@@ -387,11 +387,60 @@ void processUart1Message(PARSE_STATE *parse, uint8_t type)
     consumer = (char *)slowConsumer;
     if ((bytesToCopy > space) && (!inMainMenu))
     {
+        RING_BUFFER_OFFSET bytesToDiscard;
+        RING_BUFFER_OFFSET discardedBytes;
+        static PARSE_STATE parse;
+        RING_BUFFER_OFFSET previousTail;
+        RING_BUFFER_OFFSET tail;
+
         if (consumer)
             systemPrintf("%s is slow, ", consumer);
         systemPrintf("%d bytes of %d in use\r\n", use, settings.gnssHandlerBufferSize);
-        systemPrintf("Ring buffer full: discarding %d bytes\r\n", bytesToCopy);
-        return;
+
+        // Initialize the parser
+        memset((void *)&parse, 0, sizeof(parse));
+        parse.state = waitForPreamble;
+        parse.parserName = "Discard";
+
+        // Determine the tail of the ring buffer
+        tail = dataHead + space + 1;
+        if (tail >= settings.gnssHandlerBufferSize)
+            tail -= settings.gnssHandlerBufferSize;
+        previousTail = tail;
+
+        // Determine the amount of data to discard
+        bytesToDiscard = bytesToCopy;
+        if (bytesToDiscard < (settings.gnssHandlerBufferSize >> 2))
+            bytesToDiscard = settings.gnssHandlerBufferSize >> 2;
+
+        // Discard the oldest data
+        discardedBytes = 0;
+        while ((discardedBytes < bytesToDiscard) || (parse.state != waitForPreamble))
+        {
+            // Remove an entire message
+            parse.state(&parse, ringBuffer[tail++]);
+            if (tail >= settings.gnssHandlerBufferSize)
+                tail -= settings.gnssHandlerBufferSize;
+            discardedBytes += 1;
+
+            // Handle the NMEA case termination
+            if (parse.state == nmeaLineTermination)
+            {
+                // Remove the carriage return and linefeed
+                while ((ringBuffer[tail] == '\r') || (ringBuffer[tail] == '\n'))
+                {
+                    tail += 1;
+                    if (tail >= settings.gnssHandlerBufferSize)
+                        tail -= settings.gnssHandlerBufferSize;
+                    discardedBytes += 1;
+                }
+                parse.state = waitForPreamble;
+            }
+        }
+
+        systemPrintf("Ring buffer full: discarding %d bytes\r\n", discardedBytes);
+        updateRingBufferTails(previousTail, tail, discardedBytes);
+        availableHandlerSpace += discardedBytes;
     }
 
     // Account for this message

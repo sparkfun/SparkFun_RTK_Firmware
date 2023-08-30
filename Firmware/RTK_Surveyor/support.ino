@@ -749,7 +749,10 @@ uint8_t nmeaLineTermination(PARSE_STATE *parse, uint8_t data)
 
         // Process this message if CRC is valid
         if (parse->crc == 0)
-            parse->eomCallback(parse, SENTENCE_TYPE_NMEA);
+        {
+            if (parse->eomCallback)
+                parse->eomCallback(parse, SENTENCE_TYPE_NMEA);
+        }
         else
             failedParserMessages_NMEA++;
 
@@ -840,7 +843,10 @@ uint8_t rtcmReadCrc(PARSE_STATE *parse, uint8_t data)
 
     // Process the message if CRC is valid
     if (parse->crc == 0)
-        parse->eomCallback(parse, SENTENCE_TYPE_RTCM);
+    {
+        if (parse->eomCallback)
+            parse->eomCallback(parse, SENTENCE_TYPE_RTCM);
+    }
     else
         failedParserMessages_RTCM++;
 
@@ -933,7 +939,10 @@ uint8_t ubloxCkB(PARSE_STATE *parse, uint8_t data)
 
     // Process this message if checksum is valid
     if (badChecksum == false)
-        parse->eomCallback(parse, SENTENCE_TYPE_UBX);
+    {
+        if (parse->eomCallback)
+            parse->eomCallback(parse, SENTENCE_TYPE_UBX);
+    }
     else
         failedParserMessages_UBX++;
 

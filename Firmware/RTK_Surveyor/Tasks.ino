@@ -71,6 +71,10 @@ uint8_t bluetoothOutgoingToZed[100];
 uint16_t bluetoothOutgoingToZedHead;
 unsigned long lastZedI2CSend; // Timestamp of the last time we sent RTCM ZED over I2C
 
+// Ring buffer tails
+static RING_BUFFER_OFFSET btRingBufferTail; // BT Tail advances as it is sent over BT
+static RING_BUFFER_OFFSET sdRingBufferTail; // SD Tail advances as it is recorded to SD
+
 //----------------------------------------
 // Task routines
 //----------------------------------------
@@ -235,27 +239,27 @@ void feedWdt()
 // 250ms worst case, we should record incoming all data. Bluetooth congestion
 // or conflicts with the SD card semaphore should clear within this time.
 //
-// Ring buffer empty when (dataHead == btTail) and (dataHead == sdTail)
+// Ring buffer empty when all the tails == dataHead
 //
 //        +---------+
 //        |         |
 //        |         |
 //        |         |
 //        |         |
-//        +---------+ <-- dataHead, btTail, sdTail
+//        +---------+ <-- dataHead, btRingBufferTail, sdRingBufferTail, etc.
 //
-// Ring buffer contains data when (dataHead != btTail) or (dataHead != sdTail)
+// Ring buffer contains data when any tail != dataHead
 //
 //        +---------+
 //        |         |
 //        |         |
 //        | yyyyyyy | <-- dataHead
-//        | xxxxxxx | <-- btTail (1 byte in buffer)
-//        +---------+ <-- sdTail (2 bytes in buffer)
+//        | xxxxxxx | <-- btRingBufferTail (1 byte in buffer)
+//        +---------+ <-- sdRingBufferTail (2 bytes in buffer)
 //
 //        +---------+
-//        | yyyyyyy | <-- btTail (1 byte in buffer)
-//        | xxxxxxx | <-- sdTail (2 bytes in buffer)
+//        | yyyyyyy | <-- btRingBufferTail (1 byte in buffer)
+//        | xxxxxxx | <-- sdRingBufferTail (2 bytes in buffer)
 //        |         |
 //        |         |
 //        +---------+ <-- dataHead
@@ -438,14 +442,11 @@ void handleGnssDataTask(void *e)
     uint32_t startMillis;
     int32_t usedSpace;
 
-    static RING_BUFFER_OFFSET btTail;          // BT Tail advances as it is sent over BT
-    static RING_BUFFER_OFFSET sdTail;          // SD Tail advances as it is recorded to SD
-
     // Initialize the tails
-    btTail = 0;
+    btRingBufferTail = 0;
     pvtClientZeroTail();
     pvtServerZeroTail();
-    sdTail = 0;
+    sdRingBufferTail = 0;
 
     while (true)
     {
@@ -469,24 +470,24 @@ void handleGnssDataTask(void *e)
                          (systemState != STATE_BASE_TEMP_SURVEY_STARTED);
         if (!connected)
             // Discard the data
-            btTail = dataHead;
+            btRingBufferTail = dataHead;
         else
         {
             // Determine the amount of Bluetooth data in the buffer
-            bytesToSend = dataHead - btTail;
+            bytesToSend = dataHead - btRingBufferTail;
             if (bytesToSend < 0)
                 bytesToSend += settings.gnssHandlerBufferSize;
             if (bytesToSend > 0)
             {
                 // Reduce bytes to send if we have more to send then the end of
                 // the buffer, we'll wrap next loop
-                if ((btTail + bytesToSend) > settings.gnssHandlerBufferSize)
-                    bytesToSend = settings.gnssHandlerBufferSize - btTail;
+                if ((btRingBufferTail + bytesToSend) > settings.gnssHandlerBufferSize)
+                    bytesToSend = settings.gnssHandlerBufferSize - btRingBufferTail;
 
                 // If we are in the config menu, supress data flowing from ZED to cell phone
                 if (btPrintEcho == false)
                     // Push new data to BT SPP
-                    bytesToSend = bluetoothWrite(&ringBuffer[btTail], bytesToSend);
+                    bytesToSend = bluetoothWrite(&ringBuffer[btRingBufferTail], bytesToSend);
 
                 // Account for the data that was sent
                 if (bytesToSend > 0)
@@ -496,9 +497,9 @@ void handleGnssDataTask(void *e)
                         bluetoothOutgoingRTCM = true;
 
                     // Account for the sent or dropped data
-                    btTail += bytesToSend;
-                    if (btTail >= settings.gnssHandlerBufferSize)
-                        btTail -= settings.gnssHandlerBufferSize;
+                    btRingBufferTail += bytesToSend;
+                    if (btRingBufferTail >= settings.gnssHandlerBufferSize)
+                        btRingBufferTail -= settings.gnssHandlerBufferSize;
 
                     // Remember the maximum transfer time
                     deltaMillis = millis() - startMillis;
@@ -516,7 +517,7 @@ void handleGnssDataTask(void *e)
                     log_w("BT failed to send");
 
                 // Determine the amount of data that remains in the buffer
-                bytesToSend = dataHead - btTail;
+                bytesToSend = dataHead - btRingBufferTail;
                 if (bytesToSend < 0)
                     bytesToSend += settings.gnssHandlerBufferSize;
                 if (usedSpace < bytesToSend)
@@ -571,11 +572,11 @@ void handleGnssDataTask(void *e)
         // If user wants to log, record to SD
         if (!connected)
             // Discard the data
-            sdTail = dataHead;
+            sdRingBufferTail = dataHead;
         else
         {
             // Determine the amount of microSD card logging data in the buffer
-            bytesToSend = dataHead - sdTail;
+            bytesToSend = dataHead - sdRingBufferTail;
             if (bytesToSend < 0)
                 bytesToSend += settings.gnssHandlerBufferSize;
             if (bytesToSend > 0)
@@ -587,8 +588,8 @@ void handleGnssDataTask(void *e)
                     markSemaphore(FUNCTION_WRITESD);
 
                     // Reduce bytes to record if we have more then the end of the buffer
-                    if ((sdTail + bytesToSend) > settings.gnssHandlerBufferSize)
-                        bytesToSend = settings.gnssHandlerBufferSize - sdTail;
+                    if ((sdRingBufferTail + bytesToSend) > settings.gnssHandlerBufferSize)
+                        bytesToSend = settings.gnssHandlerBufferSize - sdRingBufferTail;
 
                     if (settings.enablePrintSDBuffers && (!inMainMenu))
                     {
@@ -617,7 +618,7 @@ void handleGnssDataTask(void *e)
                     long startTime = millis();
                     startMillis = millis();
 
-                    bytesToSend = ubxFile->write(&ringBuffer[sdTail], bytesToSend);
+                    bytesToSend = ubxFile->write(&ringBuffer[sdRingBufferTail], bytesToSend);
                     if (PERIODIC_DISPLAY(PD_SD_LOG_WRITE) && (bytesToSend > 0))
                     {
                         PERIODIC_CLEAR(PD_SD_LOG_WRITE);
@@ -673,9 +674,9 @@ void handleGnssDataTask(void *e)
                     // Account for the sent data or dropped
                     if (bytesToSend > 0)
                     {
-                        sdTail += bytesToSend;
-                        if (sdTail >= settings.gnssHandlerBufferSize)
-                            sdTail -= settings.gnssHandlerBufferSize;
+                        sdRingBufferTail += bytesToSend;
+                        if (sdRingBufferTail >= settings.gnssHandlerBufferSize)
+                            sdRingBufferTail -= settings.gnssHandlerBufferSize;
                     }
                 } // End sdCardSemaphore
                 else
@@ -690,7 +691,7 @@ void handleGnssDataTask(void *e)
                 }
 
                 // Update space available for use in UART task
-                bytesToSend = dataHead - sdTail;
+                bytesToSend = dataHead - sdRingBufferTail;
                 if (bytesToSend < 0)
                     bytesToSend += settings.gnssHandlerBufferSize;
                 if (usedSpace < bytesToSend)

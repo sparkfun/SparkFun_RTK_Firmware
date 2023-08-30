@@ -74,7 +74,7 @@ static volatile uint8_t pvtServerClientDataSent;
 static volatile uint8_t pvtServerClientWriteError;
 static NetworkClient * pvtServerClient[PVT_SERVER_MAX_CLIENTS];
 static IPAddress pvtServerClientIpAddress[PVT_SERVER_MAX_CLIENTS];
-static volatile uint16_t pvtServerClientTails[PVT_SERVER_MAX_CLIENTS];
+static volatile RING_BUFFER_OFFSET pvtServerClientTails[PVT_SERVER_MAX_CLIENTS];
 
 //----------------------------------------
 // PVT Server handleGnssDataTask Support Routines

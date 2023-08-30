@@ -281,6 +281,8 @@ typedef struct WiFiNetwork
 
 #define MAX_WIFI_NETWORKS 4
 
+typedef uint16_t RING_BUFFER_OFFSET;
+
 typedef struct _PARSE_STATE *P_PARSE_STATE;
 
 // Parse routine

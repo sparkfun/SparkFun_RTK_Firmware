@@ -11,6 +11,36 @@ Form.ino
 
 bool websocketConnected = false;
 
+class CaptiveRequestHandler : public AsyncWebHandler {
+public:
+  //https://en.wikipedia.org/wiki/Captive_portal
+  String urls[5] = {"/hotspot-detect.html", "/library/test/success.html", "/generate_204", "/ncsi.txt", "/check_network_status.txt"};
+  CaptiveRequestHandler() {}
+  virtual ~CaptiveRequestHandler() {}
+
+  bool canHandle(AsyncWebServerRequest *request){
+    for(int i = 0; i<5; i++){
+      if(request->url().equals(urls[i]))
+        return true;
+    }
+    return false;
+  }
+
+  //Provide a custom small site for redirecting the user to the config site
+  //HTTP redirect does not work and the relative links on the default config site do not work, because the phone is requesting a different server
+  void handleRequest(AsyncWebServerRequest *request) {
+    String logmessage = "Captive Portal Client:" + request->client()->remoteIP().toString() + " " + request->url();
+    systemPrintln(logmessage);
+    AsyncResponseStream *response = request->beginResponseStream("text/html");
+    response->print("<!DOCTYPE html><html><head><title>RTK Config</title></head><body>");
+    response->print("<div class='container'>");
+    response->printf("<div align='center' class='col-sm-12'><img src='http://%s/src/rtk-setup.png' alt='SparkFun RTK WiFi Setup'></div>", WiFi.softAPIP().toString().c_str());
+    response->printf("<div align='center'><h3>Configure your RTK receiver <a href='http://%s/'>here</a></h3></div>", WiFi.softAPIP().toString().c_str());
+    response->print("</div></body></html>");
+    request->send(response);
+  }
+};
+
 // Start webserver in AP mode
 bool startWebServer(bool startWiFi = true, int httpPort = 80)
 {
@@ -62,6 +92,7 @@ bool startWebServer(bool startWiFi = true, int httpPort = 80)
         }
 
         websocket->onEvent(onWsEvent);
+        webserver->addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER);//only when requested from AP
         webserver->addHandler(websocket);
 
         // * index.html (not gz'd)

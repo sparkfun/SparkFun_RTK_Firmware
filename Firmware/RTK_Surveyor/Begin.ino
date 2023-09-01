@@ -554,6 +554,8 @@ void beginUART2()
 {
     ringBuffer = (uint8_t *)malloc(settings.gnssHandlerBufferSize);
     if (!ringBuffer)
+        systemPrintln("ERROR: Failed to allocate the ring buffer!");
+    else
     {
         if (pinUART2TaskHandle == nullptr)
             xTaskCreatePinnedToCore(

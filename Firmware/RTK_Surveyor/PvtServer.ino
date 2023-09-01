@@ -48,6 +48,7 @@ static WiFiServer *pvtServer = nullptr;
 
 // PVT server clients
 static volatile uint8_t pvtServerClientConnected;
+static volatile uint8_t pvtServerClientWriteError;
 static WiFiClient pvtServerClient[PVT_SERVER_MAX_CLIENTS];
 static IPAddress pvtServerClientIpAddress[PVT_SERVER_MAX_CLIENTS];
 static volatile uint16_t pvtServerClientTails[PVT_SERVER_MAX_CLIENTS];
@@ -77,6 +78,7 @@ int32_t pvtServerClientSendData(int index, uint8_t *data, uint16_t length)
 
         pvtServerClient[index].stop();
         pvtServerClientConnected &= ~(1 << index);
+        pvtServerClientWriteError |= 1 << index;
         length = 0;
     }
     return length;
@@ -135,10 +137,6 @@ int32_t pvtServerSendData(uint16_t dataHead)
         pvtServerClientTails[index] = tail;
     }
 
-    // Shutdown the PVT server if necessary
-    if (settings.enablePvtServer || online.pvtServer)
-        pvtServerActive();
-
     // Return the amount of space that WiFi is using in the buffer
     return usedSpace;
 }
@@ -154,12 +152,13 @@ bool pvtServerActive()
     // Shutdown the PVT server
     online.pvtServer = false;
 
+    // Stop the TCP server
     if (pvtServer != nullptr)
     {
-        // Stop the PVT server
         pvtServer->stop();
         delete pvtServer;
         pvtServer = nullptr;
+        pvtServerClientWriteError = 0;
     }
     return false;
 }
@@ -202,11 +201,13 @@ void pvtServerUpdate()
     if (settings.enablePvtServer && (pvtServer == nullptr) && wifiIsConnected())
     {
         pvtServer = new WiFiServer(settings.pvtServerPort);
-
-        pvtServer->begin();
-        online.pvtServer = true;
-        systemPrint("PVT server online, IP Address ");
-        systemPrintln(WiFi.localIP());
+        if (pvtServer)
+        {
+            pvtServer->begin();
+            online.pvtServer = true;
+            systemPrint("PVT server online, IP Address ");
+            systemPrintln(WiFi.localIP());
+        }
     }
 
     // Check for another PVT server client
@@ -234,7 +235,9 @@ void pvtServerUpdate()
         if (pvtServerClientConnected & (1 << index))
         {
             // Check for a broken connection
-            if ((!pvtServerClient[index]) || (!pvtServerClient[index].connected()))
+            if ((!pvtServerClient[index])
+                || (!pvtServerClient[index].connected())
+                || (pvtServerClientWriteError & (1 << index)))
             {
                 // Done with this client connection
                 if (!inMainMenu)
@@ -245,6 +248,7 @@ void pvtServerUpdate()
 
                 pvtServerClient[index].stop();
                 pvtServerClientConnected &= ~(1 << index);
+                pvtServerClientWriteError &= ~(1 << index);
 
                 // Shutdown the PVT server if necessary
                 if (settings.enablePvtServer || online.pvtServer)

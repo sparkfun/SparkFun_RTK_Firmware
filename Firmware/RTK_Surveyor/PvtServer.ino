@@ -264,7 +264,7 @@ void pvtServerStop()
     // Stop using the network
     if (pvtServerState != PVT_SERVER_STATE_OFF)
     {
-        wifiStop();
+        networkUserClose(NETWORK_USER_PVT_SERVER);
 
         // The PVT server is now off
         pvtServerSetState(PVT_SERVER_STATE_OFF);
@@ -347,23 +347,24 @@ void pvtServerUpdate()
         // Determine if the PVT server should be running
         if (settings.enablePvtServer && (!wifiInConfigMode()) && (!wifiIsConnected()))
         {
-            if (settings.debugPvtServer && (!inMainMenu))
-                systemPrintln("PVT server starting the network");
-            wifiStart();
-            pvtServerSetState(PVT_SERVER_STATE_NETWORK_STARTED);
+            if (networkUserOpen(NETWORK_USER_PVT_SERVER, NETWORK_TYPE_ACTIVE))
+            {
+                if (settings.debugPvtServer && (!inMainMenu))
+                    systemPrintln("PVT server starting the network");
+                pvtServerSetState(PVT_SERVER_STATE_NETWORK_STARTED);
+            }
         }
         break;
 
     // Wait until the network is connected
     case PVT_SERVER_STATE_NETWORK_STARTED:
         // Determine if the network has failed
-        // Determine if the PVT server was stopped or if the network has failed
-        if ((!settings.enablePvtServer) || (!wifiIsConnected()))
+        if (networkIsShuttingDown(NETWORK_USER_PVT_SERVER))
             // Failed to connect to to the network, attempt to restart the network
             pvtServerStop();
 
         // Wait for the network to connect to the media
-        else if (wifiIsConnected())
+        else if (networkUserConnected(NETWORK_USER_PVT_SERVER))
         {
             // Delay before starting the PVT server
             if ((millis() - pvtServerTimer) >= (1 * 1000))
@@ -380,8 +381,8 @@ void pvtServerUpdate()
 
     // Handle client connections and link failures
     case PVT_SERVER_STATE_RUNNING:
-        // Determine if the PVT server was stopped or if the network has failed
-        if ((!settings.enablePvtServer) || (!wifiIsConnected()))
+        // Determine if the network has failed
+        if ((!settings.enablePvtServer) || networkIsShuttingDown(NETWORK_USER_PVT_SERVER))
         {
             if ((settings.debugPvtServer || PERIODIC_DISPLAY(PD_PVT_SERVER_DATA)) && (!inMainMenu))
             {

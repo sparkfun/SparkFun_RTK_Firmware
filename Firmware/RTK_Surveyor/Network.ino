@@ -181,10 +181,11 @@ const int networkStateEntries = sizeof(networkState) / sizeof(networkState[0]);
 // List of network users
 const char * const networkUser[] =
 {
+    "NTP Server",
     "NTRIP Client",
     "NTRIP Server",
     "PVT Client",
-    "NTP Server",
+    "PVT Server",
 };
 const int networkUserEntries = sizeof(networkUser) / sizeof(networkUser[0]);
 
@@ -837,6 +838,12 @@ void networkStop(uint8_t networkType)
                     if (settings.debugNetworkLayer)
                         systemPrintln("Network layer stopping PVT client");
                     pvtClientStop();
+                    break;
+
+                case NETWORK_USER_PVT_SERVER:
+                    if (settings.debugNetworkLayer)
+                        systemPrintln("Network layer stopping PVT server");
+                    pvtServerStop();
                     break;
                 }
             }

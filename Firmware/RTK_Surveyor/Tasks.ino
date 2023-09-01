@@ -83,6 +83,13 @@ void btReadTask(void *e)
 
     while (true)
     {
+        // Display an alive message
+        if (PERIODIC_DISPLAY(PD_TASK_BLUETOOTH_READ))
+        {
+            PERIODIC_CLEAR(PD_TASK_BLUETOOTH_READ);
+            systemPrintln("btReadTask running");
+        }
+
         // Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
         rxBytes = 0;
         if (bluetoothGetState() == BT_CONNECTED)
@@ -270,6 +277,13 @@ void gnssReadTask(void *e)
 
     while (true)
     {
+        // Display an alive message
+        if (PERIODIC_DISPLAY(PD_TASK_GNSS_READ))
+        {
+            PERIODIC_CLEAR(PD_TASK_GNSS_READ);
+            systemPrintln("gnssReadTask running");
+        }
+
         if (settings.enableTaskReports == true)
             systemPrintf("SerialReadTask High watermark: %d\r\n", uxTaskGetStackHighWaterMark(nullptr));
 
@@ -437,6 +451,13 @@ void handleGnssDataTask(void *e)
 
     while (true)
     {
+        // Display an alive message
+        if (PERIODIC_DISPLAY(PD_TASK_HANDLE_GNSS_DATA))
+        {
+            PERIODIC_CLEAR(PD_TASK_HANDLE_GNSS_DATA);
+            systemPrintln("handleGnssDataTask running");
+        }
+
         usedSpace = 0;
 
         //----------------------------------------------------------------------
@@ -775,6 +796,13 @@ void ButtonCheckTask(void *e)
 
     while (true)
     {
+        // Display an alive message
+        if (PERIODIC_DISPLAY(PD_TASK_BUTTON_CHECK))
+        {
+            PERIODIC_CLEAR(PD_TASK_BUTTON_CHECK);
+            systemPrintln("ButtonCheckTask running");
+        }
+
         /* RTK Surveyor
 
                                       .----------------------------.
@@ -1403,6 +1431,13 @@ void sdSizeCheckTask(void *e)
 {
     while (true)
     {
+        // Display an alive message
+        if (PERIODIC_DISPLAY(PD_TASK_SD_SIZE_CHECK))
+        {
+            PERIODIC_CLEAR(PD_TASK_SD_SIZE_CHECK);
+            systemPrintln("sdSizeCheckTask running");
+        }
+
         if (online.microSD && sdCardSize == 0)
         {
             // Attempt to gain access to the SD card

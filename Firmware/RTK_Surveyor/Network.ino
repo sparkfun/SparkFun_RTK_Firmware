@@ -302,20 +302,9 @@ void menuNetwork()
         //------------------------------
 
         else if (incoming == 4)
-        {
             // Toggle WiFi NEMA server
             settings.enablePvtServer ^= 1;
-            if ((!settings.enablePvtServer) && online.pvtServer)
-            {
-                // Tell the UART2 tasks that the TCP server is shutting down
-                online.pvtServer = false;
 
-                // Wait for the UART2 tasks to close the TCP client connections
-                while (pvtServerActive())
-                    delay(5);
-                systemPrintln("TCP Server offline");
-            }
-        }
         else if (incoming == 5)
         {
             systemPrint("Enter the TCP port to use (0 to 65535): ");

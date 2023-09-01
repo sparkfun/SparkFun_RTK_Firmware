@@ -62,7 +62,7 @@ const int ringBufferConsumerEntries = sizeof(ringBufferConsumer) / sizeof(ringBu
 // Locals
 //----------------------------------------
 
-volatile static uint16_t dataHead;      // Head advances as data comes in from GNSS's UART
+volatile static RING_BUFFER_OFFSET dataHead;      // Head advances as data comes in from GNSS's UART
 volatile int32_t availableHandlerSpace; // settings.gnssHandlerBufferSize - usedSpace
 volatile const char *slowConsumer;
 
@@ -339,12 +339,12 @@ void gnssReadTask(void *e)
 }
 
 // Process a complete message incoming from parser
-// If we get a complete NMEA/UBX/RTCM sentence, pass on to SD/BT/TCP interfaces
+// If we get a complete NMEA/UBX/RTCM sentence, pass on to SD/BT/PVT interfaces
 void processUart1Message(PARSE_STATE *parse, uint8_t type)
 {
     int32_t bytesToCopy;
     const char *consumer;
-    uint16_t remainingBytes;
+    RING_BUFFER_OFFSET remainingBytes;
     int32_t space;
     int32_t use;
 
@@ -424,7 +424,7 @@ void processUart1Message(PARSE_STATE *parse, uint8_t type)
 }
 
 // If new data is in the ringBuffer, dole it out to appropriate interface
-// Send data out Bluetooth, record to SD, or send over TCP
+// Send data out Bluetooth, record to SD, or send to network clients
 // Each device (Bluetooth, SD and network client) gets its own tail.  If the
 // device is running too slowly then data for that device is dropped.
 // The usedSpace variable tracks the total space in use in the buffer.
@@ -438,16 +438,14 @@ void handleGnssDataTask(void *e)
     uint32_t startMillis;
     int32_t usedSpace;
 
-    static uint16_t btTail;          // BT Tail advances as it is sent over BT
-    static uint16_t tcpTailEthernet; // TCP client tail
-    static uint16_t sdTail;          // SD Tail advances as it is recorded to SD
+    static RING_BUFFER_OFFSET btTail;          // BT Tail advances as it is sent over BT
+    static RING_BUFFER_OFFSET sdTail;          // SD Tail advances as it is recorded to SD
 
     // Initialize the tails
     btTail = 0;
     pvtClientZeroTail();
     pvtServerZeroTail();
     sdTail = 0;
-    tcpTailEthernet = 0;
 
     while (true)
     {
@@ -530,7 +528,7 @@ void handleGnssDataTask(void *e)
         }
 
         //----------------------------------------------------------------------
-        // Send data to the WiFi TCP clients
+        // Send data to the network clients
         //----------------------------------------------------------------------
 
         startMillis = millis();
@@ -1377,7 +1375,7 @@ bool tasksStartUART2()
                                 &gnssReadTaskHandle,           // Task handle
                                 settings.gnssReadTaskCore);    // Core where task should run, 0=core, 1=Arduino
 
-    // Reads data from circular buffer and sends data to SD, SPP, or TCP
+    // Reads data from circular buffer and sends data to SD, SPP, or network clients
     if (handleGnssDataTaskHandle == nullptr)
         xTaskCreatePinnedToCore(handleGnssDataTask,                  // Function to call
                                 "handleGNSSData",                    // Just for humans

@@ -153,11 +153,11 @@ const int pvtClientStateNameEntries = sizeof(pvtClientStateName) / sizeof(pvtCli
 static NetworkClient * pvtClient;
 static IPAddress pvtClientIpAddress;
 static uint8_t pvtClientState;
-static volatile uint16_t pvtClientTail;
+static volatile RING_BUFFER_OFFSET pvtClientTail;
 static volatile bool pvtClientWriteError;
 
 //----------------------------------------
-// PVT Client Routines
+// PVT Client handleGnssDataTask Support Routines
 //----------------------------------------
 
 // Send PVT data to the NMEA server
@@ -249,6 +249,10 @@ void pvtClientSetState(uint8_t newState)
             systemPrintln(pvtClientStateName[pvtClientState]);
     }
 }
+
+//----------------------------------------
+// PVT Client Routines
+//----------------------------------------
 
 // Start the PVT client
 bool pvtClientStart()

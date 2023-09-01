@@ -8,6 +8,7 @@ class NetworkClient : public Client
   protected:
 
     Client * _client; // Ethernet or WiFi client
+    bool _friendClass;
     uint8_t _networkType;
 
   public:
@@ -15,8 +16,16 @@ class NetworkClient : public Client
     //------------------------------
     // Create the network client
     //------------------------------
+    NetworkClient(Client * client, uint8_t networkType)
+    {
+        _friendClass = true;
+        _networkType = networkType;
+        _client = client;
+    }
+
     NetworkClient(uint8_t user)
     {
+        _friendClass = false;
         _networkType = networkGetType(user);
 #if defined(COMPILE_ETHERNET)
         if (_networkType == NETWORK_TYPE_ETHERNET)
@@ -38,7 +47,8 @@ class NetworkClient : public Client
         if (_client)
         {
             _client->stop();
-            delete _client;
+            if (!_friendClass)
+                delete _client;
             _client = nullptr;
         }
     };
@@ -221,6 +231,57 @@ class NetworkClient : public Client
     {
         return Client::rawIPAddress(addr);
     }
+
+    //------------------------------
+    // Declare the friend classes
+    //------------------------------
+
+    friend class NetworkEthernetClient;
+    friend class NetworkWiFiClient;
 };
+
+#ifdef  COMPILE_ETHERNET
+class NetworkEthernetClient : public NetworkClient
+{
+  private:
+
+    EthernetClient _client;
+
+  public:
+
+    NetworkEthernetClient(EthernetClient& client) :
+        _client{client},
+        NetworkClient(&_client, NETWORK_TYPE_ETHERNET)
+    {
+    }
+
+    ~NetworkEthernetClient()
+    {
+        this->~NetworkClient();
+    }
+};
+#endif  // COMPILE_ETHERNET
+
+#ifdef  COMPILE_WIFI
+class NetworkWiFiClient : public NetworkClient
+{
+  private:
+
+    WiFiClient _client;
+
+  public:
+
+    NetworkWiFiClient(WiFiClient& client) :
+        _client{client},
+        NetworkClient(&_client, NETWORK_TYPE_WIFI)
+    {
+    }
+
+    ~NetworkWiFiClient()
+    {
+        this->~NetworkClient();
+    }
+};
+#endif  // COMPILE_WIFI
 
 #endif  // __NETWORK_CLIENT_H__

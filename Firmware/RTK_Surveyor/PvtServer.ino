@@ -72,7 +72,7 @@ static uint32_t pvtServerTimer;
 static volatile uint8_t pvtServerClientConnected;
 static volatile uint8_t pvtServerClientDataSent;
 static volatile uint8_t pvtServerClientWriteError;
-static WiFiClient pvtServerClient[PVT_SERVER_MAX_CLIENTS];
+static NetworkClient * pvtServerClient[PVT_SERVER_MAX_CLIENTS];
 static IPAddress pvtServerClientIpAddress[PVT_SERVER_MAX_CLIENTS];
 static volatile uint16_t pvtServerClientTails[PVT_SERVER_MAX_CLIENTS];
 
@@ -84,7 +84,7 @@ static volatile uint16_t pvtServerClientTails[PVT_SERVER_MAX_CLIENTS];
 int32_t pvtServerClientSendData(int index, uint8_t *data, uint16_t length)
 {
 
-    length = pvtServerClient[index].write(data, length);
+    length = pvtServerClient[index]->write(data, length);
     if (length >= 0)
     {
         // Update the data sent flag when data successfully sent
@@ -116,6 +116,9 @@ int32_t pvtServerClientSendData(int index, uint8_t *data, uint16_t length)
                          pvtServerClientIpAddress[index][2],
                          pvtServerClientIpAddress[index][3]);
         }
+
+        pvtServerClient[index]->stop();
+        pvtServerClientConnected &= ~(1 << index);
         pvtServerClientWriteError |= 1 << index;
         length = 0;
     }
@@ -127,13 +130,9 @@ int32_t pvtServerSendData(uint16_t dataHead)
 {
     int32_t usedSpace = 0;
 
-    bool connected;
     int32_t bytesToSend;
     int index;
     uint16_t tail;
-
-    // Determine if a client is connected
-    connected = settings.enablePvtServer && online.pvtServer && pvtServerClientConnected;
 
     // Update each of the clients
     for (index = 0; index < PVT_SERVER_MAX_CLIENTS; index++)
@@ -141,7 +140,7 @@ int32_t pvtServerSendData(uint16_t dataHead)
         tail = pvtServerClientTails[index];
 
         // Determine if the client is connected
-        if ((!connected) || ((pvtServerClientConnected & (1 << index)) == 0))
+        if (!(pvtServerClientConnected & (1 << index)))
             tail = dataHead;
         else
         {
@@ -284,7 +283,7 @@ void pvtServerStopClient(int index)
         PERIODIC_CLEAR(PD_PVT_SERVER_DATA);
 
         // Determine the shutdown reason
-        connected = pvtServerClient[index].connected()
+        connected = pvtServerClient[index]->connected()
                     && (!(pvtServerClientWriteError & (1 << index)));
         dataSent = ((millis() - pvtServerTimer) < PVT_SERVER_CLIENT_DATA_TIMEOUT)
                  || (pvtServerClientDataSent & (1 << index));
@@ -302,7 +301,7 @@ void pvtServerStopClient(int index)
     }
 
     // Shutdown the PVT server client link
-    pvtServerClient[index].stop();
+    pvtServerClient[index]->stop();
     pvtServerClientConnected &= ~(1 << index);
     pvtServerClientWriteError &= ~(1 << index);
 }
@@ -403,8 +402,7 @@ void pvtServerUpdate()
             {
                 // Data structure in use
                 // Check for a working PVT server client connection
-                connected = pvtServerClient[index].connected()
-                            && (!(pvtServerClientWriteError & (1 << index)));
+                connected = pvtServerClient[index]->connected();
                 dataSent = ((millis() - pvtServerTimer) < PVT_SERVER_CLIENT_DATA_TIMEOUT)
                          || (pvtServerClientDataSent & (1 << index));
                 if (connected && dataSent)
@@ -445,8 +443,8 @@ void pvtServerUpdate()
                     break;
 
                 // Start processing the new PVT server client connection
-                pvtServerClient[index] = client;
-                pvtServerClientIpAddress[index] = pvtServerClient[index].remoteIP();
+                pvtServerClient[index] = new NetworkWiFiClient(client);
+                pvtServerClientIpAddress[index] = pvtServerClient[index]->remoteIP();
                 pvtServerClientConnected |= 1 << index;
                 pvtServerClientDataSent |= 1 << index;
                 if ((settings.debugPvtServer || PERIODIC_DISPLAY(PD_PVT_SERVER_DATA)) && (!inMainMenu))

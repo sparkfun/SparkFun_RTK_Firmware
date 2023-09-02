@@ -72,6 +72,10 @@
 #define MILLISECONDS_IN_AN_HOUR (60 * MILLISECONDS_IN_A_MINUTE)
 #define MILLISECONDS_IN_A_DAY (24 * MILLISECONDS_IN_AN_HOUR)
 
+#define SECONDS_IN_A_MINUTE     60
+#define SECONDS_IN_AN_HOUR      (60 * SECONDS_IN_A_MINUTE)
+#define SECONDS_IN_A_DAY        (24 * SECONDS_IN_AN_HOUR)
+
 // Hardware connections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 // These pins are set in beginBoard()
@@ -918,6 +922,10 @@ void loop()
     {
         lastPeriodicDisplay = millis();
         periodicDisplay = settings.periodicDisplay;
+
+        // Reboot the system after a specified timeout
+        if (((lastPeriodicDisplay / 1000) > settings.rebootSeconds) && (!inMainMenu))
+            ESP.restart();
     }
     if (deadManWalking)
         periodicDisplay = (PeriodicDisplay_t)-1;

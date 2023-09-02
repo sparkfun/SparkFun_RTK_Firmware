@@ -335,6 +335,7 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "enablePrintSDBuffers", settings.enablePrintSDBuffers);
     settingsFile->printf("%s=%d\r\n", "periodicDisplay", settings.periodicDisplay);
     settingsFile->printf("%s=%d\r\n", "periodicDisplayInterval", settings.periodicDisplayInterval);
+    settingsFile->printf("%s=%d\r\n", "rebootSeconds", settings.rebootSeconds);
     settingsFile->printf("%s=%d\r\n", "forceResetOnSDFail", settings.forceResetOnSDFail);
 
     // Record WiFi credential table
@@ -1148,6 +1149,8 @@ bool parseLine(char *str, Settings *settings)
         settings->periodicDisplay = d;
     else if (strcmp(settingName, "periodicDisplayInterval") == 0)
         settings->periodicDisplayInterval = d;
+    else if (strcmp(settingName, "rebootSeconds") == 0)
+        settings->rebootSeconds = d;
     else if (strcmp(settingName, "forceResetOnSDFail") == 0)
         settings->forceResetOnSDFail = d;
     else if (strcmp(settingName, "wifiConfigOverAP") == 0)

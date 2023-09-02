@@ -178,6 +178,31 @@ int32_t pvtServerSendData(uint16_t dataHead)
     return usedSpace;
 }
 
+// Remove previous messages from the ring buffer
+void discardPvtServerBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail, RING_BUFFER_OFFSET discardedBytes)
+{
+    int index;
+    uint16_t tail;
+
+    // Update each of the clients
+    for (index = 0; index < PVT_SERVER_MAX_CLIENTS; index++)
+    {
+        tail = pvtServerClientTails[index];
+        if (previousTail < newTail)
+        {
+            // No buffer wrap occurred
+            if ((tail >= previousTail) && (tail < newTail))
+                pvtServerClientTails[index] = newTail;
+        }
+        else
+        {
+            // Buffer wrap occurred
+            if ((tail >= previousTail) || (tail < newTail))
+                pvtServerClientTails[index] = newTail;
+        }
+    }
+}
+
 //----------------------------------------
 // PVT Server Routines
 //----------------------------------------

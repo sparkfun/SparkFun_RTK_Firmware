@@ -35,6 +35,17 @@ Tasks.ino
 ------------------------------------------------------------------------------*/
 
 //----------------------------------------
+// Macros
+//----------------------------------------
+
+#define WRAP_OFFSET(offset, increment, arraySize)   \
+{                                                   \
+    offset += increment;                            \
+    if (offset >= arraySize)                        \
+        offset -= arraySize;                        \
+}
+
+//----------------------------------------
 // Constants
 //----------------------------------------
 
@@ -74,6 +85,9 @@ unsigned long lastZedI2CSend; // Timestamp of the last time we sent RTCM ZED ove
 // Ring buffer tails
 static RING_BUFFER_OFFSET btRingBufferTail; // BT Tail advances as it is sent over BT
 static RING_BUFFER_OFFSET sdRingBufferTail; // SD Tail advances as it is recorded to SD
+
+// Ring buffer offsets
+static uint16_t rbOffsetHead;
 
 //----------------------------------------
 // Task routines
@@ -343,7 +357,7 @@ void gnssReadTask(void *e)
 }
 
 // Process a complete message incoming from parser
-// If we get a complete NMEA/UBX/RTCM sentence, pass on to SD/BT/PVT interfaces
+// If we get a complete NMEA/UBX/RTCM message, pass on to SD/BT/PVT interfaces
 void processUart1Message(PARSE_STATE *parse, uint8_t type)
 {
     int32_t bytesToCopy;
@@ -387,13 +401,181 @@ void processUart1Message(PARSE_STATE *parse, uint8_t type)
     consumer = (char *)slowConsumer;
     if ((bytesToCopy > space) && (!inMainMenu))
     {
+        int32_t bufferedData;
+        int32_t bytesToDiscard;
+        int32_t discardedBytes;
+        int32_t listEnd;
+        int32_t messageLength;
+        int32_t offsetBytes;
+        int32_t previousTail;
+        int32_t rbOffsetTail;
+
+        // Determine the tail of the ring buffer
+        previousTail = dataHead + space + 1;
+        if (previousTail >= settings.gnssHandlerBufferSize)
+            previousTail -= settings.gnssHandlerBufferSize;
+
+        /*  The rbOffsetArray holds the offsets into the ring buffer of the
+         *  start of each of the parsed messages.  A head (rbOffsetHead) and
+         *  tail (rbOffsetTail) offsets are used for this array to insert and
+         *  remove entries.  Typically this task only manipulates the head as
+         *  new messages are placed into the ring buffer.  The handleGnssDataTask
+         *  normally manipulates the tail as data is removed from the buffer.
+         *  However this task will manipulate the tail under two conditions:
+         *
+         *  1.  The ring buffer gets full and data must be discarded
+         *
+         *  2.  The rbOffsetArray is too small to hold all of the message
+         *      offsets for the data in the ring buffer.  The array is full
+         *      when (Head + 1) == Tail
+         *
+         *  Notes:
+         *      The rbOffsetArray is allocated along with the ring buffer in
+         *      Begin.ino
+         *
+         *      The first entry rbOffsetArray[0] is initialized to zero (0)
+         *      in Begin.ino
+         *
+         *      The array always has one entry in it containing the head offset
+         *      which contains a valid offset into the ringBuffer, handled below
+         *
+         *      The empty condition is Tail == Head
+         *
+         *      The amount of data described by the rbOffsetArray is
+         *      rbOffsetArray[Head] - rbOffsetArray[Tail]
+         *
+         *              rbOffsetArray                  ringBuffer
+         *           .-----------------.           .-----------------.
+         *           |                 |           |                 |
+         *           +-----------------+           |                 |
+         *  Tail --> |   Msg 1 Offset  |---------->+-----------------+ <-- Tail n
+         *           +-----------------+           |      Msg 1      |
+         *           |   Msg 2 Offset  |--------.  |                 |
+         *           +-----------------+        |  |                 |
+         *           |   Msg 3 Offset  |------. '->+-----------------+
+         *           +-----------------+      |    |      Msg 2      |
+         *  Head --> |   Head Offset   |--.   |    |                 |
+         *           +-----------------+  |   |    |                 |
+         *           |                 |  |   |    |                 |
+         *           +-----------------+  |   |    |                 |
+         *           |                 |  |   '--->+-----------------+
+         *           +-----------------+  |        |      Msg 3      |
+         *           |                 |  |        |                 |
+         *           +-----------------+  '------->+-----------------+ <-- dataHead
+         *           |                 |           |                 |
+         */
+
+        // Determine the index for the end of the circular ring buffer
+        // offset list
+        listEnd = rbOffsetHead;
+        WRAP_OFFSET(listEnd, 1, rbOffsetEntries);
+
+        // Update the tail, walk newest message to oldest message
+        rbOffsetTail = rbOffsetHead;
+        bufferedData = 0;
+        messageLength = 0;
+        while ((rbOffsetTail != listEnd) && (bufferedData < use))
+        {
+            // Determine the amount of data in the ring buffer up until
+            // either the tail or the end of the rbOffsetArray
+            //
+            //                      |           |
+            //                      |           | Valid, still in ring buffer
+            //                      |  Newest   |
+            //                      +-----------+ <-- rbOffsetHead
+            //                      |           |
+            //                      |           | free space
+            //                      |           |
+            //     rbOffsetTail --> +-----------+ <-- bufferedData
+            //                      |   ring    |
+            //                      |  buffer   | <-- used
+            //                      |   data    |
+            //                      +-----------+ Valid, still in ring buffer
+            //                      |           |
+            //
+            messageLength = rbOffsetArray[rbOffsetTail];
+            WRAP_OFFSET(rbOffsetTail, rbOffsetEntries - 1, rbOffsetEntries);
+            messageLength -= rbOffsetArray[rbOffsetTail];
+            if (messageLength < 0)
+                messageLength += settings.gnssHandlerBufferSize;
+            bufferedData += messageLength;
+        }
+
+        // Account for any data in the ring buffer not described by the array
+        //
+        //                      |           |
+        //                      +-----------+
+        //                      |  Oldest   |
+        //                      |           |
+        //                      |   ring    |
+        //                      |  buffer   | <-- used
+        //                      |   data    |
+        //                      +-----------+ Valid, still in ring buffer
+        //                      |           |
+        //     rbOffsetTail --> +-----------+ <-- bufferedData
+        //                      |           |
+        //                      |  Newest   |
+        //                      +-----------+ <-- rbOffsetHead
+        //                      |           |
+        //
+        discardedBytes = 0;
+        if (bufferedData < use)
+            discardedBytes = use - bufferedData;
+
+        // Writing to the SD card, the network or Bluetooth, a partial
+        // message may be written leaving the tail pointer mid-message
+        //
+        //                      |           |
+        //     rbOffsetTail --> +-----------+
+        //                      |  Oldest   |
+        //                      |           |
+        //                      |   ring    |
+        //                      |  buffer   | <-- used
+        //                      |   data    | Valid, still in ring buffer
+        //                      +-----------+ <--
+        //                      |           |
+        //                      +-----------+
+        //                      |           |
+        //                      |  Newest   |
+        //                      +-----------+ <-- rbOffsetHead
+        //                      |           |
+        //
+        else if (bufferedData > use)
+        {
+            // Remove the remaining portion of the oldest entry in the array
+            discardedBytes = messageLength + use - bufferedData;
+            WRAP_OFFSET(rbOffsetTail, 1, rbOffsetEntries);
+        }
+
+        // rbOffsetTail now points to the beginning of a message in the
+        // ring buffer
+        // Determine the amount of data to discard
+        bytesToDiscard = discardedBytes;
+        if (bytesToDiscard < bytesToCopy)
+            bytesToDiscard = bytesToCopy;
+        if (bytesToDiscard < AMOUNT_OF_RING_BUFFER_DATA_TO_DISCARD)
+            bytesToDiscard = AMOUNT_OF_RING_BUFFER_DATA_TO_DISCARD;
+
+        // Walk the ring buffer messages from oldest to newest
+        while ((discardedBytes < bytesToDiscard) && (rbOffsetTail != rbOffsetHead))
+        {
+            // Determine the length of the oldest message
+            WRAP_OFFSET(rbOffsetTail, 1, rbOffsetEntries);
+            discardedBytes = rbOffsetArray[rbOffsetTail] - previousTail;
+            if (discardedBytes < 0)
+                discardedBytes += settings.gnssHandlerBufferSize;
+        }
+
+        // Discard the oldest data from the ring buffer
         if (consumer)
-            systemPrintf("%s is slow, ", consumer);
-        systemPrintf("%d bytes of %d in use\r\n", use, settings.gnssHandlerBufferSize);
-        systemPrintf("Ring buffer full: discarding %d bytes\r\n", bytesToCopy);
-        return;
+            systemPrintf("Ring buffer full: discarding %d bytes, %s is slow\r\n", discardedBytes, consumer);
+        else
+            systemPrintf("Ring buffer full: discarding %d bytes\r\n", discardedBytes);
+        updateRingBufferTails(previousTail, rbOffsetArray[rbOffsetTail]);
+        availableHandlerSpace += discardedBytes;
     }
 
+    // Add another message to the ring buffer
     // Account for this message
     availableHandlerSpace -= bytesToCopy;
 
@@ -422,26 +604,51 @@ void processUart1Message(PARSE_STATE *parse, uint8_t type)
             dataHead -= settings.gnssHandlerBufferSize;
     }
 
+    // Add the head offset to the offset array
+    WRAP_OFFSET(rbOffsetHead, 1, rbOffsetEntries);
+    rbOffsetArray[rbOffsetHead] = dataHead;
+
     // Display the dataHead offset
     if (settings.enablePrintRingBufferOffsets && (!inMainMenu))
         systemPrintf("%4d\r\n", dataHead);
 }
 
 // Remove previous messages from the ring buffer
-void updateRingBufferTails(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail, RING_BUFFER_OFFSET discardedBytes)
+void updateRingBufferTails(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail)
 {
-    discardRingBufferBytes(&btRingBufferTail, previousTail, newTail, discardedBytes);
-    discardRingBufferBytes(&sdRingBufferTail, previousTail, newTail, discardedBytes);
-    discardPvtClientBytes(previousTail, newTail, discardedBytes);
-    discardPvtServerBytes(previousTail, newTail, discardedBytes);
+    // Trim any long or medium tails
+    discardRingBufferBytes(&btRingBufferTail, previousTail, newTail);
+    discardRingBufferBytes(&sdRingBufferTail, previousTail, newTail);
+    discardPvtClientBytes(previousTail, newTail);
+    discardPvtServerBytes(previousTail, newTail);
 }
 
 // Remove previous messages from the ring buffer
-void discardRingBufferBytes(RING_BUFFER_OFFSET * tail, RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail, RING_BUFFER_OFFSET discardedBytes)
+void discardRingBufferBytes(RING_BUFFER_OFFSET * tail, RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail)
 {
+    // The longest tail is being trimmed.  Medium length tails may contain
+    // some data within the region begin trimmed.  The shortest tails will
+    // be trimmed.
+    //
+    // Devices that get their tails trimmed, may output a partial message
+    // prior to the buffer trimming.  After the trimming, the tail of the
+    // ring buffer points to the beginning of a new message.
+    //
+    //                 previousTail                newTail
+    //                      |                         |
+    //  Before trimming     v         Discarded       v   After trimming
+    //  ----+-----------------  ...  -----+--  ..  ---+-----------+------
+    //      | Partial message             |           |           |
+    //  ----+-----------------  ...  -----+--  ..  ---+-----------+------
+    //                      ^          ^                     ^
+    //                      |          |                     |
+    //        long tail ----'          '--- medium tail      '-- short tail
+    //
+    // Determine if the trimmed data wraps the end of the buffer
     if (previousTail < newTail)
     {
         // No buffer wrap occurred
+        // Only discard the data from long and medium tails
         if ((*tail >= previousTail) && (*tail < newTail))
             *tail = newTail;
     }
@@ -464,6 +671,7 @@ void handleGnssDataTask(void *e)
     bool connected;
     uint32_t deltaMillis;
     int32_t freeSpace;
+    uint16_t listEnd;
     static uint32_t maxMillis[RBC_MAX];
     uint32_t startMillis;
     int32_t usedSpace;

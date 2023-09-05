@@ -427,6 +427,32 @@ void processUart1Message(PARSE_STATE *parse, uint8_t type)
         systemPrintf("%4d\r\n", dataHead);
 }
 
+// Remove previous messages from the ring buffer
+void updateRingBufferTails(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail, RING_BUFFER_OFFSET discardedBytes)
+{
+    discardRingBufferBytes(&btRingBufferTail, previousTail, newTail, discardedBytes);
+    discardRingBufferBytes(&sdRingBufferTail, previousTail, newTail, discardedBytes);
+    discardPvtClientBytes(previousTail, newTail, discardedBytes);
+    discardPvtServerBytes(previousTail, newTail, discardedBytes);
+}
+
+// Remove previous messages from the ring buffer
+void discardRingBufferBytes(RING_BUFFER_OFFSET * tail, RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail, RING_BUFFER_OFFSET discardedBytes)
+{
+    if (previousTail < newTail)
+    {
+        // No buffer wrap occurred
+        if ((*tail >= previousTail) && (*tail < newTail))
+            *tail = newTail;
+    }
+    else
+    {
+        // Buffer wrap occurred
+        if ((*tail >= previousTail) || (*tail < newTail))
+            *tail = newTail;
+    }
+}
+
 // If new data is in the ringBuffer, dole it out to appropriate interface
 // Send data out Bluetooth, record to SD, or send to network clients
 // Each device (Bluetooth, SD and network client) gets its own tail.  If the

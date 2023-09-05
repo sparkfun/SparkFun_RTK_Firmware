@@ -250,6 +250,23 @@ void pvtClientSetState(uint8_t newState)
     }
 }
 
+// Remove previous messages from the ring buffer
+void discardPvtClientBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail, RING_BUFFER_OFFSET discardedBytes)
+{
+    if (previousTail < newTail)
+    {
+        // No buffer wrap occurred
+        if ((pvtClientTail >= previousTail) && (pvtClientTail < newTail))
+            pvtClientTail = newTail;
+    }
+    else
+    {
+        // Buffer wrap occurred
+        if ((pvtClientTail >= previousTail) || (pvtClientTail < newTail))
+            pvtClientTail = newTail;
+    }
+}
+
 //----------------------------------------
 // PVT Client Routines
 //----------------------------------------

@@ -588,28 +588,51 @@ void menuDebugSoftware()
         systemPrintf("%s\r\n", settings.enableHeapReport ? "Enabled" : "Disabled");
 
         // Ring buffer - ZED Tx
-        systemPrint("2) Print ring buffer offsets: ");
+        systemPrint("10) Print ring buffer offsets: ");
         systemPrintf("%s\r\n", settings.enablePrintRingBufferOffsets ? "Enabled" : "Disabled");
 
-        systemPrint("3) Print ring buffer overruns: ");
+        systemPrint("11) Print ring buffer overruns: ");
         systemPrintf("%s\r\n", settings.enablePrintBufferOverrun ? "Enabled" : "Disabled");
 
-        systemPrint("4) RTCM message checking: ");
+        systemPrint("12) RTCM message checking: ");
         systemPrintf("%s\r\n", settings.enableRtcmMessageChecking ? "Enabled" : "Disabled");
 
         // Rover
-        systemPrint("5) Print Rover accuracy messages: ");
+        systemPrint("20) Print Rover accuracy messages: ");
         systemPrintf("%s\r\n", settings.enablePrintRoverAccuracy ? "Enabled" : "Disabled");
 
         // RTK
-        systemPrint("6) Print states: ");
+        systemPrint("30) Print states: ");
         systemPrintf("%s\r\n", settings.enablePrintStates ? "Enabled" : "Disabled");
 
-        systemPrint("7) Print duplicate states: ");
+        systemPrint("31) Print duplicate states: ");
         systemPrintf("%s\r\n", settings.enablePrintDuplicateStates ? "Enabled" : "Disabled");
 
+        systemPrint("32) Reboot RTK after uptime reaches: ");
+        if (settings.rebootSeconds > 4294967)
+            systemPrintln("Disabled");
+        else
+        {
+            int days;
+            int hours;
+            int minutes;
+            int seconds;
+
+            seconds = settings.rebootSeconds;
+            days = seconds / SECONDS_IN_A_DAY;
+            seconds -= days * SECONDS_IN_A_DAY;
+            hours = seconds / SECONDS_IN_AN_HOUR;
+            seconds -= hours * SECONDS_IN_AN_HOUR;
+            minutes = seconds / SECONDS_IN_A_MINUTE;
+            seconds -= minutes * SECONDS_IN_A_MINUTE;
+
+            systemPrintf("%d (%d days %d:%02d:%02d)\r\n",
+                         settings.rebootSeconds,
+                         days, hours, minutes, seconds);
+        }
+
         // Tasks
-        systemPrint("8) Task Highwater Reporting: ");
+        systemPrint("50) Task Highwater Reporting: ");
         if (settings.enableTaskReports == true)
             systemPrintln("Enabled");
         else
@@ -625,19 +648,54 @@ void menuDebugSoftware()
 
         if (incoming == 1)
             settings.enableHeapReport ^= 1;
-        else if (incoming == 2)
+        else if (incoming == 10)
             settings.enablePrintRingBufferOffsets ^= 1;
-        else if (incoming == 3)
+        else if (incoming == 11)
             settings.enablePrintBufferOverrun ^= 1;
-        else if (incoming == 4)
+        else if (incoming == 12)
             settings.enableRtcmMessageChecking ^= 1;
-        else if (incoming == 5)
+        else if (incoming == 20)
             settings.enablePrintRoverAccuracy ^= 1;
-        else if (incoming == 6)
+        else if (incoming == 30)
             settings.enablePrintStates ^= 1;
-        else if (incoming == 7)
+        else if (incoming == 31)
             settings.enablePrintDuplicateStates ^= 1;
-        else if (incoming == 8)
+        else if (incoming == 32)
+        {
+            systemPrint("Enter uptime seconds before reboot, Disabled = 0, Reboot range (30 - 4294967): ");
+            int rebootSeconds = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((rebootSeconds != INPUT_RESPONSE_GETNUMBER_EXIT)
+                && (rebootSeconds != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (rebootSeconds < 30 || rebootSeconds > 4294967) // Disable the reboot
+                {
+                    settings.rebootSeconds = (uint32_t)-1;
+                    systemPrintln("Reset is disabled");
+                }
+                else
+                {
+                    int days;
+                    int hours;
+                    int minutes;
+                    int seconds;
+
+                    // Set the reboot time
+                    settings.rebootSeconds = rebootSeconds;
+
+                    seconds = settings.rebootSeconds;
+                    days = seconds / SECONDS_IN_A_DAY;
+                    seconds -= days * SECONDS_IN_A_DAY;
+                    hours = seconds / SECONDS_IN_AN_HOUR;
+                    seconds -= hours * SECONDS_IN_AN_HOUR;
+                    minutes = seconds / SECONDS_IN_A_MINUTE;
+                    seconds -= minutes * SECONDS_IN_A_MINUTE;
+
+                    systemPrintf("Reboot after uptime reaches %d days %d:%02d:%02d\r\n",
+                                 days, hours, minutes, seconds);
+                }
+            }
+        }
+        else if (incoming == 50)
             settings.enableTaskReports ^= 1;
         else if (incoming == 'e')
         {

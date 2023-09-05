@@ -943,6 +943,7 @@ typedef struct
     PeriodicDisplay_t periodicDisplay = (PeriodicDisplay_t)-1;
     uint32_t periodicDisplayInterval = 15 * 1000;
 
+    uint32_t rebootSeconds = (uint32_t)-1; // Disabled, reboots after uptime reaches this number of seconds
     bool forceResetOnSDFail = false; // Set to true to reset system if SD is detected but fails to start.
 
     uint8_t minElev = 10; // Minimum elevation (in deg) for a GNSS satellite to be used in NAV

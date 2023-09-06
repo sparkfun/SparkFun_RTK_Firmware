@@ -100,7 +100,6 @@ void pvtClientZeroTail() {}
 // PVT server
 //----------------------------------------
 
-bool pvtServerActive() {return false;}
 int pvtServerSendData(uint16_t dataHead) {return 0;}
 void pvtServerUpdate() {}
 void pvtServerZeroTail() {}

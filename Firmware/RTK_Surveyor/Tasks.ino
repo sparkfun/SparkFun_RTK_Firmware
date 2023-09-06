@@ -62,7 +62,7 @@ const int ringBufferConsumerEntries = sizeof(ringBufferConsumer) / sizeof(ringBu
 // Locals
 //----------------------------------------
 
-volatile static uint16_t dataHead;      // Head advances as data comes in from GNSS's UART
+volatile static RING_BUFFER_OFFSET dataHead;      // Head advances as data comes in from GNSS's UART
 volatile int32_t availableHandlerSpace; // settings.gnssHandlerBufferSize - usedSpace
 volatile const char *slowConsumer;
 
@@ -70,6 +70,10 @@ volatile const char *slowConsumer;
 uint8_t bluetoothOutgoingToZed[100];
 uint16_t bluetoothOutgoingToZedHead;
 unsigned long lastZedI2CSend; // Timestamp of the last time we sent RTCM ZED over I2C
+
+// Ring buffer tails
+static RING_BUFFER_OFFSET btRingBufferTail; // BT Tail advances as it is sent over BT
+static RING_BUFFER_OFFSET sdRingBufferTail; // SD Tail advances as it is recorded to SD
 
 //----------------------------------------
 // Task routines
@@ -83,6 +87,13 @@ void btReadTask(void *e)
 
     while (true)
     {
+        // Display an alive message
+        if (PERIODIC_DISPLAY(PD_TASK_BLUETOOTH_READ))
+        {
+            PERIODIC_CLEAR(PD_TASK_BLUETOOTH_READ);
+            systemPrintln("btReadTask running");
+        }
+
         // Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
         rxBytes = 0;
         if (bluetoothGetState() == BT_CONNECTED)
@@ -228,27 +239,27 @@ void feedWdt()
 // 250ms worst case, we should record incoming all data. Bluetooth congestion
 // or conflicts with the SD card semaphore should clear within this time.
 //
-// Ring buffer empty when (dataHead == btTail) and (dataHead == sdTail)
+// Ring buffer empty when all the tails == dataHead
 //
 //        +---------+
 //        |         |
 //        |         |
 //        |         |
 //        |         |
-//        +---------+ <-- dataHead, btTail, sdTail
+//        +---------+ <-- dataHead, btRingBufferTail, sdRingBufferTail, etc.
 //
-// Ring buffer contains data when (dataHead != btTail) or (dataHead != sdTail)
+// Ring buffer contains data when any tail != dataHead
 //
 //        +---------+
 //        |         |
 //        |         |
 //        | yyyyyyy | <-- dataHead
-//        | xxxxxxx | <-- btTail (1 byte in buffer)
-//        +---------+ <-- sdTail (2 bytes in buffer)
+//        | xxxxxxx | <-- btRingBufferTail (1 byte in buffer)
+//        +---------+ <-- sdRingBufferTail (2 bytes in buffer)
 //
 //        +---------+
-//        | yyyyyyy | <-- btTail (1 byte in buffer)
-//        | xxxxxxx | <-- sdTail (2 bytes in buffer)
+//        | yyyyyyy | <-- btRingBufferTail (1 byte in buffer)
+//        | xxxxxxx | <-- sdRingBufferTail (2 bytes in buffer)
 //        |         |
 //        |         |
 //        +---------+ <-- dataHead
@@ -270,6 +281,13 @@ void gnssReadTask(void *e)
 
     while (true)
     {
+        // Display an alive message
+        if (PERIODIC_DISPLAY(PD_TASK_GNSS_READ))
+        {
+            PERIODIC_CLEAR(PD_TASK_GNSS_READ);
+            systemPrintln("gnssReadTask running");
+        }
+
         if (settings.enableTaskReports == true)
             systemPrintf("SerialReadTask High watermark: %d\r\n", uxTaskGetStackHighWaterMark(nullptr));
 
@@ -325,12 +343,12 @@ void gnssReadTask(void *e)
 }
 
 // Process a complete message incoming from parser
-// If we get a complete NMEA/UBX/RTCM sentence, pass on to SD/BT/TCP interfaces
+// If we get a complete NMEA/UBX/RTCM sentence, pass on to SD/BT/PVT interfaces
 void processUart1Message(PARSE_STATE *parse, uint8_t type)
 {
     int32_t bytesToCopy;
     const char *consumer;
-    uint16_t remainingBytes;
+    RING_BUFFER_OFFSET remainingBytes;
     int32_t space;
     int32_t use;
 
@@ -410,7 +428,7 @@ void processUart1Message(PARSE_STATE *parse, uint8_t type)
 }
 
 // If new data is in the ringBuffer, dole it out to appropriate interface
-// Send data out Bluetooth, record to SD, or send over TCP
+// Send data out Bluetooth, record to SD, or send to network clients
 // Each device (Bluetooth, SD and network client) gets its own tail.  If the
 // device is running too slowly then data for that device is dropped.
 // The usedSpace variable tracks the total space in use in the buffer.
@@ -424,19 +442,21 @@ void handleGnssDataTask(void *e)
     uint32_t startMillis;
     int32_t usedSpace;
 
-    static uint16_t btTail;          // BT Tail advances as it is sent over BT
-    static uint16_t tcpTailEthernet; // TCP client tail
-    static uint16_t sdTail;          // SD Tail advances as it is recorded to SD
-
     // Initialize the tails
-    btTail = 0;
+    btRingBufferTail = 0;
     pvtClientZeroTail();
     pvtServerZeroTail();
-    sdTail = 0;
-    tcpTailEthernet = 0;
+    sdRingBufferTail = 0;
 
     while (true)
     {
+        // Display an alive message
+        if (PERIODIC_DISPLAY(PD_TASK_HANDLE_GNSS_DATA))
+        {
+            PERIODIC_CLEAR(PD_TASK_HANDLE_GNSS_DATA);
+            systemPrintln("handleGnssDataTask running");
+        }
+
         usedSpace = 0;
 
         //----------------------------------------------------------------------
@@ -450,24 +470,24 @@ void handleGnssDataTask(void *e)
                          (systemState != STATE_BASE_TEMP_SURVEY_STARTED);
         if (!connected)
             // Discard the data
-            btTail = dataHead;
+            btRingBufferTail = dataHead;
         else
         {
             // Determine the amount of Bluetooth data in the buffer
-            bytesToSend = dataHead - btTail;
+            bytesToSend = dataHead - btRingBufferTail;
             if (bytesToSend < 0)
                 bytesToSend += settings.gnssHandlerBufferSize;
             if (bytesToSend > 0)
             {
                 // Reduce bytes to send if we have more to send then the end of
                 // the buffer, we'll wrap next loop
-                if ((btTail + bytesToSend) > settings.gnssHandlerBufferSize)
-                    bytesToSend = settings.gnssHandlerBufferSize - btTail;
+                if ((btRingBufferTail + bytesToSend) > settings.gnssHandlerBufferSize)
+                    bytesToSend = settings.gnssHandlerBufferSize - btRingBufferTail;
 
                 // If we are in the config menu, supress data flowing from ZED to cell phone
                 if (btPrintEcho == false)
                     // Push new data to BT SPP
-                    bytesToSend = bluetoothWrite(&ringBuffer[btTail], bytesToSend);
+                    bytesToSend = bluetoothWrite(&ringBuffer[btRingBufferTail], bytesToSend);
 
                 // Account for the data that was sent
                 if (bytesToSend > 0)
@@ -477,9 +497,9 @@ void handleGnssDataTask(void *e)
                         bluetoothOutgoingRTCM = true;
 
                     // Account for the sent or dropped data
-                    btTail += bytesToSend;
-                    if (btTail >= settings.gnssHandlerBufferSize)
-                        btTail -= settings.gnssHandlerBufferSize;
+                    btRingBufferTail += bytesToSend;
+                    if (btRingBufferTail >= settings.gnssHandlerBufferSize)
+                        btRingBufferTail -= settings.gnssHandlerBufferSize;
 
                     // Remember the maximum transfer time
                     deltaMillis = millis() - startMillis;
@@ -497,7 +517,7 @@ void handleGnssDataTask(void *e)
                     log_w("BT failed to send");
 
                 // Determine the amount of data that remains in the buffer
-                bytesToSend = dataHead - btTail;
+                bytesToSend = dataHead - btRingBufferTail;
                 if (bytesToSend < 0)
                     bytesToSend += settings.gnssHandlerBufferSize;
                 if (usedSpace < bytesToSend)
@@ -509,7 +529,7 @@ void handleGnssDataTask(void *e)
         }
 
         //----------------------------------------------------------------------
-        // Send data to the WiFi TCP clients
+        // Send data to the network clients
         //----------------------------------------------------------------------
 
         startMillis = millis();
@@ -552,11 +572,11 @@ void handleGnssDataTask(void *e)
         // If user wants to log, record to SD
         if (!connected)
             // Discard the data
-            sdTail = dataHead;
+            sdRingBufferTail = dataHead;
         else
         {
             // Determine the amount of microSD card logging data in the buffer
-            bytesToSend = dataHead - sdTail;
+            bytesToSend = dataHead - sdRingBufferTail;
             if (bytesToSend < 0)
                 bytesToSend += settings.gnssHandlerBufferSize;
             if (bytesToSend > 0)
@@ -568,8 +588,8 @@ void handleGnssDataTask(void *e)
                     markSemaphore(FUNCTION_WRITESD);
 
                     // Reduce bytes to record if we have more then the end of the buffer
-                    if ((sdTail + bytesToSend) > settings.gnssHandlerBufferSize)
-                        bytesToSend = settings.gnssHandlerBufferSize - sdTail;
+                    if ((sdRingBufferTail + bytesToSend) > settings.gnssHandlerBufferSize)
+                        bytesToSend = settings.gnssHandlerBufferSize - sdRingBufferTail;
 
                     if (settings.enablePrintSDBuffers && (!inMainMenu))
                     {
@@ -598,7 +618,7 @@ void handleGnssDataTask(void *e)
                     long startTime = millis();
                     startMillis = millis();
 
-                    bytesToSend = ubxFile->write(&ringBuffer[sdTail], bytesToSend);
+                    bytesToSend = ubxFile->write(&ringBuffer[sdRingBufferTail], bytesToSend);
                     if (PERIODIC_DISPLAY(PD_SD_LOG_WRITE) && (bytesToSend > 0))
                     {
                         PERIODIC_CLEAR(PD_SD_LOG_WRITE);
@@ -654,9 +674,9 @@ void handleGnssDataTask(void *e)
                     // Account for the sent data or dropped
                     if (bytesToSend > 0)
                     {
-                        sdTail += bytesToSend;
-                        if (sdTail >= settings.gnssHandlerBufferSize)
-                            sdTail -= settings.gnssHandlerBufferSize;
+                        sdRingBufferTail += bytesToSend;
+                        if (sdRingBufferTail >= settings.gnssHandlerBufferSize)
+                            sdRingBufferTail -= settings.gnssHandlerBufferSize;
                     }
                 } // End sdCardSemaphore
                 else
@@ -671,7 +691,7 @@ void handleGnssDataTask(void *e)
                 }
 
                 // Update space available for use in UART task
-                bytesToSend = dataHead - sdTail;
+                bytesToSend = dataHead - sdRingBufferTail;
                 if (bytesToSend < 0)
                     bytesToSend += settings.gnssHandlerBufferSize;
                 if (usedSpace < bytesToSend)
@@ -775,6 +795,13 @@ void ButtonCheckTask(void *e)
 
     while (true)
     {
+        // Display an alive message
+        if (PERIODIC_DISPLAY(PD_TASK_BUTTON_CHECK))
+        {
+            PERIODIC_CLEAR(PD_TASK_BUTTON_CHECK);
+            systemPrintln("ButtonCheckTask running");
+        }
+
         /* RTK Surveyor
 
                                       .----------------------------.
@@ -1349,7 +1376,7 @@ bool tasksStartUART2()
                                 &gnssReadTaskHandle,           // Task handle
                                 settings.gnssReadTaskCore);    // Core where task should run, 0=core, 1=Arduino
 
-    // Reads data from circular buffer and sends data to SD, SPP, or TCP
+    // Reads data from circular buffer and sends data to SD, SPP, or network clients
     if (handleGnssDataTaskHandle == nullptr)
         xTaskCreatePinnedToCore(handleGnssDataTask,                  // Function to call
                                 "handleGNSSData",                    // Just for humans
@@ -1403,6 +1430,13 @@ void sdSizeCheckTask(void *e)
 {
     while (true)
     {
+        // Display an alive message
+        if (PERIODIC_DISPLAY(PD_TASK_SD_SIZE_CHECK))
+        {
+            PERIODIC_CLEAR(PD_TASK_SD_SIZE_CHECK);
+            systemPrintln("sdSizeCheckTask running");
+        }
+
         if (online.microSD && sdCardSize == 0)
         {
             // Attempt to gain access to the SD card

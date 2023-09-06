@@ -408,21 +408,9 @@ void wifiStop()
     if (settings.mdnsEnable == true)
         MDNS.end();
 
-    // Stop the PVT server
-    if (online.pvtServer)
-    {
-        // Tell the UART2 tasks that the TCP server is shutting down
-        online.pvtServer = false;
-
-        // Wait for the UART2 tasks to close the TCP client connections
-        while (pvtServerActive())
-            delay(5);
-        systemPrintln("TCP Server offline");
-    }
-
     //Stop the DNS server
     dnsServer.stop();
-
+    
     // Stop the other network clients and then WiFi
     networkStop(NETWORK_TYPE_WIFI);
 }

@@ -479,7 +479,7 @@ function validateFields() {
     checkElementValue("minCNO", 0, 90, "Must be between 0 and 90", "collapseGNSSConfig");
 
     if (ge("enableNtripClient").checked) {
-        checkElementString("ntripClient_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
+        checkElementString("ntripClient_CasterHost", 1, 45, "Must be 1 to 45 characters", "collapseGNSSConfig");
         checkElementValue("ntripClient_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseGNSSConfig");
         checkElementString("ntripClient_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
         checkElementCasterUser("ntripClient_CasterUser", "rtk2go.com", "User must use their email address", "collapseGNSSConfig");

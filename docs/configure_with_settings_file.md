@@ -20,7 +20,7 @@ Keep in mind:
 For example, if you only wanted to set up two wireless networks for profile 2, you could create a file named "SFE_Express_Settings_1.txt" that only contained the following settings:
 
     profileName=a name you choose
-    enableTcpServer=1
+    enablePvtServer=1
     wifiNetwork0SSID=your SSID name 1
     wifiNetwork0Password=your SSID password 1
     wifiNetwork1SSID=your SSID name 2

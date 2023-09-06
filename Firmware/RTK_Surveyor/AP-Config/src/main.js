@@ -353,6 +353,7 @@ function parseIncoming(msg) {
         updateECEFList();
         updateGeodeticList();
         tcpBoxes();
+        udpBoxes();
         tcpBoxesEthernet();
         dhcpEthernet();
         updateLatLong();
@@ -592,10 +593,13 @@ function validateFields() {
     checkElementString("wifiNetwork2Password", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
     checkElementString("wifiNetwork3SSID", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
     checkElementString("wifiNetwork3Password", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
-    if (ge("enableTcpClient").checked || ge("enableTcpServer").checked) {
-        checkElementString("wifiTcpPort", 1, 65535, "Must be 1 to 65535", "collapseWiFiConfig");
+    if (ge("enablePvtClient").checked || ge("enablePvtServer").checked) {
+        checkElementString("pvtServerPort", 1, 65535, "Must be 1 to 65535", "collapseWiFiConfig");
     }
-    checkCheckboxMutex("enableTcpClient", "enableTcpServer", "TCP Client and Server can not be enabled at the same time", "collapseWiFiConfig");
+    if (ge("enablePvtUdpServer").checked) {
+        checkElementString("pvtUdpServerPort", 1, 65535, "Must be 1 to 65535", "collapseWiFiConfig");
+    }
+    checkCheckboxMutex("enablePvtClient", "enablePvtServer", "TCP Client and Server can not be enabled at the same time", "collapseWiFiConfig");
 
     //System Config
     if (ge("enableLogging").checked) {
@@ -1567,12 +1571,22 @@ function abortHandler(event) {
 }
 
 function tcpBoxes() {
-    if (ge("enableTcpClient").checked || ge("enableTcpServer").checked) {
+    if (ge("enablePvtServer").checked || ge("enablePvtClient").checked) {
         show("tcpSettingsConfig");
     }
     else {
         hide("tcpSettingsConfig");
-        ge("wifiTcpPort").value = 2947;
+        ge("pvtServerPort").value = 2947;
+    }
+}
+
+function udpBoxes() {
+    if (ge("enablePvtUdpServer").checked) {
+        show("udpSettingsConfig");
+    }
+    else {
+        hide("udpSettingsConfig");
+        ge("pvtUdpServerPort").value = 10110;
     }
 }
 

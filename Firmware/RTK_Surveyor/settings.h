@@ -1058,6 +1058,13 @@ typedef struct
     bool debugPvtServer = false;
     bool enablePvtServer = false;
     uint16_t pvtServerPort = 2948; // PVT server port, 2948 is GPS Daemon: http://tcp-udp-ports.com/port-2948.htm
+
+    // UDP Server
+    bool debugPvtUdpServer = false;
+    bool enablePvtUdpServer = false;
+    uint16_t pvtUdpServerPort =
+        10110; //https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=nmea
+
 } Settings;
 Settings settings;
 
@@ -1080,6 +1087,7 @@ struct struct_online
     bool i2c = false;
     bool pvtClient = false;
     bool pvtServer = false;
+    bool pvtUdpServer = false;
     ethernetStatus_e ethernetStatus = ETH_NOT_STARTED;
     bool NTPServer = false; // EthernetUDP
 } online;

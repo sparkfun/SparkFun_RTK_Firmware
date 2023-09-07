@@ -779,6 +779,9 @@ void menuOperation()
         // ZED
         systemPrintln("11) Mirror ZED-F9x's UART1 settings to USB");
 
+        systemPrint("12) Use I2C for L-Band Corrections: ");
+        systemPrintf("%s\r\n", settings.useI2cForLbandCorrections ? "Enabled" : "Disabled");
+
         systemPrintln("----  Interrupts  ----");
         systemPrint("30) Bluetooth Interrupts Core: ");
         systemPrintln(settings.bluetoothInterruptsCore);
@@ -945,6 +948,11 @@ void menuOperation()
                 systemPrintln(F("Failed to enable USB messages"));
             else
                 systemPrintln(F("USB messages successfully enabled"));
+        }
+        else if (incoming == 12)
+        {
+            settings.useI2cForLbandCorrectionsConfigured = true; //Record that the user has manually modified the settings.
+            settings.useI2cForLbandCorrections ^= 1;
         }
 
         else if (incoming == 30)

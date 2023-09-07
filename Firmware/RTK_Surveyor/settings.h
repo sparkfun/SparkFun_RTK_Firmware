@@ -941,7 +941,7 @@ typedef struct
 
     bool enablePrintBufferOverrun = false;
     bool enablePrintSDBuffers = false;
-    PeriodicDisplay_t periodicDisplay = (PeriodicDisplay_t)-1;
+    PeriodicDisplay_t periodicDisplay = (PeriodicDisplay_t)0; //Turn off all periodic debug displays by default.
     uint32_t periodicDisplayInterval = 15 * 1000;
 
     uint32_t rebootSeconds = (uint32_t)-1; // Disabled, reboots after uptime reaches this number of seconds

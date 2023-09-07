@@ -9,7 +9,7 @@ void updateSerial()
         if (incoming == '~')
         {
             // Output custom GNTXT message with all current system data
-            // printCurrentConditionsNMEA();
+            printCurrentConditionsNMEA();
         }
         else
             menuMain(); // Present user menu

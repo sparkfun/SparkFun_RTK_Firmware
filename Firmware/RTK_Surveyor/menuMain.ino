@@ -31,7 +31,11 @@ void menuMain()
         systemPrintf("SparkFun RTK %s %s\r\n", platformPrefix, versionString);
 
 #ifdef COMPILE_BT
-        systemPrint("** Bluetooth broadcasting as: ");
+
+        if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
+        systemPrint("** Bluetooth SPP broadcasting as: ");
+        else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
+        systemPrint("** Bluetooth Low-Energy broadcasting as: ");
         systemPrint(deviceName);
         systemPrintln(" **");
 #else  // COMPILE_BT

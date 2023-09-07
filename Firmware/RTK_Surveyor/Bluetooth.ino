@@ -214,7 +214,11 @@ void bluetoothStart()
         bluetoothSerial->register_callback(bluetoothCallback); // Controls BT Status LED on Surveyor
         bluetoothSerial->setTimeout(250);
 
-        systemPrint("Bluetooth broadcasting as: ");
+        if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
+            systemPrint("Bluetooth SPP broadcasting as: ");
+        else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
+            systemPrint("Bluetooth Low-Energy broadcasting as: ");
+
         systemPrintln(deviceName);
 
         // Start task for controlling Bluetooth pair LED

@@ -629,6 +629,10 @@ void displaySplash()
         {
             printTextCenter("Facet LB", yPos, QW_FONT_8X16, 1, false);
         }
+        else if (productVariant == RTK_FACET_LBAND_DIRECT)
+        {
+            printTextCenter("Facet LB", yPos, QW_FONT_8X16, 1, false); //Same as L-Band at boot
+        }
         else if (productVariant == REFERENCE_STATION)
         {
             printTextCenter("Ref Stn", yPos, QW_FONT_8X16, 1, false);
@@ -2309,7 +2313,7 @@ void paintSystemTest()
                 oled.print("FAIL");
 
             if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET ||
-                productVariant == RTK_FACET_LBAND)
+                productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT)
             {
                 oled.setCursor(xOffset, yOffset + (1 * charHeight)); // x, y
                 oled.print("Accel:");
@@ -2350,7 +2354,7 @@ void paintSystemTest()
                 oled.print("FAIL");
 
             if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET ||
-                productVariant == RTK_FACET_LBAND)
+                productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT)
             {
                 oled.setCursor(xOffset, yOffset + (4 * charHeight)); // x, y
                 oled.print("Mux:");
@@ -2413,7 +2417,7 @@ void paintSystemTest()
                 oled.print("OK");
         } // End display 1
 
-        if (productVariant == RTK_FACET_LBAND)
+        if (productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT)
         {
             if (systemTestDisplayNumber == 0)
             {
@@ -2509,7 +2513,7 @@ void getAngles()
                 accelZ *= -1.0;
                 accelX *= -1.0;
             }
-            else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
+            else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT)
             {
                 accelZ = accel.getX();
                 accelX = accel.getY();

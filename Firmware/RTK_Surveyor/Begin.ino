@@ -3,32 +3,55 @@
 void identifyBoard()
 {
     // Use ADC to check resistor divider
-    int pin_adc_rtk_facet = 35;
-    uint16_t idValue = analogReadMilliVolts(pin_adc_rtk_facet);
-    log_d("Board ADC ID: %d", idValue);
+    // Express: 10/3.3
+    // Express+: 3.3/10
+    // Facet: 10/10
+    // Facet L-Band: 10/20
+    // Reference Station: 20/10
+    // Facet L-Band Direct: 10/100
+    // Surveyor: ID resistors do not exist
 
-    if (idValue > (3300 / 2 * 0.9) && idValue < (3300 / 2 * 1.1))
+    const float rtkExpressID = 3.3 / (10 + 3.3) * 3300;          // 819mV
+    const float rtkExressPlusID = 10.0 / (10 + 3.3) * 3300;      // 2418mV
+    const float rtkFacetID = 10.0 / (10 + 10) * 3300;            // 1650mV
+    const float rtkFacetLbandID = 20.0 / (20 + 10) * 3300;       // 2200mV
+    const float rtkReferenceStationID = 10.0 / (10 + 20) * 3300; // 1100mV
+    const float rtkFacetLbandDirectID = 1.0 / (4.7 + 1) * 3300;  // 579mV
+
+    const float tolerance = 0.0475;             // 4.75% Testing shows the combined ADC+resistors is under a 1% window
+    const float upperThreshold = 1 + tolerance; // 104.75%
+    const float lowerThreshold = 1 - tolerance; // 95.25%
+
+    int pin_deviceID = 35;
+    uint16_t idValue = analogReadMilliVolts(pin_deviceID);
+    log_d("Board ADC ID (mV): %d", idValue);
+
+    if (idValue > (rtkFacetID * lowerThreshold) && idValue < (rtkFacetID * upperThreshold))
     {
         productVariant = RTK_FACET;
     }
-    else if (idValue > (3300 * 2 / 3 * 0.9) && idValue < (3300 * 2 / 3 * 1.1))
+    else if (idValue > (rtkFacetLbandID * lowerThreshold) && idValue < (rtkFacetLbandID * upperThreshold))
     {
         productVariant = RTK_FACET_LBAND;
     }
-    else if (idValue > (3300 * 3.3 / 13.3 * 0.9) && idValue < (3300 * 3.3 / 13.3 * 1.1))
+    else if (idValue > (rtkExpressID * lowerThreshold) && idValue < (rtkExpressID * upperThreshold))
     {
         productVariant = RTK_EXPRESS;
     }
-    else if (idValue > (3300 * 10 / 13.3 * 0.9) && idValue < (3300 * 10 / 13.3 * 1.1))
+    else if (idValue > (rtkExressPlusID * lowerThreshold) && idValue < (rtkExressPlusID * upperThreshold))
     {
         productVariant = RTK_EXPRESS_PLUS;
     }
-    else if (idValue > (3300 * 1 / 3 * 0.9) && idValue < (3300 * 1 / 3 * 1.1))
+    else if (idValue > (rtkReferenceStationID * lowerThreshold) && idValue < (rtkReferenceStationID * upperThreshold))
     {
         productVariant = REFERENCE_STATION;
         // We can't auto-detect the ZED version if the firmware is in configViaEthernet mode,
         // so fake it here - otherwise messageSupported always returns false
         zedFirmwareVersionInt = 112;
+    }
+    else if (idValue > (rtkFacetLbandDirectID * lowerThreshold) && idValue < (rtkFacetLbandDirectID * upperThreshold))
+    {
+        productVariant = RTK_FACET_LBAND_DIRECT;
     }
     else
     {
@@ -116,8 +139,8 @@ void beginBoard()
         }
     }
 
-    //We need some settings before we are completely powered on
-    //ie, disablePowerFiltering, enableResetDisplay, resetCount, etc
+    // We need some settings before we are completely powered on
+    // ie, disablePowerFiltering, enableResetDisplay, resetCount, etc
     loadSettingsPartial(); // Loads settings from LFS
 
     // Setup hardware pins
@@ -177,7 +200,8 @@ void beginBoard()
             strncpy(platformPrefix, "Express Plus", sizeof(platformPrefix) - 1);
         }
     }
-    else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
+    else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND ||
+             productVariant == RTK_FACET_LBAND_DIRECT)
     {
         // v11
         pin_muxA = 2;
@@ -222,6 +246,15 @@ void beginBoard()
         {
             strncpy(platformFilePrefix, "SFE_Facet_LBand", sizeof(platformFilePrefix) - 1);
             strncpy(platformPrefix, "Facet L-Band", sizeof(platformPrefix) - 1);
+        }
+        else if (productVariant == RTK_FACET_LBAND_DIRECT)
+        {
+            strncpy(platformFilePrefix, "SFE_Facet_LBand_Direct", sizeof(platformFilePrefix) - 1);
+            strncpy(platformPrefix, "Facet L-Band Direct", sizeof(platformPrefix) - 1);
+
+            // Override the default setting if a user has not explicitly configured the setting
+            if (settings.useI2cForLbandCorrectionsConfigured == false)
+                settings.useI2cForLbandCorrections = false;
         }
     }
     else if (productVariant == REFERENCE_STATION)
@@ -449,13 +482,13 @@ void beginSD()
                 }
             }
         }
-#else   // COMPILE_SD_MMC
+#else  // COMPILE_SD_MMC
         else
         {
             log_d("SD_MMC not compiled");
             break; // No SD available.
         }
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
 
         if (createTestFile() == false)
         {
@@ -494,7 +527,7 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
 #ifdef COMPILE_SD_MMC
         else
             SD_MMC.end();
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
 
         online.microSD = false;
         systemPrintln("microSD: Offline");
@@ -884,7 +917,7 @@ void beginInterrupts()
         pinMode(pin_Ethernet_Interrupt, INPUT_PULLUP);                 // Prepare the interrupt pin
         attachInterrupt(pin_Ethernet_Interrupt, ethernetISR, FALLING); // Attach the interrupt
     }
-#endif  // COMPILE_ETHERNET
+#endif // COMPILE_ETHERNET
 }
 
 // Set LEDs for output and configure PWM
@@ -988,7 +1021,7 @@ void beginSystemState()
     if (systemState > STATE_NOT_SET)
     {
         systemPrintln("Unknown state - factory reset");
-        factoryReset(false); //We do not have the SD semaphore
+        factoryReset(false); // We do not have the SD semaphore
     }
 
     if (productVariant == RTK_SURVEYOR)
@@ -1030,7 +1063,8 @@ void beginSystemState()
         powerBtn = new Button(pin_powerSenseAndControl); // Create the button in memory
         // Allocation failures handled in ButtonCheckTask
     }
-    else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
+    else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND ||
+             productVariant == RTK_FACET_LBAND_DIRECT)
     {
         if (settings.lastState == STATE_NOT_SET) // Default
         {

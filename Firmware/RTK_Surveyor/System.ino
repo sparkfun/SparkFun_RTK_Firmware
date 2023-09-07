@@ -138,12 +138,9 @@ bool configureUbloxModule()
 
         if (commandSupported(UBLOX_CFG_I2CINPROT_SPARTN) == true)
         {
-            if (productVariant == RTK_FACET_LBAND)
-                response &= theGNSS.addCfgValset(
-                    UBLOX_CFG_I2CINPROT_SPARTN,
-                    1); // We push NEO-D9S correction data (SPARTN) to ZED-F9P over the I2C interface
-            else
-                response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_SPARTN, 0);
+            // We push NEO-D9S correction data over the I2C interface via the PMP message. This uses the UBX protocol.
+            // SPARTN is not needed on I2C
+            response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_SPARTN, 0);
         }
     }
 

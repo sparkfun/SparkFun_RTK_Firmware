@@ -303,6 +303,7 @@ function parseIncoming(msg) {
         else if (val == "true") {
             try {
                 ge(id).checked = true;
+                console.log("Set " + id + ": true");
             } catch (error) {
                 console.log("Issue with ID: " + id)
             }
@@ -310,6 +311,7 @@ function parseIncoming(msg) {
         else if (val == "false") {
             try {
                 ge(id).checked = false;
+                console.log("Set " + id + ": true");
             } catch (error) {
                 console.log("Issue with ID: " + id)
             }
@@ -319,6 +321,7 @@ function parseIncoming(msg) {
         else {
             try {
                 ge(id).value = val;
+                console.log("Set " + id + ": " + val);
             } catch (error) {
                 console.log("Issue with ID: " + id)
             }

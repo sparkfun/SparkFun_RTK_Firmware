@@ -958,7 +958,10 @@ void createSettingsString(char *newSettings)
     else
         stringRecord(newSettings, "wifiConfigOverAP", 0); // 1 = AP mode, 0 = WiFi
 
+    stringRecord(newSettings, "enablePvtServer", settings.enablePvtServer);
+    stringRecord(newSettings, "enablePvtClient", settings.enablePvtClient);
     stringRecord(newSettings, "pvtServerPort", settings.pvtServerPort);
+    stringRecord(newSettings, "enablePvtUdpServer", settings.enablePvtUdpServer);
     stringRecord(newSettings, "pvtUdpServerPort", settings.pvtUdpServerPort);
     stringRecord(newSettings, "enableRCFirmware", enableRCFirmware);
 

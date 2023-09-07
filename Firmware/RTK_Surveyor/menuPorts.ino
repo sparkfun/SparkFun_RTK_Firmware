@@ -222,6 +222,7 @@ void menuPortsMultiplexed()
         }
         else if (productVariant == RTK_FACET_LBAND_DIRECT && incoming == 5)
         {
+            settings.useI2cForLbandCorrectionsConfigured = true; //Record that the user has manually modified the settings.
             settings.useI2cForLbandCorrections ^= 1;
             systemPrintln("External radio port updated. Changes will be applied at next restart.");
         }

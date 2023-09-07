@@ -135,7 +135,21 @@ void beginBoard()
         }
         else
         {
-            productVariant = RTK_SURVEYOR;
+            // Detect RTK Expresses (v1.3 and below) that do not have an accel or device ID resistors
+
+            // On a Surveyor, pin 34 is not connected. On Express, 34 is connected to ZED_TX_READY
+            const int pin_ZedTxReady = 34;
+            uint16_t pinValue = analogReadMilliVolts(pin_ZedTxReady);
+            log_d("Alternate ID pinValue (mV): %d\r\n", pinValue); // Surveyor = 142 to 152, //Express = 3129
+            if (pinValue > 3000)
+            {
+                if (zedModuleType == PLATFORM_F9P)
+                    productVariant = RTK_EXPRESS;
+                else if (zedModuleType == PLATFORM_F9R)
+                    productVariant = RTK_EXPRESS_PLUS;
+            }
+            else
+                productVariant = RTK_SURVEYOR;
         }
     }
 

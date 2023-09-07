@@ -950,7 +950,10 @@ void menuOperation()
                 systemPrintln(F("USB messages successfully enabled"));
         }
         else if (incoming == 12)
+        {
+            settings.useI2cForLbandCorrectionsConfigured = true; //Record that the user has manually modified the settings.
             settings.useI2cForLbandCorrections ^= 1;
+        }
 
         else if (incoming == 30)
         {

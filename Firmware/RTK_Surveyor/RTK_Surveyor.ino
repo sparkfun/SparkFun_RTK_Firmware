@@ -722,6 +722,7 @@ volatile bool deadManWalking;
     settings.debugNtripServerState = true;              \
     settings.debugPvtClient = true;                     \
     settings.debugPvtServer = true;                     \
+    settings.debugPvtUdpServer = true;                     \
 }
 
 #else   // 0

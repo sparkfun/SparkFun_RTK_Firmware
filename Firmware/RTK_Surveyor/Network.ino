@@ -186,6 +186,7 @@ const char * const networkUser[] =
     "NTRIP Server",
     "PVT Client",
     "PVT Server",
+    "PVT UDP Server",
 };
 const int networkUserEntries = sizeof(networkUser) / sizeof(networkUser[0]);
 
@@ -871,6 +872,12 @@ void networkStop(uint8_t networkType)
                         systemPrintln("Network layer stopping PVT server");
                     pvtServerStop();
                     break;
+
+                case NETWORK_USER_PVT_UDP_SERVER:
+                    if (settings.debugNetworkLayer)
+                        systemPrintln("Network layer stopping PVT UDP server");
+                    pvtUdpServerStop();
+                    break;
                 }
             }
         }
@@ -1109,6 +1116,7 @@ void networkUpdate()
         ntripServerUpdate(); // Check the NTRIP server connection and move data ZED --> NTRIP
         pvtClientUpdate();   // Turn on the PVT client as needed
         pvtServerUpdate();   // Turn on the PVT server as needed
+        pvtUdpServerUpdate();   // Turn on the PVT UDP server as needed
     }
 
     // Display the IP addresses

@@ -44,6 +44,7 @@ enum RingBufferConsumers
     RBC_PVT_CLIENT,
     RBC_PVT_SERVER,
     RBC_SD_CARD,
+    RBC_PVT_UDP_SERVER,
     // Insert new consumers here
     RBC_MAX
 };
@@ -54,6 +55,7 @@ const char * const ringBufferConsumer[] =
     "PVT Client",
     "PVT Server",
     "SD Card",
+    "PVT UDP Server",
 };
 
 const int ringBufferConsumerEntries = sizeof(ringBufferConsumer) / sizeof(ringBufferConsumer[0]);
@@ -434,6 +436,7 @@ void updateRingBufferTails(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET n
     discardRingBufferBytes(&sdRingBufferTail, previousTail, newTail, discardedBytes);
     discardPvtClientBytes(previousTail, newTail, discardedBytes);
     discardPvtServerBytes(previousTail, newTail, discardedBytes);
+    discardPvtUdpServerBytes(previousTail, newTail, discardedBytes);
 }
 
 // Remove previous messages from the ring buffer
@@ -472,6 +475,7 @@ void handleGnssDataTask(void *e)
     btRingBufferTail = 0;
     pvtClientZeroTail();
     pvtServerZeroTail();
+    pvtUdpServerZeroTail();
     sdRingBufferTail = 0;
 
     while (true)
@@ -587,6 +591,21 @@ void handleGnssDataTask(void *e)
         deltaMillis = millis() - startMillis;
         if (maxMillis[RBC_PVT_SERVER] < deltaMillis)
             maxMillis[RBC_PVT_SERVER] = deltaMillis;
+
+        startMillis = millis();
+
+        // Update space available for use in UART task
+        bytesToSend = pvtUdpServerSendData(dataHead);
+        if (usedSpace < bytesToSend)
+        {
+            usedSpace = bytesToSend;
+            slowConsumer = "PVT UDP server";
+        }
+
+        // Remember the maximum transfer time
+        deltaMillis = millis() - startMillis;
+        if (maxMillis[RBC_PVT_UDP_SERVER] < deltaMillis)
+            maxMillis[RBC_PVT_UDP_SERVER] = deltaMillis;
 
         //----------------------------------------------------------------------
         // Log data to the SD card

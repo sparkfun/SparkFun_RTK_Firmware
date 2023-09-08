@@ -494,7 +494,7 @@ bool wifiConnect(unsigned long timeout)
     int wifiResponse = wifiMulti.run(timeout);
     if (wifiResponse == WL_CONNECTED)
     {
-        if (settings.enablePvtClient == true || settings.enablePvtServer == true)
+        if (settings.enablePvtClient == true || settings.enablePvtServer == true || settings.enablePvtUdpServer == true)
         {
             if (settings.mdnsEnable == true)
             {
@@ -526,6 +526,8 @@ bool wifiIsNeeded()
     if (settings.enablePvtClient == true)
         needed = true;
     if (settings.enablePvtServer == true)
+        needed = true;
+    if (settings.enablePvtUdpServer == true)
         needed = true;
 
     // Handle WiFi within systemStates

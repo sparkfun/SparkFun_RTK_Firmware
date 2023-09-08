@@ -272,7 +272,7 @@ bool ntripClientConnect()
         strEncodedCredentials.toCharArray(encodedCredentials,
                                           sizeof(encodedCredentials)); // Convert String to char array
 
-        snprintf(credentials, sizeof(credentials), "Accept: */*\r\nAuthorization: Basic %s\r\n", encodedCredentials);
+        snprintf(credentials, sizeof(credentials), "Authorization: Basic %s\r\n", encodedCredentials);
     }
 
     // Add the encoded credentials to the server request

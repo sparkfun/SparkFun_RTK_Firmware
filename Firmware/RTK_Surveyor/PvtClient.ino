@@ -251,7 +251,7 @@ void pvtClientSetState(uint8_t newState)
 }
 
 // Remove previous messages from the ring buffer
-void discardPvtClientBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail, RING_BUFFER_OFFSET discardedBytes)
+void discardPvtClientBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail)
 {
     if (previousTail < newTail)
     {

@@ -225,6 +225,7 @@ unsigned int binBytesSent = 0;         // Tracks firmware bytes sent over WiFi O
 #include <WiFi.h>             //Built-in.
 #include <WiFiClientSecure.h> //Built-in.
 #include <WiFiMulti.h>        //Built-in.
+#include <DNSServer.h>        //Built-in.
 
 #include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
 

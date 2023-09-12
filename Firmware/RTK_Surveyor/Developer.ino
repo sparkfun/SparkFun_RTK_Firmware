@@ -31,6 +31,7 @@ void menuNTP() {systemPrint("NOT compiled");}
 void ntpServerBegin() {}
 void ntpServerUpdate() {}
 void ntpValidateTables() {}
+void ntpServerStop() {}
 
 #endif // COMPILE_ETHERNET
 

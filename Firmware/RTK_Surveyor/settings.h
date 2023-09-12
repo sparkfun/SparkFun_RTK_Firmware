@@ -63,6 +63,7 @@ typedef enum
     RTK_EXPRESS_PLUS,
     RTK_FACET_LBAND,
     REFERENCE_STATION,
+    RTK_FACET_LBAND_DIRECT,
     RTK_UNKNOWN,
 } ProductVariant;
 ProductVariant productVariant = RTK_SURVEYOR;
@@ -945,7 +946,7 @@ typedef struct
 
     bool enablePrintBufferOverrun = false;
     bool enablePrintSDBuffers = false;
-    PeriodicDisplay_t periodicDisplay = (PeriodicDisplay_t)-1;
+    PeriodicDisplay_t periodicDisplay = (PeriodicDisplay_t)0; //Turn off all periodic debug displays by default.
     uint32_t periodicDisplayInterval = 15 * 1000;
 
     uint32_t rebootSeconds = (uint32_t)-1; // Disabled, reboots after uptime reaches this number of seconds
@@ -984,6 +985,8 @@ typedef struct
     uint32_t shutdownNoChargeTimeout_s = 0; // If > 0, shut down unit after timeout if not charging
     bool disableSetupButton = false;                  // By default, allow setup through the overlay button(s)
     bool powerButtonFiltering = true; //Set to false during firmware development to prevent device power down when new firmware is loaded
+    bool useI2cForLbandCorrections = true; //Set to false to stop I2C callback. Corrections will require direct ZED to NEO UART2 connections.
+    bool useI2cForLbandCorrectionsConfigured = false; //If a user sets useI2cForLbandCorrections, this goes true. 
 
     // Ethernet
     bool enablePrintEthernetDiag = false;

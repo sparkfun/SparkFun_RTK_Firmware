@@ -53,7 +53,7 @@ void powerDown(bool displayInfo)
         digitalWrite(pin_powerFastOff, LOW);
     }
 
-    if ((productVariant == RTK_FACET) || (productVariant == RTK_FACET_LBAND) || (productVariant == REFERENCE_STATION))
+    if ((productVariant == RTK_FACET) || (productVariant == RTK_FACET_LBAND)  || (productVariant == RTK_FACET_LBAND_DIRECT) || (productVariant == REFERENCE_STATION))
         digitalWrite(pin_peripheralPowerControl, LOW);
 
     while (1)

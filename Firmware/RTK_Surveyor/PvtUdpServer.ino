@@ -61,7 +61,7 @@ const int pvtUdpServerStateNameEntries = sizeof(pvtUdpServerStateName) / sizeof(
 //----------------------------------------
 
 // PVT UDP server
-static WiFiUDP *pvtUdpServer = nullptr;
+static NetworkUDP *pvtUdpServer = nullptr;
 static uint8_t pvtUdpServerState;
 static uint32_t pvtUdpServerTimer;
 static volatile RING_BUFFER_OFFSET pvtUdpServerTail;
@@ -200,7 +200,7 @@ bool pvtUdpServerStart()
         systemPrintln("PVT UDP server starting");
 
     // Start the PVT server
-    pvtUdpServer = new WiFiUDP();
+    pvtUdpServer = new NetworkUDP(NETWORK_USER_PVT_UDP_SERVER);
     if (!pvtUdpServer)
         return false;
 

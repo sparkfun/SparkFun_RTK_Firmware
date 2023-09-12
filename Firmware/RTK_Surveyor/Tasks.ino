@@ -623,7 +623,7 @@ void updateRingBufferTails(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET n
     discardRingBufferBytes(&sdRingBufferTail, previousTail, newTail);
     discardPvtClientBytes(previousTail, newTail);
     discardPvtServerBytes(previousTail, newTail);
-    discardPvtUdpServerBytes(previousTail, newTail, discardedBytes);
+    discardPvtUdpServerBytes(previousTail, newTail);
 }
 
 // Remove previous messages from the ring buffer

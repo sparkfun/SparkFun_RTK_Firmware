@@ -143,7 +143,7 @@ int32_t pvtUdpServerSendData(uint16_t dataHead)
 }
 
 // Remove previous messages from the ring buffer
-void discardPvtUdpServerBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail, RING_BUFFER_OFFSET discardedBytes)
+void discardPvtUdpServerBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail)
 {
     int index;
     uint16_t tail;

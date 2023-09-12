@@ -95,6 +95,8 @@ uint16_t pvtClientSendData(uint16_t dataHead) {return 0;};
 void pvtClientUpdate() {}
 void pvtClientValidateTables() {}
 void pvtClientZeroTail() {}
+void discardPvtClientBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail) {}
+
 
 //----------------------------------------
 // PVT server
@@ -103,6 +105,8 @@ void pvtClientZeroTail() {}
 int pvtServerSendData(uint16_t dataHead) {return 0;}
 void pvtServerUpdate() {}
 void pvtServerZeroTail() {}
+void pvtServerValidateTables() {}
+void discardPvtServerBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail) {}
 
 //----------------------------------------
 // WiFi

@@ -225,6 +225,7 @@ unsigned int binBytesSent = 0;         // Tracks firmware bytes sent over WiFi O
 #include <WiFi.h>             //Built-in.
 #include <WiFiClientSecure.h> //Built-in.
 #include <WiFiMulti.h>        //Built-in.
+#include <DNSServer.h>        //Built-in.
 
 #include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
 
@@ -398,6 +399,12 @@ uint8_t wBuffer[SERIAL_SIZE_TX]; // Buffer for writing from incoming SPP to F9P
 TaskHandle_t btReadTaskHandle =
     nullptr; // Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const int btReadTaskStackSize = 2000;
+
+// Array of start of sentence offsets into the ring buffer
+#define AMOUNT_OF_RING_BUFFER_DATA_TO_DISCARD (settings.gnssHandlerBufferSize >> 2)
+#define AVERAGE_SENTENCE_LENGTH_IN_BYTES    32
+RING_BUFFER_OFFSET * rbOffsetArray;
+uint16_t rbOffsetEntries;
 
 uint8_t *ringBuffer; // Buffer for reading from F9P. At 230400bps, 23040 bytes/s. If SD blocks for 250ms, we need 23040
                      // * 0.25 = 5760 bytes worst case.

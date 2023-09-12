@@ -599,11 +599,25 @@ void resetSPI()
 // See issue: https://github.com/espressif/arduino-esp32/issues/3386
 void beginUART2()
 {
-    ringBuffer = (uint8_t *)malloc(settings.gnssHandlerBufferSize);
-    if (!ringBuffer)
+    size_t length;
+
+    // Determine the length of data to be retained in the ring buffer
+    // after discarding the oldest data
+    length = settings.gnssHandlerBufferSize;
+    rbOffsetEntries = (length >> 1) / AVERAGE_SENTENCE_LENGTH_IN_BYTES;
+    length = settings.gnssHandlerBufferSize
+           + (rbOffsetEntries * sizeof(RING_BUFFER_OFFSET));
+    ringBuffer = nullptr;
+    rbOffsetArray = (RING_BUFFER_OFFSET *)malloc(length);
+    if (!rbOffsetArray)
+    {
+        rbOffsetEntries = 0;
         systemPrintln("ERROR: Failed to allocate the ring buffer!");
+    }
     else
     {
+        ringBuffer = (uint8_t *)&rbOffsetArray[rbOffsetEntries];
+        rbOffsetArray[0] = 0;
         if (pinUART2TaskHandle == nullptr)
             xTaskCreatePinnedToCore(
                 pinUART2Task,

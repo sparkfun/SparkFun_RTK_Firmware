@@ -11,6 +11,49 @@ Form.ino
 
 bool websocketConnected = false;
 
+class CaptiveRequestHandler : public AsyncWebHandler
+{
+  public:
+    // https://en.wikipedia.org/wiki/Captive_portal
+    String urls[5] = {"/hotspot-detect.html", "/library/test/success.html", "/generate_204", "/ncsi.txt",
+                      "/check_network_status.txt"};
+    CaptiveRequestHandler()
+    {
+    }
+    virtual ~CaptiveRequestHandler()
+    {
+    }
+
+    bool canHandle(AsyncWebServerRequest *request)
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            if (request->url().equals(urls[i]))
+                return true;
+        }
+        return false;
+    }
+
+    // Provide a custom small site for redirecting the user to the config site
+    // HTTP redirect does not work and the relative links on the default config site do not work, because the phone is
+    // requesting a different server
+    void handleRequest(AsyncWebServerRequest *request)
+    {
+        String logmessage = "Captive Portal Client:" + request->client()->remoteIP().toString() + " " + request->url();
+        systemPrintln(logmessage);
+        AsyncResponseStream *response = request->beginResponseStream("text/html");
+        response->print("<!DOCTYPE html><html><head><title>RTK Config</title></head><body>");
+        response->print("<div class='container'>");
+        response->printf("<div align='center' class='col-sm-12'><img src='http://%s/src/rtk-setup.png' alt='SparkFun "
+                         "RTK WiFi Setup'></div>",
+                         WiFi.softAPIP().toString().c_str());
+        response->printf("<div align='center'><h3>Configure your RTK receiver <a href='http://%s/'>here</a></h3></div>",
+                         WiFi.softAPIP().toString().c_str());
+        response->print("</div></body></html>");
+        request->send(response);
+    }
+};
+
 // Start webserver in AP mode
 bool startWebServer(bool startWiFi = true, int httpPort = 80)
 {
@@ -62,6 +105,7 @@ bool startWebServer(bool startWiFi = true, int httpPort = 80)
         }
 
         websocket->onEvent(onWsEvent);
+        webserver->addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER); // only when requested from AP
         webserver->addHandler(websocket);
 
         // * index.html (not gz'd)
@@ -91,7 +135,8 @@ bool startWebServer(bool startWiFi = true, int httpPort = 80)
             handleUpload); // Run handleUpload function when any file is uploaded. Must be before server.on() calls.
 
         webserver->on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-            AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", index_html, sizeof(index_html));
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/html", index_html, sizeof(index_html));
             response->addHeader("Content-Encoding", "gzip");
             request->send(response);
         });
@@ -104,8 +149,8 @@ bool startWebServer(bool startWiFi = true, int httpPort = 80)
         });
 
         webserver->on("/src/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-            AsyncWebServerResponse *response =
-                request->beginResponse_P(200, "text/javascript", bootstrap_bundle_min_js, sizeof(bootstrap_bundle_min_js));
+            AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", bootstrap_bundle_min_js,
+                                                                        sizeof(bootstrap_bundle_min_js));
             response->addHeader("Content-Encoding", "gzip");
             request->send(response);
         });
@@ -132,7 +177,8 @@ bool startWebServer(bool startWiFi = true, int httpPort = 80)
         });
 
         webserver->on("/src/main.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-            AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", main_js, sizeof(main_js));
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/javascript", main_js, sizeof(main_js));
             response->addHeader("Content-Encoding", "gzip");
             request->send(response);
         });
@@ -349,7 +395,7 @@ static void handleFileManager(AsyncWebServerRequest *request)
         {
             fileExists = SD_MMC.exists(slashFileName);
         }
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
 
         if (fileExists == false)
         {
@@ -427,7 +473,7 @@ static void handleFileManager(AsyncWebServerRequest *request)
 #ifdef COMPILE_SD_MMC
                 else
                     SD_MMC.remove(slashFileName);
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
                 request->send(200, "text/plain", "Deleted File: " + String(fileName));
             }
             else
@@ -731,7 +777,7 @@ void createSettingsString(char *newSettings)
 #ifdef COMPILE_L_BAND
         int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
         snprintf(apDaysRemaining, sizeof(apDaysRemaining), "%d", daysRemaining);
-#endif  // COMPILE_L_BAND
+#endif // COMPILE_L_BAND
     }
     else
         snprintf(apDaysRemaining, sizeof(apDaysRemaining), "No Keys");
@@ -1354,7 +1400,7 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             requestChangeState(STATE_ROVER_NOT_STARTED); // If update failed, return to Rover mode.
     }
     else if (strcmp(settingName, "factoryDefaultReset") == 0)
-        factoryReset(false); //We do not have the sdSemaphore
+        factoryReset(false); // We do not have the sdSemaphore
     else if (strcmp(settingName, "exitAndReset") == 0)
     {
         // Confirm receipt
@@ -1769,7 +1815,7 @@ void getFileList(String &returnText)
 
             root.close();
         }
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
 
         xSemaphoreGive(sdCardSemaphore);
     }
@@ -1891,4 +1937,4 @@ void handleUpload(AsyncWebServerRequest *request, String filename, size_t index,
     }
 }
 
-#endif  // COMPILE_AP
+#endif // COMPILE_AP

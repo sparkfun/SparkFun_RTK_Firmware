@@ -684,6 +684,24 @@ void ntripServerUpdate()
             // Look for various responses
             if (strstr(response, "200") != nullptr) //'200' found
             {
+                // We got a response, now check it for possible errors
+                if (strcasestr(response, "banned") != nullptr)
+                {
+                    systemPrintf("NTRIP Server connected to caster but caster responded with banned error: %s\r\n",
+                                 response);
+
+                    // Stop NTRIP Server operations
+                    ntripServerShutdown();
+                }
+                else if (strcasestr(response, "sandbox") != nullptr)
+                {
+                    systemPrintf("NTRIP Server connected to caster but caster responded with sandbox error: %s\r\n",
+                                 response);
+
+                    // Stop NTRIP Server operations
+                    ntripServerShutdown();
+                }
+
                 systemPrintf("NTRIP Server connected to %s:%d %s\r\n", settings.ntripServer_CasterHost,
                              settings.ntripServer_CasterPort, settings.ntripServer_MountPoint);
 
@@ -700,17 +718,8 @@ void ntripServerUpdate()
             else if (strstr(response, "401") != nullptr)
             {
                 systemPrintf(
-                    "NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n",
+                    "NTRIP Caster responded with unauthorized error: %s. Are you sure your caster credentials are correct?\r\n",
                     response);
-
-                // Give up - Shutdown NTRIP server, no further retries
-                ntripServerShutdown();
-            }
-
-            // Look for banned IP information
-            else if (strstr(response, "banned") != nullptr) //'Banned' found
-            {
-                systemPrintf("NTRIP Server connected to caster but caster responded with problem: %s\r\n", response);
 
                 // Give up - Shutdown NTRIP server, no further retries
                 ntripServerShutdown();

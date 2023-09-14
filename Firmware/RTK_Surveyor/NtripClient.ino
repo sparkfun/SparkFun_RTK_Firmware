@@ -640,7 +640,8 @@ void ntripClientUpdate()
             ntripClientRestart();
 
         // Check for no response from the caster service
-        else if (ntripClientReceiveDataAvailable() < strlen("ICY 200 OK")) // Wait until at least a few bytes have arrived
+        else if (ntripClientReceiveDataAvailable() <
+                 strlen("ICY 200 OK")) // Wait until at least a few bytes have arrived
         {
             // Check for response timeout
             if (millis() - ntripClientTimer > NTRIP_CLIENT_RESPONSE_TIMEOUT)
@@ -656,7 +657,10 @@ void ntripClientUpdate()
             char response[512];
             ntripClientResponse(&response[0], sizeof(response));
 
-            //log_d("Caster Response: %s", response);
+            if (settings.debugNtripClientState)
+                systemPrintf("Caster Response: %s\r\n", response);
+            else
+                log_d("Caster Response: %s", response);
 
             // Look for various responses
             if (strstr(response, "200") != nullptr) //'200' found

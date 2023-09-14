@@ -758,25 +758,25 @@ void ntripClientUpdate()
                 size_t rtcmCount = 0;
 
                 // Collect any available RTCM data
-                while (ntripClientReceiveDataAvailable() > 0)
+                if (ntripClientReceiveDataAvailable() > 0)
                 {
-                    rtcmData[rtcmCount++] = ntripClient->read();
-                    if (rtcmCount == sizeof(rtcmData))
-                        break;
-                }
+                    rtcmCount = ntripClient->read(rtcmData, sizeof(rtcmData));
+                    if (rtcmCount)
+                    {
+                        // Restart the NTRIP receive data timer
+                        ntripClientTimer = millis();
 
-                // Restart the NTRIP receive data timer
-                ntripClientTimer = millis();
+                        // Push RTCM to GNSS module over I2C / SPI
+                        theGNSS.pushRawData(rtcmData, rtcmCount);
+                        netIncomingRTCM = true;
 
-                // Push RTCM to GNSS module over I2C / SPI
-                theGNSS.pushRawData(rtcmData, rtcmCount);
-                netIncomingRTCM = true;
-
-                if ((settings.debugNtripClientRtcm || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_DATA))
-                    && (!inMainMenu))
-                {
-                    PERIODIC_CLEAR(PD_NTRIP_CLIENT_DATA);
-                    systemPrintf("NTRIP Client received %d RTCM bytes, pushed to ZED\r\n", rtcmCount);
+                        if ((settings.debugNtripClientRtcm || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_DATA))
+                            && (!inMainMenu))
+                        {
+                            PERIODIC_CLEAR(PD_NTRIP_CLIENT_DATA);
+                            systemPrintf("NTRIP Client received %d RTCM bytes, pushed to ZED\r\n", rtcmCount);
+                        }
+                    }
                 }
             }
         }

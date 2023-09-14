@@ -41,7 +41,6 @@ int wifiConnectionAttempts; // Count the number of connection attempts between r
 // Constants
 //----------------------------------------
 
-
 //----------------------------------------
 // Locals
 //----------------------------------------
@@ -60,9 +59,8 @@ static unsigned long wifiDisplayTimer;
 // Last time the WiFi state was displayed
 static uint32_t lastWifiState;
 
-//DNS server for Captive Portal
+// DNS server for Captive Portal
 static DNSServer dnsServer;
-
 
 //----------------------------------------
 // WiFi Routines
@@ -180,8 +178,7 @@ byte wifiGetStatus()
 // Update the state of the WiFi state machine
 void wifiSetState(byte newState)
 {
-    if ((settings.debugWifiState || PERIODIC_DISPLAY(PD_WIFI_STATE))
-        && (wifiState == newState))
+    if ((settings.debugWifiState || PERIODIC_DISPLAY(PD_WIFI_STATE)) && (wifiState == newState))
         systemPrint("*");
     wifiState = newState;
 
@@ -246,12 +243,17 @@ bool wifiStartAP()
         }
         systemPrint("WiFi AP Started with IP: ");
         systemPrintln(WiFi.softAPIP());
-        
+
         // Start DNS Server
-        if(dnsServer.start(53, "*", WiFi.softAPIP()) == false){
+        if (dnsServer.start(53, "*", WiFi.softAPIP()) == false)
+        {
             systemPrintln("WiFi DNS Server failed to start");
             return (false);
-        };
+        }
+        else
+        {
+            log_d("DNS Server started");
+        }
     }
     else
     {
@@ -363,11 +365,15 @@ void wifiUpdate()
         // If WiFi is connected, and no services require WiFi, shut it off
         else if (wifiIsNeeded() == false)
             wifiStop();
+
         break;
     }
-    //Process the next DNS request
-    dnsServer.processNextRequest();
 
+    // Process DNS when we are in AP mode for captive portal
+    if (WiFi.getMode() == WIFI_AP)
+    {
+        dnsServer.processNextRequest();
+    }
 }
 
 // Starts the WiFi connection state machine (moves from WIFI_OFF to WIFI_CONNECTING)
@@ -408,9 +414,10 @@ void wifiStop()
     if (settings.mdnsEnable == true)
         MDNS.end();
 
-    //Stop the DNS server
-    dnsServer.stop();
-    
+    // Stop the DNS server if we were using the captive portal
+    if (WiFi.getMode() == WIFI_AP)
+        dnsServer.stop();
+
     // Stop the other network clients and then WiFi
     networkStop(NETWORK_TYPE_WIFI);
 }

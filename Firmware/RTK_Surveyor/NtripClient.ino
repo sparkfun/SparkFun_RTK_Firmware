@@ -308,10 +308,12 @@ bool ntripClientConnectLimitReached()
     bool limitReached = (ntripClientConnectionAttempts >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS);
 
     // Restart the NTRIP client
-    ntripClientStop(limitReached);
+    ntripClientStop(limitReached || (!settings.enableNtripClient));
 
     ntripClientConnectionAttempts++;
     ntripClientConnectionAttemptsTotal++;
+    if (settings.debugNtripClientState)
+        ntripClientPrintStatus();
 
     if (limitReached == false)
     {
@@ -319,7 +321,7 @@ bool ntripClientConnectLimitReached()
             ntripClientConnectionAttempts * 15 * 1000L; // Wait 15, 30, 45, etc seconds between attempts
 
         // Display the delay before starting the NTRIP client
-        if (ntripClientConnectionAttemptTimeout)
+        if (settings.debugNtripClientState && ntripClientConnectionAttemptTimeout)
         {
             seconds = ntripClientConnectionAttemptTimeout / 1000;
             if (seconds < 120)
@@ -457,7 +459,7 @@ void ntripClientRestart()
     // Save the previous uptime value
     if (ntripClientState == NTRIP_CLIENT_CONNECTED)
         ntripClientStartTime = ntripClientTimer - ntripClientStartTime;
-    ntripClientStop(!settings.enableNtripClient);
+    ntripClientConnectLimitReached();
 }
 
 // Update the state of the NTRIP client state machine
@@ -622,7 +624,7 @@ void ntripClientUpdate()
                 {
                     // Socket opened to NTRIP system
                     if (settings.debugNtripClientState)
-                        systemPrintf("NTRIP client waiting for response from %s:%d\r\n",
+                        systemPrintf("NTRIP Client waiting for response from %s:%d\r\n",
                                      settings.ntripClient_CasterHost,
                                      settings.ntripClient_CasterPort);
                     ntripClientSetState(NTRIP_CLIENT_WAIT_RESPONSE);

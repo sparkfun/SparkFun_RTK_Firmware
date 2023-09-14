@@ -661,9 +661,27 @@ void ntripClientUpdate()
             // Look for various responses
             if (strstr(response, "200") != nullptr) //'200' found
             {
-                systemPrintf("NTRIP Client connected to %s:%d\r\n",
-                             settings.ntripClient_CasterHost,
-                             settings.ntripClient_CasterPort);
+                // Timeout receiving NTRIP data, retry the NTRIP client connection
+                if (online.rtc && online.gnss)
+                {
+                    int hours;
+                    int minutes;
+                    int seconds;
+
+                    seconds = rtc.getLocalEpoch() % SECONDS_IN_A_DAY;
+                    hours = seconds / SECONDS_IN_AN_HOUR;
+                    seconds -= hours * SECONDS_IN_AN_HOUR;
+                    minutes = seconds / SECONDS_IN_A_MINUTE;
+                    seconds -= minutes * SECONDS_IN_A_MINUTE;
+                    systemPrintf("NTRIP Client connected to %s:%d at %d:%02d:%02d\r\n",
+                                 settings.ntripClient_CasterHost,
+                                 settings.ntripClient_CasterPort,
+                                 hours, minutes, seconds);
+                }
+                else
+                    systemPrintf("NTRIP Client connected to %s:%d\r\n",
+                                 settings.ntripClient_CasterHost,
+                                 settings.ntripClient_CasterPort);
 
                 // Connection is now open, start the NTRIP receive data timer
                 ntripClientTimer = millis();
@@ -763,10 +781,26 @@ void ntripClientUpdate()
             // Check for timeout receiving NTRIP data
             if (ntripClientReceiveDataAvailable() == 0)
             {
+                // Don't fail during retransmission attempts
                 if ((millis() - ntripClientTimer) > NTRIP_CLIENT_RECEIVE_DATA_TIMEOUT)
                 {
                     // Timeout receiving NTRIP data, retry the NTRIP client connection
-                    systemPrintln("NTRIP Client timeout receiving data");
+                    if (online.rtc && online.gnss)
+                    {
+                        int hours;
+                        int minutes;
+                        int seconds;
+
+                        seconds = rtc.getLocalEpoch() % SECONDS_IN_A_DAY;
+                        hours = seconds / SECONDS_IN_AN_HOUR;
+                        seconds -= hours * SECONDS_IN_AN_HOUR;
+                        minutes = seconds / SECONDS_IN_A_MINUTE;
+                        seconds -= minutes * SECONDS_IN_A_MINUTE;
+                        systemPrintf("NTRIP Client timeout receiving data at %d:%02d:%02d\r\n",
+                                     hours, minutes, seconds);
+                    }
+                    else
+                        systemPrintln("NTRIP Client timeout receiving data");
                     ntripClientRestart();
                 }
             }

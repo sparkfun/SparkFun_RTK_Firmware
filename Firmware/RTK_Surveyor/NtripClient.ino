@@ -665,52 +665,80 @@ void ntripClientUpdate()
             // Look for various responses
             if (strstr(response, "200") != nullptr) //'200' found
             {
-                // Timeout receiving NTRIP data, retry the NTRIP client connection
-                if (online.rtc && online.gnss)
+                // We got a response, now check it for possible errors
+                if (strcasestr(response, "banned") != nullptr)
                 {
-                    int hours;
-                    int minutes;
-                    int seconds;
+                    systemPrintf("NTRIP Client connected to caster but caster responded with problem: %s\r\n",
+                                 response);
 
-                    seconds = rtc.getLocalEpoch() % SECONDS_IN_A_DAY;
-                    hours = seconds / SECONDS_IN_AN_HOUR;
-                    seconds -= hours * SECONDS_IN_AN_HOUR;
-                    minutes = seconds / SECONDS_IN_A_MINUTE;
-                    seconds -= minutes * SECONDS_IN_A_MINUTE;
-                    systemPrintf("NTRIP Client connected to %s:%d at %d:%02d:%02d\r\n",
-                                 settings.ntripClient_CasterHost,
-                                 settings.ntripClient_CasterPort,
-                                 hours, minutes, seconds);
+                    // Stop NTRIP client operations
+                    ntripClientShutdown();
+                }
+                else if (strcasestr(response, "sandbox") != nullptr)
+                {
+                    systemPrintf("NTRIP Client connected to caster but caster responded with problem: %s\r\n",
+                                 response);
+
+                    // Stop NTRIP client operations
+                    ntripClientShutdown();
+                }
+                else if (strcasestr(response, "SOURCETABLE") != nullptr)
+                {
+                    systemPrintf("Caster may not have mountpoint %s. Caster responded with problem: %s\r\n",
+                                 settings.ntripClient_MountPoint, response);
+
+                    // Stop NTRIP client operations
+                    ntripClientShutdown();
                 }
                 else
-                    systemPrintf("NTRIP Client connected to %s:%d\r\n",
-                                 settings.ntripClient_CasterHost,
-                                 settings.ntripClient_CasterPort);
-
-                // Connection is now open, start the NTRIP receive data timer
-                ntripClientTimer = millis();
-
-                if (settings.ntripClient_TransmitGGA == true)
                 {
-                    // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
-                    theGNSS.setVal8(UBLOX_CFG_NMEA_MAINTALKERID, 1);
-                    theGNSS.setNMEAGPGGAcallbackPtr(&pushGPGGA); // Set up the callback for GPGGA
+                    // We successfully connected
+                    // Timeout receiving NTRIP data, retry the NTRIP client connection
+                    if (online.rtc && online.gnss)
+                    {
+                        int hours;
+                        int minutes;
+                        int seconds;
 
-                    float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
-                    if (measurementFrequency < 0.2)
-                        measurementFrequency = 0.2; // 0.2Hz * 5 = 1 measurement every 5 seconds
-                    log_d("Adjusting GGA setting to %f", measurementFrequency);
-                    theGNSS.setVal8(
-                        UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C,
-                        measurementFrequency); // Enable GGA over I2C. Tell the module to output GGA every second
+                        seconds = rtc.getLocalEpoch() % SECONDS_IN_A_DAY;
+                        hours = seconds / SECONDS_IN_AN_HOUR;
+                        seconds -= hours * SECONDS_IN_AN_HOUR;
+                        minutes = seconds / SECONDS_IN_A_MINUTE;
+                        seconds -= minutes * SECONDS_IN_A_MINUTE;
+                        systemPrintf("NTRIP Client connected to %s:%d at %d:%02d:%02d\r\n",
+                                     settings.ntripClient_CasterHost, settings.ntripClient_CasterPort, hours, minutes,
+                                     seconds);
+                    }
+                    else
+                        systemPrintf("NTRIP Client connected to %s:%d\r\n", settings.ntripClient_CasterHost,
+                                     settings.ntripClient_CasterPort);
 
-                    lastGGAPush = millis() - NTRIPCLIENT_MS_BETWEEN_GGA; // Force immediate transmission of GGA message
+                    // Connection is now open, start the NTRIP receive data timer
+                    ntripClientTimer = millis();
+
+                    if (settings.ntripClient_TransmitGGA == true)
+                    {
+                        // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
+                        theGNSS.setVal8(UBLOX_CFG_NMEA_MAINTALKERID, 1);
+                        theGNSS.setNMEAGPGGAcallbackPtr(&pushGPGGA); // Set up the callback for GPGGA
+
+                        float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
+                        if (measurementFrequency < 0.2)
+                            measurementFrequency = 0.2; // 0.2Hz * 5 = 1 measurement every 5 seconds
+                        log_d("Adjusting GGA setting to %f", measurementFrequency);
+                        theGNSS.setVal8(
+                            UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C,
+                            measurementFrequency); // Enable GGA over I2C. Tell the module to output GGA every second
+
+                        lastGGAPush =
+                            millis() - NTRIPCLIENT_MS_BETWEEN_GGA; // Force immediate transmission of GGA message
+                    }
+
+                    // We don't use a task because we use I2C hardware (and don't have a semphore).
+                    online.ntripClient = true;
+                    ntripClientStartTime = millis();
+                    ntripClientSetState(NTRIP_CLIENT_CONNECTED);
                 }
-
-                // We don't use a task because we use I2C hardware (and don't have a semphore).
-                online.ntripClient = true;
-                ntripClientStartTime = millis();
-                ntripClientSetState(NTRIP_CLIENT_CONNECTED);
             }
             else if (strstr(response, "401") != nullptr)
             {
@@ -722,31 +750,13 @@ void ntripClientUpdate()
                 // Stop NTRIP client operations
                 ntripClientShutdown();
             }
-            else if (strstr(response, "banned") != nullptr)
-            {
-                // Look for 'HTTP/1.1 200 OK' and banned IP information
-                systemPrintf("NTRIP Client connected to caster but caster responded with problem: %s\r\n", response);
-
-                // Stop NTRIP client operations
-                ntripClientShutdown();
-            }
-            else if (strstr(response, "SOURCETABLE") != nullptr)
-            {
-                // Look for 'SOURCETABLE 200 OK'
-                systemPrintf("Caster may not have mountpoint %s. Caster responded with problem: %s\r\n",
-                             settings.ntripClient_MountPoint, response);
-
-                // Stop NTRIP client operations
-                ntripClientShutdown();
-            }
             // Other errors returned by the caster
             else
             {
                 systemPrintf("NTRIP Client connected but caster responded with problem: %s\r\n", response);
 
-                // Check for connection limit
-                if (ntripClientConnectLimitReached())
-                    systemPrintln("NTRIP Client retry limit reached; do you have your caster address and port correct?");
+                // Stop NTRIP client operations
+                ntripClientShutdown();
             }
         }
         break;

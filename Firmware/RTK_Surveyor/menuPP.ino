@@ -204,7 +204,7 @@ bool pointperfectProvisionDevice()
         char givenName[100];
         char versionString[9];
         getFirmwareVersion(versionString, sizeof(versionString), false);
-        Serial.printf("versionString: %s\r\n", versionString);
+        systemPrintf("versionString: %s\r\n", versionString);
 
         if (productVariant == RTK_FACET_LBAND)
         {
@@ -221,7 +221,7 @@ bool pointperfectProvisionDevice()
 
         if (strlen(givenName) >= 50)
         {
-            Serial.printf("Error: GivenName '%s' too long: %d bytes\r\n", givenName, strlen(givenName));
+            systemPrintf("Error: GivenName '%s' too long: %d bytes\r\n", givenName, strlen(givenName));
         }
 
         StaticJsonDocument<256> pointPerfectAPIPost;

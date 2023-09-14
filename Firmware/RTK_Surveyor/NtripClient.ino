@@ -317,8 +317,17 @@ bool ntripClientConnectLimitReached()
 
     if (limitReached == false)
     {
-        ntripClientConnectionAttemptTimeout =
-            ntripClientConnectionAttempts * 15 * 1000L; // Wait 15, 30, 45, etc seconds between attempts
+        if (ntripClientConnectionAttempts == 1)
+            ntripClientConnectionAttemptTimeout = 15 * 1000L; // Wait 15s
+        else if (ntripClientConnectionAttempts == 2)
+            ntripClientConnectionAttemptTimeout = 30 * 1000L; // Wait 30s
+        else if (ntripClientConnectionAttempts == 3)
+            ntripClientConnectionAttemptTimeout = 1 * 60 * 1000L; // Wait 1 minute
+        else if (ntripClientConnectionAttempts == 4)
+            ntripClientConnectionAttemptTimeout = 2 * 60 * 1000L; // Wait 2 minutes
+        else
+            ntripClientConnectionAttemptTimeout =
+                (ntripClientConnectionAttempts - 4) * 5 * 60 * 1000L; // Wait 5, 10, 15, etc minutes between attempts
 
         // Display the delay before starting the NTRIP client
         if (settings.debugNtripClientState && ntripClientConnectionAttemptTimeout)
@@ -668,19 +677,17 @@ void ntripClientUpdate()
                 // We got a response, now check it for possible errors
                 if (strcasestr(response, "banned") != nullptr)
                 {
-                    systemPrintf("NTRIP Client connected to caster but caster responded with problem: %s\r\n",
+                    systemPrintf("NTRIP Client connected to caster but caster responded with banned error: %s\r\n",
                                  response);
 
-                    // Stop NTRIP client operations
-                    ntripClientShutdown();
+                    ntripClientConnectLimitReached(); //Re-attempted after a period of time. Shuts down NTRIP Client if limit reached.
                 }
                 else if (strcasestr(response, "sandbox") != nullptr)
                 {
-                    systemPrintf("NTRIP Client connected to caster but caster responded with problem: %s\r\n",
+                    systemPrintf("NTRIP Client connected to caster but caster responded with sandbox error: %s\r\n",
                                  response);
 
-                    // Stop NTRIP client operations
-                    ntripClientShutdown();
+                    ntripClientConnectLimitReached(); //Re-attempted after a period of time. Shuts down NTRIP Client if limit reached.
                 }
                 else if (strcasestr(response, "SOURCETABLE") != nullptr)
                 {
@@ -744,7 +751,7 @@ void ntripClientUpdate()
             {
                 // Look for '401 Unauthorized'
                 systemPrintf(
-                    "NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n",
+                    "NTRIP Caster responded with unauthorized error: %s. Are you sure your caster credentials are correct?\r\n",
                     response);
 
                 // Stop NTRIP client operations

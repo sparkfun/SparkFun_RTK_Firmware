@@ -365,7 +365,6 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "minCNO_F9P", settings.minCNO_F9P);
     settingsFile->printf("%s=%d\r\n", "shutdownNoChargeTimeout_s", settings.shutdownNoChargeTimeout_s);
     settingsFile->printf("%s=%d\r\n", "disableSetupButton", settings.disableSetupButton);
-    settingsFile->printf("%s=%d\r\n", "powerButtonFiltering", settings.powerButtonFiltering);
     settingsFile->printf("%s=%d\r\n", "useI2cForLbandCorrections", settings.useI2cForLbandCorrections);
     settingsFile->printf("%s=%d\r\n", "useI2cForLbandCorrectionsConfigured", settings.useI2cForLbandCorrectionsConfigured);
 
@@ -1315,8 +1314,6 @@ bool parseLine(char *str, Settings *settings)
         settings->shutdownNoChargeTimeout_s = d;
     else if (strcmp(settingName, "disableSetupButton") == 0)
         settings->disableSetupButton = d;
-    else if (strcmp(settingName, "powerButtonFiltering") == 0)
-        settings->powerButtonFiltering = d;
     else if (strcmp(settingName, "useI2cForLbandCorrections") == 0)
         settings->useI2cForLbandCorrections = d;
     else if (strcmp(settingName, "useI2cForLbandCorrectionsConfigured") == 0)

@@ -756,30 +756,26 @@ void menuOperation()
         else
             systemPrintln("Disabled - no resets");
 
-        // Power button
-        systemPrint("6) Power button filtering: ");
-        systemPrintf("%s\r\n", settings.powerButtonFiltering ? "Enabled" : "Disabled");
-
         // SPI
-        systemPrint("7) SPI/SD Interface Frequency: ");
+        systemPrint("6) SPI/SD Interface Frequency: ");
         systemPrint(settings.spiFrequency);
         systemPrintln(" MHz");
 
         // SPP
-        systemPrint("8) SPP RX Buffer Size: ");
+        systemPrint("7) SPP RX Buffer Size: ");
         systemPrintln(settings.sppRxQueueSize);
 
-        systemPrint("9) SPP TX Buffer Size: ");
+        systemPrint("8) SPP TX Buffer Size: ");
         systemPrintln(settings.sppTxQueueSize);
 
         // UART
-        systemPrint("10) UART Receive Buffer Size: ");
+        systemPrint("9) UART Receive Buffer Size: ");
         systemPrintln(settings.uartReceiveBufferSize);
 
         // ZED
-        systemPrintln("11) Mirror ZED-F9x's UART1 settings to USB");
+        systemPrintln("10) Mirror ZED-F9x's UART1 settings to USB");
 
-        systemPrint("12) Use I2C for L-Band Corrections: ");
+        systemPrint("11) Use I2C for L-Band Corrections: ");
         systemPrintf("%s\r\n", settings.useI2cForLbandCorrections ? "Enabled" : "Disabled");
 
         systemPrintln("----  Interrupts  ----");
@@ -886,8 +882,6 @@ void menuOperation()
             }
         }
         else if (incoming == 6)
-            settings.powerButtonFiltering ^= 1;
-        else if (incoming == 7)
         {
             systemPrint("Enter SPI frequency in MHz (1 to 16): ");
             int freq = getNumber(); // Returns EXIT, TIMEOUT, or long
@@ -899,7 +893,7 @@ void menuOperation()
                     settings.spiFrequency = freq; // Recorded to NVM and file at main menu exit
             }
         }
-        else if (incoming == 8)
+        else if (incoming == 7)
         {
             systemPrint("Enter SPP RX Queue Size in Bytes (32 to 16384): ");
             int queSize = getNumber(); // Returns EXIT, TIMEOUT, or long
@@ -911,7 +905,7 @@ void menuOperation()
                     settings.sppRxQueueSize = queSize; // Recorded to NVM and file at main menu exit
             }
         }
-        else if (incoming == 9)
+        else if (incoming == 8)
         {
             systemPrint("Enter SPP TX Queue Size in Bytes (32 to 16384): ");
             int queSize = getNumber(); // Returns EXIT, TIMEOUT, or long
@@ -923,7 +917,7 @@ void menuOperation()
                     settings.sppTxQueueSize = queSize; // Recorded to NVM and file at main menu exit
             }
         }
-        else if (incoming == 10)
+        else if (incoming == 9)
         {
             systemPrintln("Warning: changing the Receive Buffer Size will restart the RTK. Enter 0 to abort");
             systemPrint("Enter UART Receive Buffer Size in Bytes (32 to 16384): ");
@@ -940,7 +934,7 @@ void menuOperation()
                 }
             }
         }
-        else if (incoming == 11)
+        else if (incoming == 10)
         {
             bool response = setMessagesUSB(MAX_SET_MESSAGES_RETRIES);
 
@@ -949,7 +943,7 @@ void menuOperation()
             else
                 systemPrintln(F("USB messages successfully enabled"));
         }
-        else if (incoming == 12)
+        else if (incoming == 11)
         {
             settings.useI2cForLbandCorrectionsConfigured = true; //Record that the user has manually modified the settings.
             settings.useI2cForLbandCorrections ^= 1;

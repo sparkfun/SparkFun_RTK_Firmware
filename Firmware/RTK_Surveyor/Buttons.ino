@@ -8,7 +8,11 @@ void powerOnCheck()
         if (digitalRead(pin_powerSenseAndControl) == LOW)
             delay(500);
 
-    if (settings.powerButtonFiltering == true)
+    if (FIRMWARE_VERSION_MAJOR == 99)
+    {
+        // Do not check button if this is a locally compiled developer firmware
+    }
+    else
     {
         if (pin_powerSenseAndControl >= 0)
             if (digitalRead(pin_powerSenseAndControl) != LOW)
@@ -53,7 +57,8 @@ void powerDown(bool displayInfo)
         digitalWrite(pin_powerFastOff, LOW);
     }
 
-    if ((productVariant == RTK_FACET) || (productVariant == RTK_FACET_LBAND)  || (productVariant == RTK_FACET_LBAND_DIRECT) || (productVariant == REFERENCE_STATION))
+    if ((productVariant == RTK_FACET) || (productVariant == RTK_FACET_LBAND) ||
+        (productVariant == RTK_FACET_LBAND_DIRECT) || (productVariant == REFERENCE_STATION))
         digitalWrite(pin_peripheralPowerControl, LOW);
 
     while (1)

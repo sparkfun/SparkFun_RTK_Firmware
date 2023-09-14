@@ -145,6 +145,9 @@ static const int SERVER_BUFFER_SIZE = CREDENTIALS_BUFFER_SIZE + 3;
 
 static const int NTRIPCLIENT_MS_BETWEEN_GGA = 5000; // 5s between transmission of GGA messages, if enabled
 
+// NTRIP client connection delay before resetting the connect accempt counter
+static const int NTRIP_CLIENT_CONNECTION_TIME = 5 * 60 * 1000;
+
 // Define the NTRIP client states
 enum NTRIPClientState
 {
@@ -683,8 +686,6 @@ void ntripClientUpdate()
                 // We don't use a task because we use I2C hardware (and don't have a semphore).
                 online.ntripClient = true;
                 ntripClientStartTime = millis();
-                ntripClientConnectionAttempts = 0;
-                ntripClientConnectionAttemptTimeout = 0;
                 ntripClientSetState(NTRIP_CLIENT_CONNECTED);
             }
             else if (strstr(response, "401") != nullptr)
@@ -741,6 +742,22 @@ void ntripClientUpdate()
         }
         else
         {
+            // Handle other types of NTRIP connection failures to prevent
+            // hammering the NTRIP caster with rapid connection attempts.
+            // A fast reconnect is reasonable after a long NTRIP caster
+            // connection.  However increasing backoff delays should be
+            // added when the NTRIP caster fails after a short connection
+            // interval.
+            if (((millis() - ntripClientStartTime) > NTRIP_CLIENT_CONNECTION_TIME)
+                && (ntripClientConnectionAttempts || ntripClientConnectionAttemptTimeout))
+            {
+                // After a long connection period, reset the attempt counter
+                ntripClientConnectionAttempts = 0;
+                ntripClientConnectionAttemptTimeout = 0;
+                if (settings.debugNtripClientState)
+                    systemPrintln("NTRIP Client resetting connection attempt counter and timeout");
+            }
+
             // Check for timeout receiving NTRIP data
             if (ntripClientReceiveDataAvailable() == 0)
             {

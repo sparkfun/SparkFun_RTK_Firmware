@@ -681,6 +681,11 @@ void ntripServerUpdate()
             char response[512];
             ntripServerResponse(response, sizeof(response));
 
+            if (settings.debugNtripServerState)
+                systemPrintf("Server Response: %s\r\n", response);
+            else
+                log_d("Server Response: %s", response);
+
             // Look for various responses
             if (strstr(response, "200") != nullptr) //'200' found
             {

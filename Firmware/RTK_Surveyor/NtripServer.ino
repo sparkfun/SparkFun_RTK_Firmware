@@ -138,6 +138,9 @@ NtripServer.ino
 // 5 minutes. The NTRIP server stops retrying after 25 hours and 18 minutes
 static const int MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS = 28;
 
+// NTRIP client connection delay before resetting the connect accempt counter
+static const int NTRIP_SERVER_CONNECTION_TIME = 5 * 60 * 1000;
+
 // Define the NTRIP server states
 enum NTRIPServerState
 {
@@ -687,8 +690,7 @@ void ntripServerUpdate()
 
                 // We don't use a task because we use I2C hardware (and don't have a semphore).
                 online.ntripServer = true;
-                ntripServerConnectionAttempts = 0;
-                ntripClientConnectionAttemptTimeout = 0;
+                ntripServerStartTime = millis();
                 ntripServerSetState(NTRIP_SERVER_CASTING);
             }
 
@@ -746,6 +748,22 @@ void ntripServerUpdate()
         }
         else
         {
+            // Handle other types of NTRIP connection failures to prevent
+            // hammering the NTRIP caster with rapid connection attempts.
+            // A fast reconnect is reasonable after a long NTRIP caster
+            // connection.  However increasing backoff delays should be
+            // added when the NTRIP caster fails after a short connection
+            // interval.
+            if (((millis() - ntripServerStartTime) > NTRIP_SERVER_CONNECTION_TIME)
+                && (ntripServerConnectionAttempts || ntripServerConnectionAttemptTimeout))
+            {
+                // After a long connection period, reset the attempt counter
+                ntripServerConnectionAttempts = 0;
+                ntripServerConnectionAttemptTimeout = 0;
+                if (settings.debugNtripServerState)
+                    systemPrintln("NTRIP Server resetting connection attempt counter and timeout");
+            }
+
             // All is well
             cyclePositionLEDs();
         }

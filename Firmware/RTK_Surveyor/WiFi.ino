@@ -214,7 +214,12 @@ void wifiSetState(byte newState)
 // We can also start as a WiFi station and attempt to connect to local WiFi for config
 bool wifiStartAP()
 {
-    if (settings.wifiConfigOverAP == true)
+    return(wifiStartAP(false)); //Don't force AP mode
+}
+
+bool wifiStartAP(bool forceAP)
+{
+    if (settings.wifiConfigOverAP == true || forceAP)
     {
         // Stop any current WiFi activity
         wifiStop();
@@ -275,11 +280,7 @@ bool wifiStartAP()
         if (x == maxTries)
         {
             displayNoWiFi(2000);
-            if (productVariant == REFERENCE_STATION)
-                requestChangeState(STATE_BASE_NOT_STARTED); // If WiFi failed, return to Base mode.
-            else
-                requestChangeState(STATE_ROVER_NOT_STARTED); // If WiFi failed, return to Rover mode.
-            return (false);
+            return(wifiStartAP(true)); // Because there is no local WiFi available, force AP mode so user can still get access/configure it
         }
     }
 

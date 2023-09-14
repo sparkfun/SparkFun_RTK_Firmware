@@ -262,10 +262,12 @@ bool ntripServerConnectLimitReached()
     bool limitReached = (ntripServerConnectionAttempts >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS);
 
     // Shutdown the NTRIP server
-    ntripServerStop(limitReached);
+    ntripServerStop(limitReached || (!settings.enableNtripServer));
 
     ntripServerConnectionAttempts++;
     ntripServerConnectionAttemptsTotal++;
+    if (settings.debugNtripServerState)
+        ntripServerPrintStatus();
 
     if (limitReached == false)
     {
@@ -282,7 +284,7 @@ bool ntripServerConnectLimitReached()
                 (ntripServerConnectionAttempts - 4) * 5 * 60 * 1000L; // Wait 5, 10, 15, etc minutes between attempts
 
         // Display the delay before starting the NTRIP server
-        if (ntripServerConnectionAttemptTimeout)
+        if (settings.debugNtripServerState && ntripServerConnectionAttemptTimeout)
         {
             seconds = ntripServerConnectionAttemptTimeout / 1000;
             if (seconds < 120)
@@ -451,7 +453,7 @@ void ntripServerRestart()
     // Save the previous uptime value
     if (ntripServerState == NTRIP_SERVER_CASTING)
         ntripServerStartTime = ntripServerTimer - ntripServerStartTime;
-    ntripServerStop(!settings.enableNtripServer);
+    ntripServerConnectLimitReached();
 }
 
 // Update the state of the NTRIP server state machine

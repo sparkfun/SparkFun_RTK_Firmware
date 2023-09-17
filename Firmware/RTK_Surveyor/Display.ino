@@ -2088,7 +2088,7 @@ void displayWiFiConfig()
 
 #ifdef COMPILE_AP
     IPAddress myIpAddress;
-    if (settings.wifiConfigOverAP == true)
+    if (WiFi.getMode() == WIFI_AP)
         myIpAddress = WiFi.softAPIP();
     else
         myIpAddress = WiFi.localIP();

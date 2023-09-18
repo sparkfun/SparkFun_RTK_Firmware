@@ -923,7 +923,7 @@ void updateSystemState()
         case (STATE_KEYS_PROVISION_WIFI_STARTED): {
             if (wifiIsConnected())
                 changeState(STATE_KEYS_PROVISION_WIFI_CONNECTED);
-            else if (wifiState == WIFI_OFF)
+            else
                 changeState(STATE_KEYS_WIFI_TIMEOUT);
         }
         break;

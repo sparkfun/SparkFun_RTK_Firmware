@@ -8,7 +8,7 @@ Surveyor: ![Feature Supported](img/Icons/GreenDot.png) / Express: ![Feature Supp
 
 This section goes into depth on how to gather the data using an RTK product to create a permanent fixed base.
 
-**Note:** The RTK Facet and RTK Facet L-Band are rated IP53 - Protected from limited dust ingress and water spray. As such it is not recommended for permanent outdoor deployment. Use the RTK Surveyor or Express with a fully sealed [TOP106 antenna](https://www.sparkfun.com/products/21801).
+**Note:** The RTK Facet and RTK Facet L-Band are rated IP53 - Protected from limited dust ingress and water spray. As such it is not recommended for permanent outdoor deployment. Use the RTK Surveyor or Express placed inside (or protected from the elements) with a fully sealed [TOP106 antenna](https://www.sparkfun.com/products/21801) placed outside with a clear view of the sky.
 
 **Note:** The RTK Express Plus does not support Base mode.
 

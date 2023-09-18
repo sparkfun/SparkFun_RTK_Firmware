@@ -1,4 +1,4 @@
-# Configurw with u-center
+# Configure with u-center
 
 Surveyor: ![Feature Partially Supported](img/Icons/YellowDot.png) / Express: ![Feature Partially Supported](img/Icons/YellowDot.png) / Express Plus: ![Feature Partially Supported](img/Icons/YellowDot.png) / Facet: ![Feature Partially Supported](img/Icons/YellowDot.png) / Facet L-Band: ![Feature Partially Supported](img/Icons/YellowDot.png) / Reference Station: ![Feature Partially Supported](img/Icons/YellowDot.png)
 

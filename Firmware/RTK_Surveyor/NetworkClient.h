@@ -1,17 +1,34 @@
 #ifndef __NETWORK_CLIENT_H__
 #define __NETWORK_CLIENT_H__
 
+extern uint8_t networkGetType(uint8_t user);
+
 class NetworkClient : public Client
 {
+  protected:
+
+    Client * _client; // Ethernet or WiFi client
+    bool _friendClass;
+    uint8_t _networkType;
+
   public:
 
     //------------------------------
     // Create the network client
     //------------------------------
-    NetworkClient(bool useWiFiNotEthernet)
+    NetworkClient(Client * client, uint8_t networkType)
     {
+        _friendClass = true;
+        _networkType = networkType;
+        _client = client;
+    }
+
+    NetworkClient(uint8_t user)
+    {
+        _friendClass = false;
+        _networkType = networkGetType(user);
 #if defined(COMPILE_ETHERNET)
-        if (HAS_ETHERNET && (!useWiFiNotEthernet))
+        if (_networkType == NETWORK_TYPE_ETHERNET)
             _client = new EthernetClient;
         else
 #endif // COMPILE_ETHERNET
@@ -30,7 +47,8 @@ class NetworkClient : public Client
         if (_client)
         {
             _client->stop();
-            delete _client;
+            if (!_friendClass)
+                delete _client;
             _client = nullptr;
         }
     };
@@ -138,6 +156,40 @@ class NetworkClient : public Client
     }
 
     //------------------------------
+    // Get the remote IP address
+    //------------------------------
+
+    IPAddress remoteIP()
+    {
+#if defined(COMPILE_ETHERNET)
+        if (_networkType == NETWORK_TYPE_ETHERNET)
+            return ((EthernetClient *)_client)->remoteIP();
+#endif // COMPILE_ETHERNET
+#if defined(COMPILE_WIFI)
+        if (_networkType == NETWORK_TYPE_WIFI)
+            return ((WiFiClient *)_client)->remoteIP();
+#endif  // COMPILE_WIFI
+        return IPAddress((uint32_t)0);
+    }
+
+    //------------------------------
+    // Get the remote port number
+    //------------------------------
+
+    uint16_t remotePort()
+    {
+#if defined(COMPILE_ETHERNET)
+        if (_networkType == NETWORK_TYPE_ETHERNET)
+            return ((EthernetClient *)_client)->remotePort();
+#endif // COMPILE_ETHERNET
+#if defined(COMPILE_WIFI)
+        if (_networkType == NETWORK_TYPE_WIFI)
+            return ((WiFiClient *)_client)->remotePort();
+#endif  // COMPILE_WIFI
+        return 0;
+    }
+
+    //------------------------------
     // Stop the network client
     //------------------------------
 
@@ -171,9 +223,6 @@ class NetworkClient : public Client
 
   protected:
 
-    bool _useWiFiNotEthernet;
-    Client * _client; // Ethernet or WiFi client
-
     //------------------------------
     // Return the IP address
     //------------------------------
@@ -182,6 +231,57 @@ class NetworkClient : public Client
     {
         return Client::rawIPAddress(addr);
     }
+
+    //------------------------------
+    // Declare the friend classes
+    //------------------------------
+
+    friend class NetworkEthernetClient;
+    friend class NetworkWiFiClient;
 };
+
+#ifdef  COMPILE_ETHERNET
+class NetworkEthernetClient : public NetworkClient
+{
+  private:
+
+    EthernetClient _client;
+
+  public:
+
+    NetworkEthernetClient(EthernetClient& client) :
+        _client{client},
+        NetworkClient(&_client, NETWORK_TYPE_ETHERNET)
+    {
+    }
+
+    ~NetworkEthernetClient()
+    {
+        this->~NetworkClient();
+    }
+};
+#endif  // COMPILE_ETHERNET
+
+#ifdef  COMPILE_WIFI
+class NetworkWiFiClient : public NetworkClient
+{
+  private:
+
+    WiFiClient _client;
+
+  public:
+
+    NetworkWiFiClient(WiFiClient& client) :
+        _client{client},
+        NetworkClient(&_client, NETWORK_TYPE_WIFI)
+    {
+    }
+
+    ~NetworkWiFiClient()
+    {
+        this->~NetworkClient();
+    }
+};
+#endif  // COMPILE_WIFI
 
 #endif  // __NETWORK_CLIENT_H__

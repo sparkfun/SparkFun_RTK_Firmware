@@ -9,7 +9,7 @@ void updateSerial()
         if (incoming == '~')
         {
             // Output custom GNTXT message with all current system data
-            // printCurrentConditionsNMEA();
+            printCurrentConditionsNMEA();
         }
         else
             menuMain(); // Present user menu
@@ -31,7 +31,11 @@ void menuMain()
         systemPrintf("SparkFun RTK %s %s\r\n", platformPrefix, versionString);
 
 #ifdef COMPILE_BT
-        systemPrint("** Bluetooth broadcasting as: ");
+
+        if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
+        systemPrint("** Bluetooth SPP broadcasting as: ");
+        else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
+        systemPrint("** Bluetooth Low-Energy broadcasting as: ");
         systemPrint(deviceName);
         systemPrintln(" **");
 #else  // COMPILE_BT
@@ -59,6 +63,11 @@ void menuMain()
         systemPrintln("6) **WiFi Not Compiled**");
 #endif // COMPILE_WIFI
 
+#if COMPILE_NETWORK
+        systemPrintln("7) Configure Network");
+#else  // COMPILE_NETWORK
+        systemPrintln("7) **Network Not Compiled**");
+#endif // COMPILE_NETWORK
 #ifdef COMPILE_ETHERNET
         if (HAS_ETHERNET)
         {
@@ -103,6 +112,8 @@ void menuMain()
             menuLog();
         else if (incoming == 6)
             menuWiFi();
+        else if (incoming == 7)
+            menuNetwork();
         else if (incoming == 'e' && (HAS_ETHERNET))
             menuEthernet();
         else if (incoming == 'n' && (HAS_ETHERNET))

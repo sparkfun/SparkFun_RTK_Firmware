@@ -34,6 +34,7 @@ void updateSystemState()
         }
 
         // Move between states as needed
+        DMW_st(changeState, systemState);
         switch (systemState)
         {
         /*
@@ -123,18 +124,21 @@ void updateSystemState()
             bluetoothStart(); // Turn on Bluetooth with 'Rover' name
             radioStart();     // Start internal radio if enabled, otherwise disable
 
-            tasksStartUART2(); // Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
+            if (!tasksStartUART2()) // Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
+                displayRoverFail(1000);
+            else
+            {
+                settings.updateZEDSettings = false; // On the next boot, no need to update the ZED on this profile
+                settings.lastState = STATE_ROVER_NOT_STARTED;
+                recordSystemSettings(); // Record this state for next POR
 
-            settings.updateZEDSettings = false; // On the next boot, no need to update the ZED on this profile
-            settings.lastState = STATE_ROVER_NOT_STARTED;
-            recordSystemSettings(); // Record this state for next POR
+                displayRoverSuccess(500);
 
-            displayRoverSuccess(500);
+                ntripClientStart();
+                changeState(STATE_ROVER_NO_FIX);
 
-            ntripClientStart();
-            changeState(STATE_ROVER_NO_FIX);
-
-            firstRoverStart = false; // Do not allow entry into test menu again
+                firstRoverStart = false; // Do not allow entry into test menu again
+            }
         }
         break;
 
@@ -244,9 +248,8 @@ void updateSystemState()
             bluetoothStop();
             bluetoothStart(); // Restart Bluetooth with 'Base' identifier
 
-            tasksStartUART2(); // Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
-
-            if (configureUbloxModuleBase() == true)
+            // Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
+            if (tasksStartUART2() && configureUbloxModuleBase())
             {
                 settings.updateZEDSettings = false; // On the next boot, no need to update the ZED on this profile
                 settings.lastState = STATE_BASE_NOT_STARTED; // Record this state for next POR
@@ -631,9 +634,10 @@ void updateSystemState()
             espnowStop();
 
             tasksStopUART2(); // Delete F9 serial tasks if running
-            startWebServer(); // Start in AP mode and show config html page
-
-            changeState(STATE_WIFI_CONFIG);
+            if (!startWebServer()) // Start in AP mode and show config html page
+                changeState(STATE_ROVER_NOT_STARTED);
+            else
+                changeState(STATE_WIFI_CONFIG);
         }
         break;
 
@@ -919,7 +923,7 @@ void updateSystemState()
         case (STATE_KEYS_PROVISION_WIFI_STARTED): {
             if (wifiIsConnected())
                 changeState(STATE_KEYS_PROVISION_WIFI_CONNECTED);
-            else if (wifiState == WIFI_OFF)
+            else
                 changeState(STATE_KEYS_WIFI_TIMEOUT);
         }
         break;
@@ -987,27 +991,32 @@ void updateSystemState()
 
             displayNtpStart(500); // Show 'NTP'
 
-            tasksStartUART2(); // Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
-
-            if (configureUbloxModuleNTP() == true)
+            // Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
+            if (tasksStartUART2() && configureUbloxModuleNTP())
             {
                 settings.updateZEDSettings = false; // On the next boot, no need to update the ZED on this profile
                 settings.lastState = STATE_NTPSERVER_NOT_STARTED; // Record this state for next POR
                 recordSystemSettings();
 
-                if (online.ethernetNTPServer)
+                if (online.NTPServer)
                 {
+                    if (settings.debugNtp)
+                        systemPrintln("NTP Server started");
                     displayNtpStarted(500); // Show 'NTP Started'
                     changeState(STATE_NTPSERVER_NO_SYNC);
                 }
                 else
                 {
+                    if (settings.debugNtp)
+                        systemPrintln("NTP Server waiting for Ethernet");
                     displayNtpNotReady(1000); // Show 'Ethernet Not Ready'
                     changeState(STATE_NTPSERVER_NO_SYNC);
                 }
             }
             else
             {
+                if (settings.debugNtp)
+                    systemPrintln("NTP Server ZED configuration failed");
                 displayNTPFail(1000); // Show 'NTP Failed'
                 // Do we stay in STATE_NTPSERVER_NOT_STARTED? Or should we reset?
             }
@@ -1017,6 +1026,8 @@ void updateSystemState()
         case (STATE_NTPSERVER_NO_SYNC): {
             if (rtcSyncd)
             {
+                if (settings.debugNtp)
+                    systemPrintln("NTP Server RTC synchronized");
                 changeState(STATE_NTPSERVER_SYNC);
             }
         }
@@ -1062,11 +1073,12 @@ void updateSystemState()
             espnowStop();     // Should be redundant - but just in case
             tasksStopUART2(); // Delete F9 serial tasks if running
 
-            startEthernerWebServerESP32W5500(); // Start Ethernet in dedicated configure-via-ethernet mode
+            ethernetWebServerStartESP32W5500(); // Start Ethernet in dedicated configure-via-ethernet mode
 
-            startWebServer(false, settings.ethernetHttpPort); // Start the async web server
-
-            changeState(STATE_CONFIG_VIA_ETH);
+            if (!startWebServer(false, settings.httpPort)) // Start the async web server
+                changeState(STATE_ROVER_NOT_STARTED);
+            else
+                changeState(STATE_CONFIG_VIA_ETH);
         }
         break;
 
@@ -1121,7 +1133,7 @@ void updateSystemState()
         case (STATE_CONFIG_VIA_ETH_RESTART_BASE): {
             displayConfigViaEthNotStarted(1000);
 
-            endEthernerWebServerESP32W5500();
+            ethernetWebServerStopESP32W5500();
 
             settings.updateZEDSettings = false;          // On the next boot, no need to update the ZED on this profile
             settings.lastState = STATE_BASE_NOT_STARTED; // Record the _next_ state for POR
@@ -1160,7 +1172,7 @@ void requestChangeState(SystemState requestedState)
 void changeState(SystemState newState)
 {
     // Log the heap size at the state change
-    reportHeapNow();
+    reportHeapNow(false);
 
     // Debug print of new state, add leading asterisk for repeated states
     if ((!settings.enablePrintDuplicateStates) && (newState == systemState))

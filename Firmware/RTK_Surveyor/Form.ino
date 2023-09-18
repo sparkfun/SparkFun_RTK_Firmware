@@ -1,311 +1,374 @@
+/*------------------------------------------------------------------------------
+Form.ino
+
+  Start and stop the web-server, provide the form and handle browser input.
+------------------------------------------------------------------------------*/
+
+#ifdef COMPILE_AP
+
 // Once connected to the access point for WiFi Config, the ESP32 sends current setting values in one long string to
 // websocket After user clicks 'save', data is validated via main.js and a long string of values is returned.
 
 bool websocketConnected = false;
 
-// Start webserver in AP mode
-void startWebServer(bool startWiFi = true, int httpPort = 80); // Header
-void startWebServer(bool startWiFi, int httpPort)
+class CaptiveRequestHandler : public AsyncWebHandler
 {
-#ifdef COMPILE_WIFI
-#ifdef COMPILE_AP
-
-    ntripClientStop(true); // Do not allocate new wifiClient
-    ntripServerStop(true); // Do not allocate new wifiClient
-
-    if (startWiFi)
-        if (wifiStartAP() == false) // Exits calling wifiConnect()
-            return;
-
-    if (settings.mdnsEnable == true)
+  public:
+    // https://en.wikipedia.org/wiki/Captive_portal
+    String urls[5] = {"/hotspot-detect.html", "/library/test/success.html", "/generate_204", "/ncsi.txt",
+                      "/check_network_status.txt"};
+    CaptiveRequestHandler()
     {
-        if (MDNS.begin("rtk") == false) // This should make the module findable from 'rtk.local' in browser
-            log_d("Error setting up MDNS responder!");
-        else
-            MDNS.addService("http", "tcp", 80); // Add service to MDNS-SD
+    }
+    virtual ~CaptiveRequestHandler()
+    {
     }
 
-    incomingSettings = (char *)malloc(AP_CONFIG_SETTING_SIZE);
-    memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
+    bool canHandle(AsyncWebServerRequest *request)
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            if (request->url().equals(urls[i]))
+                return true;
+        }
+        return false;
+    }
 
-    // Pre-load settings CSV
-    settingsCSV = (char *)malloc(AP_CONFIG_SETTING_SIZE);
-    createSettingsString(settingsCSV);
-
-    webserver = new AsyncWebServer(httpPort);
-    websocket = new AsyncWebSocket("/ws");
-
-    websocket->onEvent(onWsEvent);
-    webserver->addHandler(websocket);
-
-    // * index.html (not gz'd)
-    // * favicon.ico
-
-    // * /src/bootstrap.bundle.min.js - Needed for popper
-    // * /src/bootstrap.min.css
-    // * /src/bootstrap.min.js
-    // * /src/jquery-3.6.0.min.js
-    // * /src/main.js (not gz'd)
-    // * /src/rtk-setup.png
-    // * /src/style.css
-
-    // * /src/fonts/icomoon.eot
-    // * /src/fonts/icomoon.svg
-    // * /src/fonts/icomoon.ttf
-    // * /src/fonts/icomoon.woof
-
-    // * /listfiles responds with a CSV of files and sizes in root
-    // * /listMessages responds with a CSV of messages supported by this platform
-    // * /listMessagesBase responds with a CSV of RTCM Base messages supported by this platform
-    // * /file allows the download or deletion of a file
-
-    webserver->onNotFound(notFound);
-
-    webserver->onFileUpload(
-        handleUpload); // Run handleUpload function when any file is uploaded. Must be before server.on() calls.
-
-    webserver->on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", index_html, sizeof(index_html));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-
-    webserver->on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/plain", favicon_ico, sizeof(favicon_ico));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-
-    webserver->on("/src/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/javascript", bootstrap_bundle_min_js, sizeof(bootstrap_bundle_min_js));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-
-    webserver->on("/src/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/css", bootstrap_min_css, sizeof(bootstrap_min_css));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-
-    webserver->on("/src/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/javascript", bootstrap_min_js, sizeof(bootstrap_min_js));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-
-    webserver->on("/src/jquery-3.6.0.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/javascript", jquery_js, sizeof(jquery_js));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-
-    webserver->on("/src/main.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", main_js, sizeof(main_js));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-
-    webserver->on("/src/rtk-setup.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response;
-        if (productVariant == REFERENCE_STATION)
-            response = request->beginResponse_P(200, "image/png", rtkSetup_png, sizeof(rtkSetup_png));
-        else
-            response = request->beginResponse_P(200, "image/png", rtkSetupWiFi_png, sizeof(rtkSetupWiFi_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-
-    // Battery icons
-    webserver->on("/src/BatteryBlank.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", batteryBlank_png, sizeof(batteryBlank_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-    webserver->on("/src/Battery0.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery0_png, sizeof(battery0_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-    webserver->on("/src/Battery1.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery1_png, sizeof(battery1_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-    webserver->on("/src/Battery2.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery2_png, sizeof(battery2_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-    webserver->on("/src/Battery3.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery3_png, sizeof(battery3_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-
-    webserver->on("/src/Battery0_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery0_Charging_png, sizeof(battery0_Charging_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-    webserver->on("/src/Battery1_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery1_Charging_png, sizeof(battery1_Charging_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-    webserver->on("/src/Battery2_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery2_Charging_png, sizeof(battery2_Charging_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-    webserver->on("/src/Battery3_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery3_Charging_png, sizeof(battery3_Charging_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-
-    webserver->on("/src/style.css", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", style_css, sizeof(style_css));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-
-    webserver->on("/src/fonts/icomoon.eot", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/plain", icomoon_eot, sizeof(icomoon_eot));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-
-    webserver->on("/src/fonts/icomoon.svg", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/plain", icomoon_svg, sizeof(icomoon_svg));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-
-    webserver->on("/src/fonts/icomoon.ttf", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/plain", icomoon_ttf, sizeof(icomoon_ttf));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-
-    webserver->on("/src/fonts/icomoon.woof", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/plain", icomoon_woof, sizeof(icomoon_woof));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-
-    // Handler for the /upload form POST
-    webserver->on(
-        "/upload", HTTP_POST, [](AsyncWebServerRequest *request) { request->send(200); }, handleFirmwareFileUpload);
-
-    // Handler for file manager
-    webserver->on("/listfiles", HTTP_GET, [](AsyncWebServerRequest *request) {
-        String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+    // Provide a custom small site for redirecting the user to the config site
+    // HTTP redirect does not work and the relative links on the default config site do not work, because the phone is
+    // requesting a different server
+    void handleRequest(AsyncWebServerRequest *request)
+    {
+        String logmessage = "Captive Portal Client:" + request->client()->remoteIP().toString() + " " + request->url();
         systemPrintln(logmessage);
-        String files;
-        getFileList(files);
-        request->send(200, "text/plain", files);
-    });
+        AsyncResponseStream *response = request->beginResponseStream("text/html");
+        response->print("<!DOCTYPE html><html><head><title>RTK Config</title></head><body>");
+        response->print("<div class='container'>");
+        response->printf("<div align='center' class='col-sm-12'><img src='http://%s/src/rtk-setup.png' alt='SparkFun "
+                         "RTK WiFi Setup'></div>",
+                         WiFi.softAPIP().toString().c_str());
+        response->printf("<div align='center'><h3>Configure your RTK receiver <a href='http://%s/'>here</a></h3></div>",
+                         WiFi.softAPIP().toString().c_str());
+        response->print("</div></body></html>");
+        request->send(response);
+    }
+};
 
-    // Handler for supported messages list
-    webserver->on("/listMessages", HTTP_GET, [](AsyncWebServerRequest *request) {
-        String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
-        systemPrintln(logmessage);
-        String messages;
-        createMessageList(messages);
-        request->send(200, "text/plain", messages);
-    });
+// Start webserver in AP mode
+bool startWebServer(bool startWiFi = true, int httpPort = 80)
+{
+    do
+    {
+        ntripClientStop(true); // Do not allocate new wifiClient
+        ntripServerStop(true); // Do not allocate new wifiClient
 
-    // Handler for supported RTCM/Base messages list
-    webserver->on("/listMessagesBase", HTTP_GET, [](AsyncWebServerRequest *request) {
-        String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
-        systemPrintln(logmessage);
-        String messageList;
-        createMessageListBase(messageList);
-        request->send(200, "text/plain", messageList);
-    });
+        if (startWiFi)
+            if (wifiStartAP() == false) // Exits calling wifiConnect()
+                break;
 
-    // Handler for file manager
-    webserver->on("/file", HTTP_GET, [](AsyncWebServerRequest *request) { handleFileManager(request); });
+        if (settings.mdnsEnable == true)
+        {
+            if (MDNS.begin("rtk") == false) // This should make the module findable from 'rtk.local' in browser
+                log_d("Error setting up MDNS responder!");
+            else
+                MDNS.addService("http", "tcp", 80); // Add service to MDNS-SD
+        }
 
-    webserver->begin();
+        incomingSettings = (char *)malloc(AP_CONFIG_SETTING_SIZE);
+        if (!incomingSettings)
+        {
+            systemPrintln("ERROR: Failed to allocate incomingSettings");
+            break;
+        }
+        memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
 
-    log_d("Web Server Started");
-    reportHeapNow();
+        // Pre-load settings CSV
+        settingsCSV = (char *)malloc(AP_CONFIG_SETTING_SIZE);
+        if (!settingsCSV)
+        {
+            systemPrintln("ERROR: Failed to allocate settingsCSV");
+            break;
+        }
+        createSettingsString(settingsCSV);
 
-#endif // COMPILE_AP
-#endif // COMPILE_WIFI
+        webserver = new AsyncWebServer(httpPort);
+        if (!webserver)
+        {
+            systemPrintln("ERROR: Failed to allocate webserver");
+            break;
+        }
+        websocket = new AsyncWebSocket("/ws");
+        if (!websocket)
+        {
+            systemPrintln("ERROR: Failed to allocate websocket");
+            break;
+        }
+
+        websocket->onEvent(onWsEvent);
+        webserver->addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER); // only when requested from AP
+        webserver->addHandler(websocket);
+
+        // * index.html (not gz'd)
+        // * favicon.ico
+
+        // * /src/bootstrap.bundle.min.js - Needed for popper
+        // * /src/bootstrap.min.css
+        // * /src/bootstrap.min.js
+        // * /src/jquery-3.6.0.min.js
+        // * /src/main.js (not gz'd)
+        // * /src/rtk-setup.png
+        // * /src/style.css
+
+        // * /src/fonts/icomoon.eot
+        // * /src/fonts/icomoon.svg
+        // * /src/fonts/icomoon.ttf
+        // * /src/fonts/icomoon.woof
+
+        // * /listfiles responds with a CSV of files and sizes in root
+        // * /listMessages responds with a CSV of messages supported by this platform
+        // * /listMessagesBase responds with a CSV of RTCM Base messages supported by this platform
+        // * /file allows the download or deletion of a file
+
+        webserver->onNotFound(notFound);
+
+        webserver->onFileUpload(
+            handleUpload); // Run handleUpload function when any file is uploaded. Must be before server.on() calls.
+
+        webserver->on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/html", index_html, sizeof(index_html));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        webserver->on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/plain", favicon_ico, sizeof(favicon_ico));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        webserver->on("/src/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", bootstrap_bundle_min_js,
+                                                                        sizeof(bootstrap_bundle_min_js));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        webserver->on("/src/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/css", bootstrap_min_css, sizeof(bootstrap_min_css));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        webserver->on("/src/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/javascript", bootstrap_min_js, sizeof(bootstrap_min_js));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        webserver->on("/src/jquery-3.6.0.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/javascript", jquery_js, sizeof(jquery_js));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        webserver->on("/src/main.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/javascript", main_js, sizeof(main_js));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        webserver->on("/src/rtk-setup.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response;
+            if (productVariant == REFERENCE_STATION)
+                response = request->beginResponse_P(200, "image/png", rtkSetup_png, sizeof(rtkSetup_png));
+            else
+                response = request->beginResponse_P(200, "image/png", rtkSetupWiFi_png, sizeof(rtkSetupWiFi_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        // Battery icons
+        webserver->on("/src/BatteryBlank.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", batteryBlank_png, sizeof(batteryBlank_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+        webserver->on("/src/Battery0.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery0_png, sizeof(battery0_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+        webserver->on("/src/Battery1.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery1_png, sizeof(battery1_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+        webserver->on("/src/Battery2.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery2_png, sizeof(battery2_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+        webserver->on("/src/Battery3.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery3_png, sizeof(battery3_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        webserver->on("/src/Battery0_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery0_Charging_png, sizeof(battery0_Charging_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+        webserver->on("/src/Battery1_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery1_Charging_png, sizeof(battery1_Charging_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+        webserver->on("/src/Battery2_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery2_Charging_png, sizeof(battery2_Charging_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+        webserver->on("/src/Battery3_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery3_Charging_png, sizeof(battery3_Charging_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        webserver->on("/src/style.css", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", style_css, sizeof(style_css));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        webserver->on("/src/fonts/icomoon.eot", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/plain", icomoon_eot, sizeof(icomoon_eot));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        webserver->on("/src/fonts/icomoon.svg", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/plain", icomoon_svg, sizeof(icomoon_svg));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        webserver->on("/src/fonts/icomoon.ttf", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/plain", icomoon_ttf, sizeof(icomoon_ttf));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        webserver->on("/src/fonts/icomoon.woof", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/plain", icomoon_woof, sizeof(icomoon_woof));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        // Handler for the /upload form POST
+        webserver->on(
+            "/upload", HTTP_POST, [](AsyncWebServerRequest *request) { request->send(200); }, handleFirmwareFileUpload);
+
+        // Handler for file manager
+        webserver->on("/listfiles", HTTP_GET, [](AsyncWebServerRequest *request) {
+            String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+            systemPrintln(logmessage);
+            String files;
+            getFileList(files);
+            request->send(200, "text/plain", files);
+        });
+
+        // Handler for supported messages list
+        webserver->on("/listMessages", HTTP_GET, [](AsyncWebServerRequest *request) {
+            String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+            systemPrintln(logmessage);
+            String messages;
+            createMessageList(messages);
+            request->send(200, "text/plain", messages);
+        });
+
+        // Handler for supported RTCM/Base messages list
+        webserver->on("/listMessagesBase", HTTP_GET, [](AsyncWebServerRequest *request) {
+            String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+            systemPrintln(logmessage);
+            String messageList;
+            createMessageListBase(messageList);
+            request->send(200, "text/plain", messageList);
+        });
+
+        // Handler for file manager
+        webserver->on("/file", HTTP_GET, [](AsyncWebServerRequest *request) { handleFileManager(request); });
+
+        webserver->begin();
+
+        log_d("Web Server Started");
+        reportHeapNow(false);
+        return true;
+    } while (0);
+
+    // Release the resources
+    stopWebServer();
+    return false;
 }
 
 void stopWebServer()
 {
-#ifdef COMPILE_WIFI
-#ifdef COMPILE_AP
-
     if (webserver != nullptr)
     {
         webserver->end();
         free(webserver);
         webserver = nullptr;
+    }
 
-        if (websocket != nullptr)
-        {
-            delete websocket;
-            websocket = nullptr;
-        }
+    if (websocket != nullptr)
+    {
+        delete websocket;
+        websocket = nullptr;
+    }
 
-        if (settingsCSV != nullptr)
-        {
-            free(settingsCSV);
-            settingsCSV = nullptr;
-        }
+    if (settingsCSV != nullptr)
+    {
+        free(settingsCSV);
+        settingsCSV = nullptr;
+    }
 
-        if (incomingSettings != nullptr)
-        {
-            free(incomingSettings);
-            incomingSettings = nullptr;
-        }
+    if (incomingSettings != nullptr)
+    {
+        free(incomingSettings);
+        incomingSettings = nullptr;
     }
 
     log_d("Web Server Stopped");
-    reportHeapNow();
-
-#endif  // COMPILE_AP
-#endif  // COMPILE_WIFI
+    reportHeapNow(false);
 }
 
-#ifdef COMPILE_WIFI
-#ifdef COMPILE_AP
 void notFound(AsyncWebServerRequest *request)
 {
     String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
     systemPrintln(logmessage);
     request->send(404, "text/plain", "Not found");
 }
-#endif  // COMPILE_AP
-#endif  // COMPILE_WIFI
 
 // Handler for firmware file downloads
-#ifdef COMPILE_WIFI
-#ifdef COMPILE_AP
 static void handleFileManager(AsyncWebServerRequest *request)
 {
     // This section does not tolerate semaphore transactions
@@ -332,7 +395,7 @@ static void handleFileManager(AsyncWebServerRequest *request)
         {
             fileExists = SD_MMC.exists(slashFileName);
         }
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
 
         if (fileExists == false)
         {
@@ -410,7 +473,7 @@ static void handleFileManager(AsyncWebServerRequest *request)
 #ifdef COMPILE_SD_MMC
                 else
                     SD_MMC.remove(slashFileName);
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
                 request->send(200, "text/plain", "Deleted File: " + String(fileName));
             }
             else
@@ -426,12 +489,8 @@ static void handleFileManager(AsyncWebServerRequest *request)
         request->send(400, "text/plain", "ERROR: name and action params required");
     }
 }
-#endif  // COMPILE_AP
-#endif  // COMPILE_WIFI
 
 // Handler for firmware file upload
-#ifdef COMPILE_WIFI
-#ifdef COMPILE_AP
 static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data,
                                      size_t len, bool final)
 {
@@ -517,13 +576,8 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
         }
     }
 }
-#endif  // COMPILE_AP
-#endif  // COMPILE_WIFI
 
 // Events triggered by web sockets
-#ifdef COMPILE_WIFI
-#ifdef COMPILE_AP
-
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data,
                size_t len)
 {
@@ -557,13 +611,9 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
     else
         log_d("onWsEvent: unrecognised AwsEventType %d", type);
 }
-#endif  // COMPILE_AP
-#endif  // COMPILE_WIFI
-
 // Create a csv string with current settings
 void createSettingsString(char *newSettings)
 {
-#ifdef COMPILE_AP
     char tagText[32];
     char nameText[64];
 
@@ -688,11 +738,14 @@ void createSettingsString(char *newSettings)
     stringRecord(newSettings, "ethernetGateway", ipAddressChar);
     snprintf(ipAddressChar, sizeof(ipAddressChar), "%s", settings.ethernetSubnet.toString().c_str());
     stringRecord(newSettings, "ethernetSubnet", ipAddressChar);
-    stringRecord(newSettings, "ethernetHttpPort", settings.ethernetHttpPort);
+    stringRecord(newSettings, "httpPort", settings.httpPort);
     stringRecord(newSettings, "ethernetNtpPort", settings.ethernetNtpPort);
-    stringRecord(newSettings, "enableTcpClientEthernet", settings.enableTcpClientEthernet);
-    stringRecord(newSettings, "ethernetTcpPort", settings.ethernetTcpPort);
-    stringRecord(newSettings, "hostForTCPClient", settings.hostForTCPClient);
+    stringRecord(newSettings, "pvtClientPort", settings.pvtClientPort);
+    stringRecord(newSettings, "pvtClientHost", settings.pvtClientHost);
+
+    // Network layer
+    stringRecord(newSettings, "defaultNetworkType", settings.defaultNetworkType);
+    stringRecord(newSettings, "enableNetworkFailover", settings.enableNetworkFailover);
 
     // NTP
     stringRecord(newSettings, "ntpPollExponent", settings.ntpPollExponent);
@@ -724,7 +777,7 @@ void createSettingsString(char *newSettings)
 #ifdef COMPILE_L_BAND
         int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
         snprintf(apDaysRemaining, sizeof(apDaysRemaining), "%d", daysRemaining);
-#endif  // COMPILE_L_BAND
+#endif // COMPILE_L_BAND
     }
     else
         snprintf(apDaysRemaining, sizeof(apDaysRemaining), "No Keys");
@@ -951,7 +1004,7 @@ void createSettingsString(char *newSettings)
     else
         stringRecord(newSettings, "wifiConfigOverAP", 0); // 1 = AP mode, 0 = WiFi
 
-    stringRecord(newSettings, "wifiTcpPort", settings.wifiTcpPort);
+    stringRecord(newSettings, "pvtServerPort", settings.pvtServerPort);
     stringRecord(newSettings, "enableRCFirmware", enableRCFirmware);
 
     // New settings not yet integrated
@@ -960,13 +1013,11 @@ void createSettingsString(char *newSettings)
     strcat(newSettings, "\0");
     systemPrintf("newSettings len: %d\r\n", strlen(newSettings));
     systemPrintf("newSettings: %s\r\n", newSettings);
-#endif  // COMPILE_AP
 }
 
 // Create a csv string with the dynamic data to update (current coordinates, battery level, etc)
 void createDynamicDataString(char *settingsCSV)
 {
-#ifdef COMPILE_AP
     settingsCSV[0] = '\0'; // Erase current settings string
 
     // Current coordinates come from HPPOSLLH call back
@@ -1021,13 +1072,11 @@ void createDynamicDataString(char *settingsCSV)
     }
 
     strcat(settingsCSV, "\0");
-#endif  // COMPILE_AP
 }
 
 // Given a settingName, and string value, update a given setting
 void updateSettingWithValue(const char *settingName, const char *settingValueStr)
 {
-#ifdef COMPILE_AP
     char *ptr;
     double settingValue = strtod(settingValueStr, &ptr);
 
@@ -1199,8 +1248,8 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         recordLineToLFS(stationCoordinateGeodeticFileName, settingValueStr);
         log_d("%s recorded", settingValueStr);
     }
-    else if (strcmp(settingName, "wifiTcpPort") == 0)
-        settings.wifiTcpPort = settingValue;
+    else if (strcmp(settingName, "pvtServerPort") == 0)
+        settings.pvtServerPort = settingValue;
     else if (strcmp(settingName, "wifiConfigOverAP") == 0)
     {
         if (settingValue == 1) // Drop downs come back as a value
@@ -1209,10 +1258,10 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             settings.wifiConfigOverAP = false;
     }
 
-    else if (strcmp(settingName, "enableTcpClient") == 0)
-        settings.enableTcpClient = settingValueBool;
-    else if (strcmp(settingName, "enableTcpServer") == 0)
-        settings.enableTcpServer = settingValueBool;
+    else if (strcmp(settingName, "enablePvtClient") == 0)
+        settings.enablePvtClient = settingValueBool;
+    else if (strcmp(settingName, "enablePvtServer") == 0)
+        settings.enablePvtServer = settingValueBool;
     else if (strcmp(settingName, "enableRCFirmware") == 0)
         enableRCFirmware = settingValueBool;
     else if (strcmp(settingName, "minElev") == 0)
@@ -1259,16 +1308,20 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         String tempString = String(settingValueStr);
         settings.ethernetSubnet.fromString(tempString);
     }
-    else if (strcmp(settingName, "ethernetHttpPort") == 0)
-        settings.ethernetHttpPort = settingValue;
+    else if (strcmp(settingName, "httpPort") == 0)
+        settings.httpPort = settingValue;
     else if (strcmp(settingName, "ethernetNtpPort") == 0)
         settings.ethernetNtpPort = settingValue;
-    else if (strcmp(settingName, "enableTcpClientEthernet") == 0)
-        settings.enableTcpClientEthernet = settingValueBool;
-    else if (strcmp(settingName, "ethernetTcpPort") == 0)
-        settings.ethernetTcpPort = settingValue;
-    else if (strcmp(settingName, "hostForTCPClient") == 0)
-        strcpy(settings.hostForTCPClient, settingValueStr);
+    else if (strcmp(settingName, "pvtClientPort") == 0)
+        settings.pvtClientPort = settingValue;
+    else if (strcmp(settingName, "pvtClientHost") == 0)
+        strcpy(settings.pvtClientHost, settingValueStr);
+
+    // Network layer
+    else if (strcmp(settingName, "defaultNetworkType") == 0)
+        settings.defaultNetworkType = settingValue;
+    else if (strcmp(settingName, "enableNetworkFailover") == 0)
+        settings.enableNetworkFailover = settingValue;
 
     // NTP
     else if (strcmp(settingName, "ntpPollExponent") == 0)
@@ -1339,7 +1392,7 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             requestChangeState(STATE_ROVER_NOT_STARTED); // If update failed, return to Rover mode.
     }
     else if (strcmp(settingName, "factoryDefaultReset") == 0)
-        factoryReset(false); //We do not have the sdSemaphore
+        factoryReset(false); // We do not have the sdSemaphore
     else if (strcmp(settingName, "exitAndReset") == 0)
     {
         // Confirm receipt
@@ -1354,7 +1407,7 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
 
         if (configureViaEthernet)
         {
-            endEthernerWebServerESP32W5500();
+            ethernetWebServerStopESP32W5500();
 
             // We need to exit configure-via-ethernet mode.
             // But if the settings have not been saved then lastState will still be STATE_CONFIG_VIA_ETH_STARTED.
@@ -1380,9 +1433,6 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         loadSettings();
 
         // Send new settings to browser. Re-use settingsCSV to avoid stack.
-        if (settingsCSV == nullptr)
-            settingsCSV = (char *)malloc(AP_CONFIG_SETTING_SIZE);
-
         memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); // Clear any garbage from settings array
 
         createSettingsString(settingsCSV);
@@ -1401,9 +1451,6 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         activeProfiles = loadProfileNames();
 
         // Send new settings to browser. Re-use settingsCSV to avoid stack.
-        if (settingsCSV == nullptr)
-            settingsCSV = (char *)malloc(AP_CONFIG_SETTING_SIZE);
-
         memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); // Clear any garbage from settings array
 
         createSettingsString(settingsCSV);
@@ -1571,7 +1618,6 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             systemPrintf("Unknown '%s': %0.3lf\r\n", settingName, settingValue);
         }
     } // End last strcpy catch
-#endif  // COMPILE_AP
 }
 
 // Add record with int
@@ -1683,9 +1729,7 @@ bool parseIncomingSettings()
     {
         // Confirm receipt
         log_d("Sending receipt confirmation of settings");
-#ifdef COMPILE_AP
         websocket->textAll("confirmDataReceipt,1,");
-#endif  // COMPILE_AP
     }
 
     return (true);
@@ -1763,7 +1807,7 @@ void getFileList(String &returnText)
 
             root.close();
         }
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
 
         xSemaphoreGive(sdCardSemaphore);
     }
@@ -1813,46 +1857,6 @@ void createMessageListBase(String &returnText)
 
     log_d("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
 }
-
-// Make size of files human readable
-void stringHumanReadableSize(String &returnText, uint64_t bytes)
-{
-    char suffix[5] = {'\0'};
-    char readableSize[50] = {'\0'};
-    float cardSize = 0.0;
-
-    if (bytes < 1024)
-        strcpy(suffix, "B");
-    else if (bytes < (1024 * 1024))
-        strcpy(suffix, "KB");
-    else if (bytes < (1024 * 1024 * 1024))
-        strcpy(suffix, "MB");
-    else
-        strcpy(suffix, "GB");
-
-    if (bytes < (1024))
-        cardSize = bytes; // B
-    else if (bytes < (1024 * 1024))
-        cardSize = bytes / 1024.0; // KB
-    else if (bytes < (1024 * 1024 * 1024))
-        cardSize = bytes / 1024.0 / 1024.0; // MB
-    else
-        cardSize = bytes / 1024.0 / 1024.0 / 1024.0; // GB
-
-    if (strcmp(suffix, "GB") == 0)
-        snprintf(readableSize, sizeof(readableSize), "%0.1f %s", cardSize, suffix); // Print decimal portion
-    else if (strcmp(suffix, "MB") == 0)
-        snprintf(readableSize, sizeof(readableSize), "%0.1f %s", cardSize, suffix); // Print decimal portion
-    else if (strcmp(suffix, "KB") == 0)
-        snprintf(readableSize, sizeof(readableSize), "%0.1f %s", cardSize, suffix); // Print decimal portion
-    else
-        snprintf(readableSize, sizeof(readableSize), "%.0f %s", cardSize, suffix); // Don't print decimal portion
-
-    returnText = String(readableSize);
-}
-
-#ifdef COMPILE_WIFI
-#ifdef COMPILE_AP
 
 // Handles uploading of user files to SD
 void handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
@@ -1925,5 +1929,4 @@ void handleUpload(AsyncWebServerRequest *request, String filename, size_t index,
     }
 }
 
-#endif  // COMPILE_AP
-#endif  // COMPILE_WIFI
+#endif // COMPILE_AP

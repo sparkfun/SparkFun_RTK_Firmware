@@ -8,7 +8,11 @@ void powerOnCheck()
         if (digitalRead(pin_powerSenseAndControl) == LOW)
             delay(500);
 
-    if (ENABLE_DEVELOPER == false)
+    if (FIRMWARE_VERSION_MAJOR == 99)
+    {
+        // Do not check button if this is a locally compiled developer firmware
+    }
+    else
     {
         if (pin_powerSenseAndControl >= 0)
             if (digitalRead(pin_powerSenseAndControl) != LOW)
@@ -31,7 +35,7 @@ void powerDown(bool displayInfo)
     // If we are in configureViaEthernet mode, we need to shut down the async web server
     // otherwise it causes a core panic and badness at the restart
     if (configureViaEthernet)
-        endEthernerWebServerESP32W5500();
+        ethernetWebServerStopESP32W5500();
 
     if (displayInfo == true)
     {
@@ -53,7 +57,8 @@ void powerDown(bool displayInfo)
         digitalWrite(pin_powerFastOff, LOW);
     }
 
-    if ((productVariant == RTK_FACET) || (productVariant == RTK_FACET_LBAND) || (productVariant == REFERENCE_STATION))
+    if ((productVariant == RTK_FACET) || (productVariant == RTK_FACET_LBAND) ||
+        (productVariant == RTK_FACET_LBAND_DIRECT) || (productVariant == REFERENCE_STATION))
         digitalWrite(pin_peripheralPowerControl, LOW);
 
     while (1)

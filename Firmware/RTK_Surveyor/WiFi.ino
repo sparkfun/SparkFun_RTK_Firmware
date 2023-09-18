@@ -22,7 +22,7 @@
                                     v                 Fail     |
                                   WIFI_CONNECTING------------->+
                                     |    ^                     ^
-                     wifiConnect()  |    |                     | wifiStop()
+                     wifiConnect()  |    |                     | wifiShutdown()
                                     |    | WL_CONNECTION_LOST  |
                                     |    | WL_DISCONNECTED     |
                                     v    |                     |
@@ -30,43 +30,136 @@
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
-// Constants
+// Globals
 //----------------------------------------
 
-// Interval to use when displaying the IP address
-static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000; // Milliseconds
-
-#define WIFI_MAX_TCP_CLIENTS 4
-
-// Throttle the time between connection attempts
-// ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
-static int wifiConnectionAttempts = 0;       // Count the number of connection attempts between restarts
-static uint32_t wifiConnectionAttemptsTotal; // Count the number of connection attempts absolutely
-static uint32_t wifiConnectionAttemptTimeout = 0;
-
-//----------------------------------------
-// Locals - compiled out
-//----------------------------------------
+int wifiConnectionAttempts; // Count the number of connection attempts between restarts
 
 #ifdef COMPILE_WIFI
 
-static uint32_t wifiLastConnectionAttempt = 0;
+//----------------------------------------
+// Constants
+//----------------------------------------
+
+//----------------------------------------
+// Locals
+//----------------------------------------
+
+static uint32_t wifiLastConnectionAttempt;
+
+// Throttle the time between connection attempts
+// ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
+static uint32_t wifiConnectionAttemptsTotal; // Count the number of connection attempts absolutely
+static uint32_t wifiConnectionAttemptTimeout;
 
 // WiFi Timer usage:
 //  * Measure interval to display IP address
-static unsigned long wifiDisplayTimer = 0;
+static unsigned long wifiDisplayTimer;
 
 // Last time the WiFi state was displayed
-static uint32_t lastWifiState = 0;
+static uint32_t lastWifiState;
 
-// TCP server
-static WiFiServer *wifiTcpServer = nullptr;
-static WiFiClient wifiTcpClient[WIFI_MAX_TCP_CLIENTS];
+// DNS server for Captive Portal
+static DNSServer dnsServer;
 
 //----------------------------------------
-// WiFi Routines - compiled out
+// WiFi Routines
 //----------------------------------------
 
+// Set WiFi credentials
+// Enable TCP connections
+void menuWiFi()
+{
+    bool restartWiFi = false; // Restart WiFi if user changes anything
+
+    while (1)
+    {
+        systemPrintln();
+        systemPrintln("Menu: WiFi Networks");
+
+        for (int x = 0; x < MAX_WIFI_NETWORKS; x++)
+        {
+            systemPrintf("%d) SSID %d: %s\r\n", (x * 2) + 1, x + 1, settings.wifiNetworks[x].ssid);
+            systemPrintf("%d) Password %d: %s\r\n", (x * 2) + 2, x + 1, settings.wifiNetworks[x].password);
+        }
+
+        systemPrint("a) Configure device via WiFi Access Point or connect to WiFi: ");
+        systemPrintf("%s\r\n", settings.wifiConfigOverAP ? "AP" : "WiFi");
+
+        systemPrint("m) MDNS: ");
+        systemPrintf("%s\r\n", settings.mdnsEnable ? "Enabled" : "Disabled");
+
+        systemPrintln("x) Exit");
+
+        byte incoming = getCharacterNumber();
+
+        if (incoming >= 1 && incoming <= MAX_WIFI_NETWORKS * 2)
+        {
+            int arraySlot = ((incoming - 1) / 2); // Adjust incoming to array starting at 0
+
+            if (incoming % 2 == 1)
+            {
+                systemPrintf("Enter SSID network %d: ", arraySlot + 1);
+                getString(settings.wifiNetworks[arraySlot].ssid, sizeof(settings.wifiNetworks[arraySlot].ssid));
+                restartWiFi = true; // If we are modifying the SSID table, force restart of WiFi
+            }
+            else
+            {
+                systemPrintf("Enter Password for %s: ", settings.wifiNetworks[arraySlot].ssid);
+                getString(settings.wifiNetworks[arraySlot].password, sizeof(settings.wifiNetworks[arraySlot].password));
+                restartWiFi = true; // If we are modifying the SSID table, force restart of WiFi
+            }
+        }
+        else if (incoming == 'a')
+        {
+            settings.wifiConfigOverAP ^= 1;
+            restartWiFi = true;
+        }
+
+        else if (incoming == 'm')
+        {
+            settings.mdnsEnable ^= 1;
+        }
+        else if (incoming == 'x')
+            break;
+        else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
+            break;
+        else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
+            break;
+        else
+            printUnknown(incoming);
+    }
+
+    // Erase passwords from empty SSID entries
+    for (int x = 0; x < MAX_WIFI_NETWORKS; x++)
+    {
+        if (strlen(settings.wifiNetworks[x].ssid) == 0)
+            strcpy(settings.wifiNetworks[x].password, "");
+    }
+
+    // Restart WiFi if anything changes
+    if (restartWiFi == true)
+    {
+        // Restart the AP webserver if we are in that state
+        if (systemState == STATE_WIFI_CONFIG)
+            requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
+        else
+        {
+            // Restart WiFi if we are not in AP config mode
+            if (wifiIsConnected())
+            {
+                log_d("Menu caused restarting of WiFi");
+                wifiStop();
+                wifiStart();
+                wifiConnectionAttempts = 0; // Reset the timeout
+            }
+        }
+    }
+
+    clearBuffer(); // Empty buffer of any newline chars
+}
+
+// Display the WiFi IP address
 void wifiDisplayIpAddress()
 {
     systemPrint("WiFi IP address: ");
@@ -76,47 +169,40 @@ void wifiDisplayIpAddress()
     wifiDisplayTimer = millis();
 }
 
-IPAddress wifiGetIpAddress()
-{
-    return WiFi.localIP();
-}
-
+// Get the WiFi adapter status
 byte wifiGetStatus()
 {
     return WiFi.status();
 }
 
-void wifiPeriodicallyDisplayIpAddress()
-{
-    if (settings.enablePrintWifiIpAddress && (wifiGetStatus() == WL_CONNECTED))
-        if ((millis() - wifiDisplayTimer) >= WIFI_IP_ADDRESS_DISPLAY_INTERVAL)
-            wifiDisplayIpAddress();
-}
-
 // Update the state of the WiFi state machine
 void wifiSetState(byte newState)
 {
-    if (wifiState == newState)
+    if ((settings.debugWifiState || PERIODIC_DISPLAY(PD_WIFI_STATE)) && (wifiState == newState))
         systemPrint("*");
     wifiState = newState;
 
-    switch (newState)
+    if (settings.debugWifiState || PERIODIC_DISPLAY(PD_WIFI_STATE))
     {
-    default:
-        systemPrintf("Unknown WiFi state: %d\r\n", newState);
-        break;
-    case WIFI_OFF:
-        systemPrintln("WIFI_OFF");
-        break;
-    case WIFI_START:
-        systemPrintln("WIFI_START");
-        break;
-    case WIFI_CONNECTING:
-        systemPrintln("WIFI_CONNECTING");
-        break;
-    case WIFI_CONNECTED:
-        systemPrintln("WIFI_CONNECTED");
-        break;
+        PERIODIC_CLEAR(PD_WIFI_STATE);
+        switch (newState)
+        {
+        default:
+            systemPrintf("Unknown WiFi state: %d\r\n", newState);
+            break;
+        case WIFI_OFF:
+            systemPrintln("WIFI_OFF");
+            break;
+        case WIFI_START:
+            systemPrintln("WIFI_START");
+            break;
+        case WIFI_CONNECTING:
+            systemPrintln("WIFI_CONNECTING");
+            break;
+        case WIFI_CONNECTED:
+            systemPrintln("WIFI_CONNECTED");
+            break;
+        }
     }
 }
 
@@ -128,7 +214,12 @@ void wifiSetState(byte newState)
 // We can also start as a WiFi station and attempt to connect to local WiFi for config
 bool wifiStartAP()
 {
-    if (settings.wifiConfigOverAP == true)
+    return(wifiStartAP(false)); //Don't force AP mode
+}
+
+bool wifiStartAP(bool forceAP)
+{
+    if (settings.wifiConfigOverAP == true || forceAP)
     {
         // Stop any current WiFi activity
         wifiStop();
@@ -157,6 +248,17 @@ bool wifiStartAP()
         }
         systemPrint("WiFi AP Started with IP: ");
         systemPrintln(WiFi.softAPIP());
+
+        // Start DNS Server
+        if (dnsServer.start(53, "*", WiFi.softAPIP()) == false)
+        {
+            systemPrintln("WiFi DNS Server failed to start");
+            return (false);
+        }
+        else
+        {
+            log_d("DNS Server started");
+        }
     }
     else
     {
@@ -178,21 +280,15 @@ bool wifiStartAP()
         if (x == maxTries)
         {
             displayNoWiFi(2000);
-            if (productVariant == REFERENCE_STATION)
-                requestChangeState(STATE_BASE_NOT_STARTED); // If WiFi failed, return to Base mode.
-            else
-                requestChangeState(STATE_ROVER_NOT_STARTED); // If WiFi failed, return to Rover mode.
-            return (false);
+            return(wifiStartAP(true)); // Because there is no local WiFi available, force AP mode so user can still get access/configure it
         }
     }
 
     return (true);
 }
 
-#endif // COMPILE_WIFI
-
 //----------------------------------------
-// Global WiFi Routines
+// WiFi Routines
 //----------------------------------------
 
 // Advance the WiFi state from off to connected
@@ -206,15 +302,14 @@ void wifiUpdate()
         return;
     }
 
-#ifdef COMPILE_WIFI
-
     // Periodically display the WiFi state
-    if (settings.enablePrintWifiState && ((millis() - lastWifiState) > 15000))
+    if (settings.debugWifiState && ((millis() - lastWifiState) > 15000))
     {
         wifiSetState(wifiState);
         lastWifiState = millis();
     }
 
+    DMW_st(wifiSetState, wifiState);
     switch (wifiState)
     {
     default:
@@ -267,18 +362,19 @@ void wifiUpdate()
             wifiConnectionAttempts = 0; // Reset the timeout
             wifiSetState(WIFI_CONNECTING);
         }
-        else
-        {
-            wifiPeriodicallyDisplayIpAddress(); // Periodically display the IP address
 
-            // If WiFi is connected, and no services require WiFi, shut it off
-            if (wifiIsNeeded() == false)
-                wifiStop();
-        }
+        // If WiFi is connected, and no services require WiFi, shut it off
+        else if (wifiIsNeeded() == false)
+            wifiStop();
+
         break;
     }
 
-#endif // COMPILE_WIFI
+    // Process DNS when we are in AP mode for captive portal
+    if (WiFi.getMode() == WIFI_AP)
+    {
+        dnsServer.processNextRequest();
+    }
 }
 
 // Starts the WiFi connection state machine (moves from WIFI_OFF to WIFI_CONNECTING)
@@ -287,7 +383,6 @@ void wifiUpdate()
 // If ESP-Now is active, only add the LR protocol
 void wifiStart()
 {
-#ifdef COMPILE_WIFI
     if (wifiNetworkCount() == 0)
     {
         systemPrintln("Error: Please enter at least one SSID before using WiFi");
@@ -307,41 +402,31 @@ void wifiStart()
     wifiSetState(WIFI_CONNECTING); // This starts the state machine running
 
     // Display the heap state
-    reportHeapNow();
-#endif // COMPILE_WIFI
+    reportHeapNow(settings.debugWifiState);
+}
+
+// Stop WiFi and release all resources
+void wifiStop()
+{
+    // Stop the web server
+    stopWebServer();
+
+    // Stop the multicast domain name server
+    if (settings.mdnsEnable == true)
+        MDNS.end();
+
+    // Stop the DNS server if we were using the captive portal
+    if (WiFi.getMode() == WIFI_AP)
+        dnsServer.stop();
+
+    // Stop the other network clients and then WiFi
+    networkStop(NETWORK_TYPE_WIFI);
 }
 
 // Stop WiFi and release all resources
 // If ESP NOW is active, leave WiFi on enough for ESP NOW
-void wifiStop()
+void wifiShutdown()
 {
-#ifdef COMPILE_WIFI
-    stopWebServer();
-
-    // Shutdown the TCP client
-    if (online.tcpClient)
-    {
-        // Tell the UART2 tasks that the TCP client is shutting down
-        online.tcpClient = false;
-        delay(5);
-        systemPrintln("TCP client offline");
-    }
-
-    // Shutdown the TCP server connection
-    if (online.tcpServer)
-    {
-        // Tell the UART2 tasks that the TCP server is shutting down
-        online.tcpServer = false;
-
-        // Wait for the UART2 tasks to close the TCP client connections
-        while (wifiTcpServerActive())
-            delay(5);
-        systemPrintln("TCP Server offline");
-    }
-
-    if (settings.mdnsEnable == true)
-        MDNS.end();
-
     wifiSetState(WIFI_OFF);
 
     wifiConnectionAttempts = 0; // Reset the timeout
@@ -367,21 +452,12 @@ void wifiStop()
     }
 
     // Display the heap state
-    reportHeapNow();
-#endif // COMPILE_WIFI
+    reportHeapNow(settings.debugWifiState);
 }
 
 bool wifiIsConnected()
 {
-#ifdef COMPILE_WIFI
-    bool isConnected = (wifiGetStatus() == WL_CONNECTED);
-    if (isConnected)
-        wifiPeriodicallyDisplayIpAddress();
-
-    return isConnected;
-#else   // COMPILE_WIFI
-    return false;
-#endif  // COMPILE_WIFI
+    return (wifiGetStatus() == WL_CONNECTED);
 }
 
 // Attempts a connection to all provided SSIDs
@@ -389,8 +465,6 @@ bool wifiIsConnected()
 // Gives up if no SSID detected or connection times out
 bool wifiConnect(unsigned long timeout)
 {
-#ifdef COMPILE_WIFI
-
     if (wifiIsConnected())
         return (true); // Nothing to do
 
@@ -444,14 +518,14 @@ bool wifiConnect(unsigned long timeout)
     int wifiResponse = wifiMulti.run(timeout);
     if (wifiResponse == WL_CONNECTED)
     {
-        if (settings.enableTcpClient == true || settings.enableTcpServer == true)
+        if (settings.enablePvtClient == true || settings.enablePvtServer == true)
         {
             if (settings.mdnsEnable == true)
             {
                 if (MDNS.begin("rtk") == false) // This should make the module findable from 'rtk.local' in browser
                     log_d("Error setting up MDNS responder!");
                 else
-                    MDNS.addService("http", "tcp", settings.wifiTcpPort); // Add service to MDNS
+                    MDNS.addService("http", "tcp", settings.httpPort); // Add service to MDNS
             }
         }
 
@@ -459,11 +533,9 @@ bool wifiConnect(unsigned long timeout)
         return true;
     }
     else if (wifiResponse == WL_DISCONNECTED)
-        systemPrint("No friendly WiFi networks detected. ");
+        systemPrint("No friendly WiFi networks detected.\r\n");
     else
-        systemPrintf("WiFi failed to connect: error #%d. ", wifiResponse);
-
-#endif  // COMPILE_WIFI
+        systemPrintf("WiFi failed to connect: error #%d.\r\n", wifiResponse);
 
     return false;
 }
@@ -475,9 +547,9 @@ bool wifiIsNeeded()
 {
     bool needed = false;
 
-    if (settings.enableTcpClient == true)
+    if (settings.enablePvtClient == true)
         needed = true;
-    if (settings.enableTcpServer == true)
+    if (settings.enablePvtServer == true)
         needed = true;
 
     // Handle WiFi within systemStates
@@ -521,70 +593,6 @@ int wifiNetworkCount()
     return networkCount;
 }
 
-// Send data to the TCP clients
-void wifiSendTcpData(uint8_t *data, uint16_t length)
-{
-#ifdef COMPILE_WIFI
-
-    if (!length)
-        return;
-
-    // Send the data to the connected clients
-    if ((settings.enableTcpServer && online.tcpServer) || (settings.enableTcpClient && online.tcpClient))
-    {
-        // Walk the list of TCP clients
-        for (int index = 0; index < WIFI_MAX_TCP_CLIENTS; index++)
-        {
-            if (wifiTcpConnected & (1 << index))
-            {
-                if (wifiTcpClient[index].write(data, length) == length)
-                {
-                    if ((settings.enablePrintTcpStatus) && (!inMainMenu))
-                        systemPrintf("%d bytes written over WiFi TCP\r\n", length);
-                }
-                // Failed to write the data
-                else
-                {
-                    // Done with this client connection
-                    if (!inMainMenu)
-                    {
-                        systemPrintf("Breaking WiFi TCP client %d connection\r\n", index);
-                    }
-
-                    wifiTcpClient[index].stop();
-                    wifiTcpConnected &= ~(1 << index);
-
-                    // Shutdown the TCP server if necessary
-                    if (settings.enableTcpServer || online.tcpServer)
-                        wifiTcpServerActive();
-                }
-            }
-        }
-    }
-#endif // COMPILE_WIFI
-}
-
-// Check for TCP server active
-bool wifiTcpServerActive()
-{
-#ifdef COMPILE_WIFI
-    if ((settings.enableTcpServer && online.tcpServer) || wifiTcpConnected)
-        return true;
-
-    log_d("Stopping WiFi TCP Server");
-
-    // Shutdown the TCP server
-    online.tcpServer = false;
-
-    // Stop the TCP server
-    wifiTcpServer->stop();
-
-    if (wifiTcpServer != nullptr)
-        delete wifiTcpServer;
-#endif // COMPILE_WIFI
-    return false;
-}
-
 // Determine if another connection is possible or if the limit has been reached
 bool wifiConnectLimitReached()
 {
@@ -600,7 +608,7 @@ bool wifiConnectLimitReached()
         wifiConnectionAttemptTimeout =
             wifiConnectionAttempts * 15 * 1000L; // Wait 15, 30, 45, etc seconds between attempts
 
-        reportHeapNow();
+        reportHeapNow(settings.debugWifiState);
     }
     else
     {
@@ -610,143 +618,8 @@ bool wifiConnectLimitReached()
     return limitReached;
 }
 
-void tcpUpdate()
-{
-    // Skip if in configure-via-ethernet mode
-    if (configureViaEthernet)
-    {
-        // log_d("configureViaEthernet: skipping tcpUpdate");
-        return;
-    }
-
-#ifdef COMPILE_WIFI
-
-    static IPAddress ipAddress[WIFI_MAX_TCP_CLIENTS];
-    static uint32_t lastTcpConnectAttempt;
-
-    if (settings.enableTcpClient == false && settings.enableTcpServer == false)
-        return; // Nothing to do
-
-    if (wifiInConfigMode())
-        return; // Do not service TCP during WiFi config
-
-    // If TCP is enabled, but WiFi is not connected, start WiFi
-    if (wifiIsConnected() == false && (settings.enableTcpClient == true || settings.enableTcpServer == true))
-    {
-        // Verify WIFI_MAX_TCP_CLIENTS
-        if ((sizeof(wifiTcpConnected) * 8) < WIFI_MAX_TCP_CLIENTS)
-        {
-            systemPrintf("Please set WIFI_MAX_TCP_CLIENTS <= %d or increase size of wifiTcpConnected\r\n",
-                         sizeof(wifiTcpConnected) * 8);
-            while (true)
-                ; // Freeze
-        }
-
-        log_d("tpcUpdate starting WiFi");
-        wifiStart();
-    }
-
-    // Start the TCP client if enabled
-    if (settings.enableTcpClient && (!online.tcpClient) && (!settings.enableTcpServer) && wifiIsConnected())
-    {
-        online.tcpClient = true;
-        systemPrint("WiFi TCP client online, local IP ");
-        systemPrint(WiFi.localIP());
-        systemPrint(", gateway IP ");
-        systemPrintln(WiFi.gatewayIP());
-    }
-
-    // Start the TCP server if enabled
-    if (settings.enableTcpServer && (wifiTcpServer == nullptr) && (!settings.enableTcpClient) && wifiIsConnected())
-    {
-        wifiTcpServer = new WiFiServer(settings.wifiTcpPort);
-
-        wifiTcpServer->begin();
-        online.tcpServer = true;
-        systemPrint("WiFi TCP Server online, IP Address ");
-        systemPrintln(WiFi.localIP());
-    }
-
-    int index = 0;
-
-    // Connect the TCP client if enabled
-    if (online.tcpClient)
-    {
-        if (((!wifiTcpClient[0]) || (!wifiTcpClient[0].connected())) && ((millis() - lastTcpConnectAttempt) >= 1000))
-        {
-            lastTcpConnectAttempt = millis();
-            ipAddress[0] = WiFi.gatewayIP();
-            if (settings.enablePrintTcpStatus)
-            {
-                systemPrint("Trying to connect WiFi TCP client to ");
-                systemPrintln(ipAddress[0]);
-            }
-            if (wifiTcpClient[0].connect(ipAddress[0], settings.wifiTcpPort))
-            {
-                online.tcpClient = true;
-                systemPrint("WiFi TCP client connected to ");
-                systemPrintln(ipAddress[0]);
-                wifiTcpConnected |= 1 << index;
-            }
-            else
-            {
-                // Release any allocated resources
-                // if (wifiTcpClient[0])
-                wifiTcpClient[0].stop();
-            }
-        }
-    }
-
-    // Check for another client
-    if (online.tcpServer)
-    {
-        for (index = 0; index < WIFI_MAX_TCP_CLIENTS; index++)
-            if (!(wifiTcpConnected & (1 << index)))
-            {
-                if ((!wifiTcpClient[index]) || (!wifiTcpClient[index].connected()))
-                {
-                    wifiTcpClient[index] = wifiTcpServer->available();
-                    if (!wifiTcpClient[index])
-                        break;
-                    ipAddress[index] = wifiTcpClient[index].remoteIP();
-                    systemPrintf("Connected WiFi TCP client %d to ", index);
-                    systemPrintln(ipAddress[index]);
-                    wifiTcpConnected |= 1 << index;
-                }
-            }
-    }
-
-    // Walk the list of TCP clients
-    for (index = 0; index < WIFI_MAX_TCP_CLIENTS; index++)
-    {
-        if (wifiTcpConnected & (1 << index))
-        {
-            // Check for a broken connection
-            if ((!wifiTcpClient[index]) || (!wifiTcpClient[index].connected()))
-            {
-                // Done with this client connection
-                if (!inMainMenu)
-                {
-                    systemPrintf("Disconnected TCP client %d from ", index);
-                    systemPrintln(ipAddress[index]);
-                }
-
-                wifiTcpClient[index].stop();
-                wifiTcpConnected &= ~(1 << index);
-
-                // Shutdown the TCP server if necessary
-                if (settings.enableTcpServer || online.tcpServer)
-                    wifiTcpServerActive();
-            }
-        }
-    }
-
-#endif  // COMPILE_WIFI
-}
-
 void wifiPrintNetworkInfo()
 {
-#ifdef COMPILE_WIFI
     systemPrintln("\nNetwork Configuration:");
     systemPrintln("----------------------");
     systemPrint("         SSID: ");
@@ -771,7 +644,6 @@ void wifiPrintNetworkInfo()
     systemPrint("        DNS 3: ");
     systemPrintln(WiFi.dnsIP(2));
     systemPrintln();
-#endif  // COMPILE_WIFI
 }
 
 // Returns true if unit is in config mode
@@ -782,3 +654,20 @@ bool wifiInConfigMode()
         return true;
     return false;
 }
+
+IPAddress wifiGetGatewayIpAddress()
+{
+    return WiFi.gatewayIP();
+}
+
+IPAddress wifiGetIpAddress()
+{
+    return WiFi.localIP();
+}
+
+int wifiGetRssi()
+{
+    return WiFi.RSSI();
+}
+
+#endif // COMPILE_WIFI

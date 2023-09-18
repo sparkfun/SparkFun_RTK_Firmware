@@ -3,32 +3,55 @@
 void identifyBoard()
 {
     // Use ADC to check resistor divider
-    int pin_adc_rtk_facet = 35;
-    uint16_t idValue = analogReadMilliVolts(pin_adc_rtk_facet);
-    log_d("Board ADC ID: %d", idValue);
+    // Express: 10/3.3
+    // Express+: 3.3/10
+    // Facet: 10/10
+    // Facet L-Band: 10/20
+    // Reference Station: 20/10
+    // Facet L-Band Direct: 10/100
+    // Surveyor: ID resistors do not exist
 
-    if (idValue > (3300 / 2 * 0.9) && idValue < (3300 / 2 * 1.1))
+    const float rtkExpressID = 3.3 / (10 + 3.3) * 3300;          // 819mV
+    const float rtkExressPlusID = 10.0 / (10 + 3.3) * 3300;      // 2418mV
+    const float rtkFacetID = 10.0 / (10 + 10) * 3300;            // 1650mV
+    const float rtkFacetLbandID = 20.0 / (20 + 10) * 3300;       // 2200mV
+    const float rtkReferenceStationID = 10.0 / (10 + 20) * 3300; // 1100mV
+    const float rtkFacetLbandDirectID = 1.0 / (4.7 + 1) * 3300;  // 579mV
+
+    const float tolerance = 0.0475;             // 4.75% Testing shows the combined ADC+resistors is under a 1% window
+    const float upperThreshold = 1 + tolerance; // 104.75%
+    const float lowerThreshold = 1 - tolerance; // 95.25%
+
+    int pin_deviceID = 35;
+    uint16_t idValue = analogReadMilliVolts(pin_deviceID);
+    log_d("Board ADC ID (mV): %d", idValue);
+
+    if (idValue > (rtkFacetID * lowerThreshold) && idValue < (rtkFacetID * upperThreshold))
     {
         productVariant = RTK_FACET;
     }
-    else if (idValue > (3300 * 2 / 3 * 0.9) && idValue < (3300 * 2 / 3 * 1.1))
+    else if (idValue > (rtkFacetLbandID * lowerThreshold) && idValue < (rtkFacetLbandID * upperThreshold))
     {
         productVariant = RTK_FACET_LBAND;
     }
-    else if (idValue > (3300 * 3.3 / 13.3 * 0.9) && idValue < (3300 * 3.3 / 13.3 * 1.1))
+    else if (idValue > (rtkExpressID * lowerThreshold) && idValue < (rtkExpressID * upperThreshold))
     {
         productVariant = RTK_EXPRESS;
     }
-    else if (idValue > (3300 * 10 / 13.3 * 0.9) && idValue < (3300 * 10 / 13.3 * 1.1))
+    else if (idValue > (rtkExressPlusID * lowerThreshold) && idValue < (rtkExressPlusID * upperThreshold))
     {
         productVariant = RTK_EXPRESS_PLUS;
     }
-    else if (idValue > (3300 * 1 / 3 * 0.9) && idValue < (3300 * 1 / 3 * 1.1))
+    else if (idValue > (rtkReferenceStationID * lowerThreshold) && idValue < (rtkReferenceStationID * upperThreshold))
     {
         productVariant = REFERENCE_STATION;
         // We can't auto-detect the ZED version if the firmware is in configViaEthernet mode,
         // so fake it here - otherwise messageSupported always returns false
         zedFirmwareVersionInt = 112;
+    }
+    else if (idValue > (rtkFacetLbandDirectID * lowerThreshold) && idValue < (rtkFacetLbandDirectID * upperThreshold))
+    {
+        productVariant = RTK_FACET_LBAND_DIRECT;
     }
     else
     {
@@ -112,9 +135,27 @@ void beginBoard()
         }
         else
         {
-            productVariant = RTK_SURVEYOR;
+            // Detect RTK Expresses (v1.3 and below) that do not have an accel or device ID resistors
+
+            // On a Surveyor, pin 34 is not connected. On Express, 34 is connected to ZED_TX_READY
+            const int pin_ZedTxReady = 34;
+            uint16_t pinValue = analogReadMilliVolts(pin_ZedTxReady);
+            log_d("Alternate ID pinValue (mV): %d\r\n", pinValue); // Surveyor = 142 to 152, //Express = 3129
+            if (pinValue > 3000)
+            {
+                if (zedModuleType == PLATFORM_F9P)
+                    productVariant = RTK_EXPRESS;
+                else if (zedModuleType == PLATFORM_F9R)
+                    productVariant = RTK_EXPRESS_PLUS;
+            }
+            else
+                productVariant = RTK_SURVEYOR;
         }
     }
+
+    // We need some settings before we are completely powered on
+    // ie, disablePowerFiltering, enableResetDisplay, resetCount, etc
+    loadSettingsPartial(); // Loads settings from LFS
 
     // Setup hardware pins
     if (productVariant == RTK_SURVEYOR)
@@ -173,7 +214,8 @@ void beginBoard()
             strncpy(platformPrefix, "Express Plus", sizeof(platformPrefix) - 1);
         }
     }
-    else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
+    else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND ||
+             productVariant == RTK_FACET_LBAND_DIRECT)
     {
         // v11
         pin_muxA = 2;
@@ -219,6 +261,15 @@ void beginBoard()
             strncpy(platformFilePrefix, "SFE_Facet_LBand", sizeof(platformFilePrefix) - 1);
             strncpy(platformPrefix, "Facet L-Band", sizeof(platformPrefix) - 1);
         }
+        else if (productVariant == RTK_FACET_LBAND_DIRECT)
+        {
+            strncpy(platformFilePrefix, "SFE_Facet_LBand_Direct", sizeof(platformFilePrefix) - 1);
+            strncpy(platformPrefix, "Facet L-Band Direct", sizeof(platformPrefix) - 1);
+
+            // Override the default setting if a user has not explicitly configured the setting
+            if (settings.useI2cForLbandCorrectionsConfigured == false)
+                settings.useI2cForLbandCorrections = false;
+        }
     }
     else if (productVariant == REFERENCE_STATION)
     {
@@ -244,7 +295,6 @@ void beginBoard()
     ethernetMACAddress[5] += 3; // Convert MAC address to Ethernet MAC (add 3)
 
     // For all boards, check reset reason. If reset was due to wdt or panic, append last log
-    loadSettingsPartial(); // Loads settings from LFS
     if ((esp_reset_reason() == ESP_RST_POWERON) || (esp_reset_reason() == ESP_RST_SW))
     {
         reuseLastLog = false; // Start new log
@@ -446,13 +496,13 @@ void beginSD()
                 }
             }
         }
-#else   // COMPILE_SD_MMC
+#else  // COMPILE_SD_MMC
         else
         {
             log_d("SD_MMC not compiled");
             break; // No SD available.
         }
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
 
         if (createTestFile() == false)
         {
@@ -491,7 +541,7 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
 #ifdef COMPILE_SD_MMC
         else
             SD_MMC.end();
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
 
         online.microSD = false;
         systemPrintln("microSD: Offline");
@@ -549,20 +599,38 @@ void resetSPI()
 // See issue: https://github.com/espressif/arduino-esp32/issues/3386
 void beginUART2()
 {
-    ringBuffer = (uint8_t *)malloc(settings.gnssHandlerBufferSize);
+    size_t length;
 
-    if (pinUART2TaskHandle == nullptr)
-        xTaskCreatePinnedToCore(
-            pinUART2Task,
-            "UARTStart", // Just for humans
-            2000,        // Stack Size
-            nullptr,     // Task input parameter
-            0,           // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
-            &pinUART2TaskHandle,              // Task handle
-            settings.gnssUartInterruptsCore); // Core where task should run, 0=core, 1=Arduino
+    // Determine the length of data to be retained in the ring buffer
+    // after discarding the oldest data
+    length = settings.gnssHandlerBufferSize;
+    rbOffsetEntries = (length >> 1) / AVERAGE_SENTENCE_LENGTH_IN_BYTES;
+    length = settings.gnssHandlerBufferSize
+           + (rbOffsetEntries * sizeof(RING_BUFFER_OFFSET));
+    ringBuffer = nullptr;
+    rbOffsetArray = (RING_BUFFER_OFFSET *)malloc(length);
+    if (!rbOffsetArray)
+    {
+        rbOffsetEntries = 0;
+        systemPrintln("ERROR: Failed to allocate the ring buffer!");
+    }
+    else
+    {
+        ringBuffer = (uint8_t *)&rbOffsetArray[rbOffsetEntries];
+        rbOffsetArray[0] = 0;
+        if (pinUART2TaskHandle == nullptr)
+            xTaskCreatePinnedToCore(
+                pinUART2Task,
+                "UARTStart", // Just for humans
+                2000,        // Stack Size
+                nullptr,     // Task input parameter
+                0,           // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
+                &pinUART2TaskHandle,              // Task handle
+                settings.gnssUartInterruptsCore); // Core where task should run, 0=core, 1=Arduino
 
-    while (uart2pinned == false) // Wait for task to run once
-        delay(1);
+        while (uart2pinned == false) // Wait for task to run once
+            delay(1);
+    }
 }
 
 // Assign UART2 interrupts to the core that started the task. See:
@@ -877,7 +945,7 @@ void beginInterrupts()
         pinMode(pin_Ethernet_Interrupt, INPUT_PULLUP);                 // Prepare the interrupt pin
         attachInterrupt(pin_Ethernet_Interrupt, ethernetISR, FALLING); // Attach the interrupt
     }
-#endif  // COMPILE_ETHERNET
+#endif // COMPILE_ETHERNET
 }
 
 // Set LEDs for output and configure PWM
@@ -981,7 +1049,7 @@ void beginSystemState()
     if (systemState > STATE_NOT_SET)
     {
         systemPrintln("Unknown state - factory reset");
-        factoryReset(false); //We do not have the SD semaphore
+        factoryReset(false); // We do not have the SD semaphore
     }
 
     if (productVariant == RTK_SURVEYOR)
@@ -1002,6 +1070,7 @@ void beginSystemState()
         systemState = STATE_ROVER_NOT_STARTED; // Assume Rover. ButtonCheckTask() will correct as needed.
 
         setupBtn = new Button(pin_setupButton); // Create the button in memory
+        // Allocation failure handled in ButtonCheckTask
     }
     else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
     {
@@ -1020,8 +1089,10 @@ void beginSystemState()
 
         setupBtn = new Button(pin_setupButton);          // Create the button in memory
         powerBtn = new Button(pin_powerSenseAndControl); // Create the button in memory
+        // Allocation failures handled in ButtonCheckTask
     }
-    else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
+    else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND ||
+             productVariant == RTK_FACET_LBAND_DIRECT)
     {
         if (settings.lastState == STATE_NOT_SET) // Default
         {
@@ -1041,6 +1112,7 @@ void beginSystemState()
             firstRoverStart = false;
 
         powerBtn = new Button(pin_powerSenseAndControl); // Create the button in memory
+        // Allocation failure handled in ButtonCheckTask
     }
     else if (productVariant == REFERENCE_STATION)
     {
@@ -1055,6 +1127,7 @@ void beginSystemState()
                 .lastState; // Return to either NTP, Base or Rover Not Started. The last state previous to power down.
 
         setupBtn = new Button(pin_setupButton); // Create the button in memory
+        // Allocation failure handled in ButtonCheckTask
     }
 
     // Starts task for monitoring button presses

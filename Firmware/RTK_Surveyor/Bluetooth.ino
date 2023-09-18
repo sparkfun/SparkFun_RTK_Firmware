@@ -214,7 +214,11 @@ void bluetoothStart()
         bluetoothSerial->register_callback(bluetoothCallback); // Controls BT Status LED on Surveyor
         bluetoothSerial->setTimeout(250);
 
-        systemPrint("Bluetooth broadcasting as: ");
+        if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
+            systemPrint("Bluetooth SPP broadcasting as: ");
+        else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
+            systemPrint("Bluetooth Low-Energy broadcasting as: ");
+
         systemPrintln(deviceName);
 
         // Start task for controlling Bluetooth pair LED
@@ -226,7 +230,7 @@ void bluetoothStart()
         }
 
         bluetoothState = BT_NOTCONNECTED;
-        reportHeapNow();
+        reportHeapNow(false);
     }
 #endif // COMPILE_BT
 }
@@ -267,7 +271,7 @@ void bluetoothStop()
         log_d("Bluetooth turned off");
 
         bluetoothState = BT_OFF;
-        reportHeapNow();
+        reportHeapNow(false);
     }
 #endif // COMPILE_BT
     bluetoothIncomingRTCM = false;

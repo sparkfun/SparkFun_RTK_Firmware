@@ -1,27 +1,122 @@
-// High frequency tasks made by xTaskCreate()
-// And any low frequency tasks that are called by Ticker
+/*------------------------------------------------------------------------------
+Tasks.ino
 
-volatile static uint16_t dataHead = 0;  // Head advances as data comes in from GNSS's UART
-volatile int availableHandlerSpace = 0; // settings.gnssHandlerBufferSize - usedSpace
+  This module implements the high frequency tasks made by xTaskCreate() and any
+  low frequency tasks that are called by Ticker.
+
+                                   GNSS
+                                    |
+                                    v
+                           .--------+--------.
+                           |                 |
+                           v                 v
+                          SPI       or      I2C
+                           |                 |
+                           |                 |
+                           '------->+<-------'
+                                    |
+                                    | gnssReadTask
+                                    |    waitForPreamble
+                                    |        ...
+                                    |    processUart1Message
+                                    |
+                                    v
+                               Ring Buffer
+                                    |
+                                    | handleGnssDataTask
+                                    |
+                                    v
+            .---------------+-------+-------+---------------+
+            |               |               |               |
+            |               |               |               |
+            v               v               v               v
+        Bluetooth      PVT Client      PVT Server        SD Card
+
+------------------------------------------------------------------------------*/
+
+//----------------------------------------
+// Macros
+//----------------------------------------
+
+#define WRAP_OFFSET(offset, increment, arraySize)   \
+{                                                   \
+    offset += increment;                            \
+    if (offset >= arraySize)                        \
+        offset -= arraySize;                        \
+}
+
+//----------------------------------------
+// Constants
+//----------------------------------------
+
+enum RingBufferConsumers
+{
+    RBC_BLUETOOTH = 0,
+    RBC_PVT_CLIENT,
+    RBC_PVT_SERVER,
+    RBC_SD_CARD,
+    // Insert new consumers here
+    RBC_MAX
+};
+
+const char * const ringBufferConsumer[] =
+{
+    "Bluetooth",
+    "PVT Client",
+    "PVT Server",
+    "SD Card",
+};
+
+const int ringBufferConsumerEntries = sizeof(ringBufferConsumer) / sizeof(ringBufferConsumer[0]);
+
+//----------------------------------------
+// Locals
+//----------------------------------------
+
+volatile static RING_BUFFER_OFFSET dataHead;      // Head advances as data comes in from GNSS's UART
+volatile int32_t availableHandlerSpace; // settings.gnssHandlerBufferSize - usedSpace
+volatile const char *slowConsumer;
 
 // Buffer the incoming Bluetooth stream so that it can be passed in bulk over I2C
 uint8_t bluetoothOutgoingToZed[100];
-uint16_t bluetoothOutgoingToZedHead = 0;
-unsigned long lastZedI2CSend = 0; // Timestamp of the last time we sent RTCM ZED over I2C
+uint16_t bluetoothOutgoingToZedHead;
+unsigned long lastZedI2CSend; // Timestamp of the last time we sent RTCM ZED over I2C
+
+// Ring buffer tails
+static RING_BUFFER_OFFSET btRingBufferTail; // BT Tail advances as it is sent over BT
+static RING_BUFFER_OFFSET sdRingBufferTail; // SD Tail advances as it is recorded to SD
+
+// Ring buffer offsets
+static uint16_t rbOffsetHead;
+
+//----------------------------------------
+// Task routines
+//----------------------------------------
 
 // If the phone has any new data (NTRIP RTCM, etc), read it in over Bluetooth and pass along to ZED
 // Scan for escape characters to enter config menu
 void btReadTask(void *e)
 {
+    int rxBytes;
+
     while (true)
     {
+        // Display an alive message
+        if (PERIODIC_DISPLAY(PD_TASK_BLUETOOTH_READ))
+        {
+            PERIODIC_CLEAR(PD_TASK_BLUETOOTH_READ);
+            systemPrintln("btReadTask running");
+        }
+
         // Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
+        rxBytes = 0;
         if (bluetoothGetState() == BT_CONNECTED)
         {
             while (btPrintEcho == false && bluetoothRxDataAvailable())
             {
                 // Check stream for command characters
                 byte incoming = bluetoothRead();
+                rxBytes += 1;
 
                 if (incoming == btEscapeCharacter)
                 {
@@ -89,6 +184,11 @@ void btReadTask(void *e)
 
             } // End btPrintEcho == false && bluetoothRxDataAvailable()
 
+            if (PERIODIC_DISPLAY(PD_BLUETOOTH_DATA_RX))
+            {
+                PERIODIC_CLEAR(PD_BLUETOOTH_DATA_RX);
+                systemPrintf("Bluetooth received %d bytes\r\n", rxBytes);
+            }
         } // End bluetoothGetState() == BT_CONNECTED
 
         if (bluetoothOutgoingToZedHead > 0 && ((millis() - lastZedI2CSend) > 100))
@@ -124,6 +224,11 @@ bool sendZedI2CBuffer()
 
     if (response == true)
     {
+        if (PERIODIC_DISPLAY(PD_ZED_DATA_TX))
+        {
+            PERIODIC_CLEAR(PD_ZED_DATA_TX);
+            systemPrintf("ZED TX: Sending %d bytes from I2C\r\n", bluetoothOutgoingToZedHead);
+        }
         // log_d("Pushed %d bytes RTCM to ZED", bluetoothOutgoingToZedHead);
     }
 
@@ -148,27 +253,27 @@ void feedWdt()
 // 250ms worst case, we should record incoming all data. Bluetooth congestion
 // or conflicts with the SD card semaphore should clear within this time.
 //
-// Ring buffer empty when (dataHead == btTail) and (dataHead == sdTail)
+// Ring buffer empty when all the tails == dataHead
 //
 //        +---------+
 //        |         |
 //        |         |
 //        |         |
 //        |         |
-//        +---------+ <-- dataHead, btTail, sdTail
+//        +---------+ <-- dataHead, btRingBufferTail, sdRingBufferTail, etc.
 //
-// Ring buffer contains data when (dataHead != btTail) or (dataHead != sdTail)
+// Ring buffer contains data when any tail != dataHead
 //
 //        +---------+
 //        |         |
 //        |         |
 //        | yyyyyyy | <-- dataHead
-//        | xxxxxxx | <-- btTail (1 byte in buffer)
-//        +---------+ <-- sdTail (2 bytes in buffer)
+//        | xxxxxxx | <-- btRingBufferTail (1 byte in buffer)
+//        +---------+ <-- sdRingBufferTail (2 bytes in buffer)
 //
 //        +---------+
-//        | yyyyyyy | <-- btTail (1 byte in buffer)
-//        | xxxxxxx | <-- sdTail (2 bytes in buffer)
+//        | yyyyyyy | <-- btRingBufferTail (1 byte in buffer)
+//        | xxxxxxx | <-- sdRingBufferTail (2 bytes in buffer)
 //        |         |
 //        |         |
 //        +---------+ <-- dataHead
@@ -188,10 +293,15 @@ void gnssReadTask(void *e)
 
     uint8_t incomingData = 0;
 
-    availableHandlerSpace = settings.gnssHandlerBufferSize;
-
     while (true)
     {
+        // Display an alive message
+        if (PERIODIC_DISPLAY(PD_TASK_GNSS_READ))
+        {
+            PERIODIC_CLEAR(PD_TASK_GNSS_READ);
+            systemPrintln("gnssReadTask running");
+        }
+
         if (settings.enableTaskReports == true)
             systemPrintf("SerialReadTask High watermark: %d\r\n", uxTaskGetStackHighWaterMark(nullptr));
 
@@ -247,42 +357,225 @@ void gnssReadTask(void *e)
 }
 
 // Process a complete message incoming from parser
-// If we get a complete NMEA/UBX/RTCM sentence, pass on to SD/BT/TCP interfaces
+// If we get a complete NMEA/UBX/RTCM message, pass on to SD/BT/PVT interfaces
 void processUart1Message(PARSE_STATE *parse, uint8_t type)
 {
-    uint16_t bytesToCopy;
-    uint16_t remainingBytes;
+    int32_t bytesToCopy;
+    const char *consumer;
+    RING_BUFFER_OFFSET remainingBytes;
+    int32_t space;
+    int32_t use;
 
     // Display the message
-    if (settings.enablePrintLogFileMessages && (!parse->crc) && (!inMainMenu))
+    if ((settings.enablePrintLogFileMessages || PERIODIC_DISPLAY(PD_ZED_DATA_RX)) && (!parse->crc) && (!inMainMenu))
     {
-        printTimeStamp();
+        PERIODIC_CLEAR(PD_ZED_DATA_RX);
+        if (settings.enablePrintLogFileMessages)
+        {
+            printTimeStamp();
+            systemPrint("    ");
+        }
+        else
+            systemPrint("ZED RX: ");
         switch (type)
         {
         case SENTENCE_TYPE_NMEA:
-            systemPrintf("    %s NMEA %s, %2d bytes\r\n", parse->parserName, parse->nmeaMessageName, parse->length);
+            systemPrintf("%s NMEA %s, %2d bytes\r\n", parse->parserName, parse->nmeaMessageName, parse->length);
             break;
 
         case SENTENCE_TYPE_RTCM:
-            systemPrintf("    %s RTCM %d, %2d bytes\r\n", parse->parserName, parse->message, parse->length);
+            systemPrintf("%s RTCM %d, %2d bytes\r\n", parse->parserName, parse->message, parse->length);
             break;
 
         case SENTENCE_TYPE_UBX:
-            systemPrintf("    %s UBX %d.%d, %2d bytes\r\n", parse->parserName, parse->message >> 8,
-                         parse->message & 0xff, parse->length);
+            systemPrintf("%s UBX %d.%d, %2d bytes\r\n", parse->parserName, parse->message >> 8, parse->message & 0xff,
+                         parse->length);
             break;
         }
     }
 
     // Determine if this message will fit into the ring buffer
     bytesToCopy = parse->length;
-    if ((bytesToCopy > availableHandlerSpace) && (!inMainMenu))
+    space = availableHandlerSpace;
+    use = settings.gnssHandlerBufferSize - space;
+    consumer = (char *)slowConsumer;
+    if ((bytesToCopy > space) && (!inMainMenu))
     {
-        systemPrintf("Ring buffer full: discarding %d bytes (availableHandlerSpace is %d / %d)\r\n", bytesToCopy,
-                     availableHandlerSpace, settings.gnssHandlerBufferSize);
-        return;
+        int32_t bufferedData;
+        int32_t bytesToDiscard;
+        int32_t discardedBytes;
+        int32_t listEnd;
+        int32_t messageLength;
+        int32_t offsetBytes;
+        int32_t previousTail;
+        int32_t rbOffsetTail;
+
+        // Determine the tail of the ring buffer
+        previousTail = dataHead + space + 1;
+        if (previousTail >= settings.gnssHandlerBufferSize)
+            previousTail -= settings.gnssHandlerBufferSize;
+
+        /*  The rbOffsetArray holds the offsets into the ring buffer of the
+         *  start of each of the parsed messages.  A head (rbOffsetHead) and
+         *  tail (rbOffsetTail) offsets are used for this array to insert and
+         *  remove entries.  Typically this task only manipulates the head as
+         *  new messages are placed into the ring buffer.  The handleGnssDataTask
+         *  normally manipulates the tail as data is removed from the buffer.
+         *  However this task will manipulate the tail under two conditions:
+         *
+         *  1.  The ring buffer gets full and data must be discarded
+         *
+         *  2.  The rbOffsetArray is too small to hold all of the message
+         *      offsets for the data in the ring buffer.  The array is full
+         *      when (Head + 1) == Tail
+         *
+         *  Notes:
+         *      The rbOffsetArray is allocated along with the ring buffer in
+         *      Begin.ino
+         *
+         *      The first entry rbOffsetArray[0] is initialized to zero (0)
+         *      in Begin.ino
+         *
+         *      The array always has one entry in it containing the head offset
+         *      which contains a valid offset into the ringBuffer, handled below
+         *
+         *      The empty condition is Tail == Head
+         *
+         *      The amount of data described by the rbOffsetArray is
+         *      rbOffsetArray[Head] - rbOffsetArray[Tail]
+         *
+         *              rbOffsetArray                  ringBuffer
+         *           .-----------------.           .-----------------.
+         *           |                 |           |                 |
+         *           +-----------------+           |                 |
+         *  Tail --> |   Msg 1 Offset  |---------->+-----------------+ <-- Tail n
+         *           +-----------------+           |      Msg 1      |
+         *           |   Msg 2 Offset  |--------.  |                 |
+         *           +-----------------+        |  |                 |
+         *           |   Msg 3 Offset  |------. '->+-----------------+
+         *           +-----------------+      |    |      Msg 2      |
+         *  Head --> |   Head Offset   |--.   |    |                 |
+         *           +-----------------+  |   |    |                 |
+         *           |                 |  |   |    |                 |
+         *           +-----------------+  |   |    |                 |
+         *           |                 |  |   '--->+-----------------+
+         *           +-----------------+  |        |      Msg 3      |
+         *           |                 |  |        |                 |
+         *           +-----------------+  '------->+-----------------+ <-- dataHead
+         *           |                 |           |                 |
+         */
+
+        // Determine the index for the end of the circular ring buffer
+        // offset list
+        listEnd = rbOffsetHead;
+        WRAP_OFFSET(listEnd, 1, rbOffsetEntries);
+
+        // Update the tail, walk newest message to oldest message
+        rbOffsetTail = rbOffsetHead;
+        bufferedData = 0;
+        messageLength = 0;
+        while ((rbOffsetTail != listEnd) && (bufferedData < use))
+        {
+            // Determine the amount of data in the ring buffer up until
+            // either the tail or the end of the rbOffsetArray
+            //
+            //                      |           |
+            //                      |           | Valid, still in ring buffer
+            //                      |  Newest   |
+            //                      +-----------+ <-- rbOffsetHead
+            //                      |           |
+            //                      |           | free space
+            //                      |           |
+            //     rbOffsetTail --> +-----------+ <-- bufferedData
+            //                      |   ring    |
+            //                      |  buffer   | <-- used
+            //                      |   data    |
+            //                      +-----------+ Valid, still in ring buffer
+            //                      |           |
+            //
+            messageLength = rbOffsetArray[rbOffsetTail];
+            WRAP_OFFSET(rbOffsetTail, rbOffsetEntries - 1, rbOffsetEntries);
+            messageLength -= rbOffsetArray[rbOffsetTail];
+            if (messageLength < 0)
+                messageLength += settings.gnssHandlerBufferSize;
+            bufferedData += messageLength;
+        }
+
+        // Account for any data in the ring buffer not described by the array
+        //
+        //                      |           |
+        //                      +-----------+
+        //                      |  Oldest   |
+        //                      |           |
+        //                      |   ring    |
+        //                      |  buffer   | <-- used
+        //                      |   data    |
+        //                      +-----------+ Valid, still in ring buffer
+        //                      |           |
+        //     rbOffsetTail --> +-----------+ <-- bufferedData
+        //                      |           |
+        //                      |  Newest   |
+        //                      +-----------+ <-- rbOffsetHead
+        //                      |           |
+        //
+        discardedBytes = 0;
+        if (bufferedData < use)
+            discardedBytes = use - bufferedData;
+
+        // Writing to the SD card, the network or Bluetooth, a partial
+        // message may be written leaving the tail pointer mid-message
+        //
+        //                      |           |
+        //     rbOffsetTail --> +-----------+
+        //                      |  Oldest   |
+        //                      |           |
+        //                      |   ring    |
+        //                      |  buffer   | <-- used
+        //                      |   data    | Valid, still in ring buffer
+        //                      +-----------+ <--
+        //                      |           |
+        //                      +-----------+
+        //                      |           |
+        //                      |  Newest   |
+        //                      +-----------+ <-- rbOffsetHead
+        //                      |           |
+        //
+        else if (bufferedData > use)
+        {
+            // Remove the remaining portion of the oldest entry in the array
+            discardedBytes = messageLength + use - bufferedData;
+            WRAP_OFFSET(rbOffsetTail, 1, rbOffsetEntries);
+        }
+
+        // rbOffsetTail now points to the beginning of a message in the
+        // ring buffer
+        // Determine the amount of data to discard
+        bytesToDiscard = discardedBytes;
+        if (bytesToDiscard < bytesToCopy)
+            bytesToDiscard = bytesToCopy;
+        if (bytesToDiscard < AMOUNT_OF_RING_BUFFER_DATA_TO_DISCARD)
+            bytesToDiscard = AMOUNT_OF_RING_BUFFER_DATA_TO_DISCARD;
+
+        // Walk the ring buffer messages from oldest to newest
+        while ((discardedBytes < bytesToDiscard) && (rbOffsetTail != rbOffsetHead))
+        {
+            // Determine the length of the oldest message
+            WRAP_OFFSET(rbOffsetTail, 1, rbOffsetEntries);
+            discardedBytes = rbOffsetArray[rbOffsetTail] - previousTail;
+            if (discardedBytes < 0)
+                discardedBytes += settings.gnssHandlerBufferSize;
+        }
+
+        // Discard the oldest data from the ring buffer
+        if (consumer)
+            systemPrintf("Ring buffer full: discarding %d bytes, %s is slow\r\n", discardedBytes, consumer);
+        else
+            systemPrintf("Ring buffer full: discarding %d bytes\r\n", discardedBytes);
+        updateRingBufferTails(previousTail, rbOffsetArray[rbOffsetTail]);
+        availableHandlerSpace += discardedBytes;
     }
 
+    // Add another message to the ring buffer
     // Account for this message
     availableHandlerSpace -= bytesToCopy;
 
@@ -311,155 +604,216 @@ void processUart1Message(PARSE_STATE *parse, uint8_t type)
             dataHead -= settings.gnssHandlerBufferSize;
     }
 
+    // Add the head offset to the offset array
+    WRAP_OFFSET(rbOffsetHead, 1, rbOffsetEntries);
+    rbOffsetArray[rbOffsetHead] = dataHead;
+
     // Display the dataHead offset
     if (settings.enablePrintRingBufferOffsets && (!inMainMenu))
         systemPrintf("%4d\r\n", dataHead);
 }
 
+// Remove previous messages from the ring buffer
+void updateRingBufferTails(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail)
+{
+    // Trim any long or medium tails
+    discardRingBufferBytes(&btRingBufferTail, previousTail, newTail);
+    discardRingBufferBytes(&sdRingBufferTail, previousTail, newTail);
+    discardPvtClientBytes(previousTail, newTail);
+    discardPvtServerBytes(previousTail, newTail);
+}
+
+// Remove previous messages from the ring buffer
+void discardRingBufferBytes(RING_BUFFER_OFFSET * tail, RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail)
+{
+    // The longest tail is being trimmed.  Medium length tails may contain
+    // some data within the region begin trimmed.  The shortest tails will
+    // be trimmed.
+    //
+    // Devices that get their tails trimmed, may output a partial message
+    // prior to the buffer trimming.  After the trimming, the tail of the
+    // ring buffer points to the beginning of a new message.
+    //
+    //                 previousTail                newTail
+    //                      |                         |
+    //  Before trimming     v         Discarded       v   After trimming
+    //  ----+-----------------  ...  -----+--  ..  ---+-----------+------
+    //      | Partial message             |           |           |
+    //  ----+-----------------  ...  -----+--  ..  ---+-----------+------
+    //                      ^          ^                     ^
+    //                      |          |                     |
+    //        long tail ----'          '--- medium tail      '-- short tail
+    //
+    // Determine if the trimmed data wraps the end of the buffer
+    if (previousTail < newTail)
+    {
+        // No buffer wrap occurred
+        // Only discard the data from long and medium tails
+        if ((*tail >= previousTail) && (*tail < newTail))
+            *tail = newTail;
+    }
+    else
+    {
+        // Buffer wrap occurred
+        if ((*tail >= previousTail) || (*tail < newTail))
+            *tail = newTail;
+    }
+}
+
 // If new data is in the ringBuffer, dole it out to appropriate interface
-// Send data out Bluetooth, record to SD, or send over TCP
+// Send data out Bluetooth, record to SD, or send to network clients
+// Each device (Bluetooth, SD and network client) gets its own tail.  If the
+// device is running too slowly then data for that device is dropped.
+// The usedSpace variable tracks the total space in use in the buffer.
 void handleGnssDataTask(void *e)
 {
-    volatile static uint16_t btTail = 0;          // BT Tail advances as it is sent over BT
-    volatile static uint16_t tcpTailWiFi = 0;     // TCP client tail
-    volatile static uint16_t tcpTailEthernet = 0; // TCP client tail
-    volatile static uint16_t sdTail = 0;          // SD Tail advances as it is recorded to SD
+    int32_t bytesToSend;
+    bool connected;
+    uint32_t deltaMillis;
+    int32_t freeSpace;
+    uint16_t listEnd;
+    static uint32_t maxMillis[RBC_MAX];
+    uint32_t startMillis;
+    int32_t usedSpace;
 
-    int btBytesToSend;          // Amount of buffered Bluetooth data
-    int tcpBytesToSendWiFi;     // Amount of buffered TCP data
-    int tcpBytesToSendEthernet; // Amount of buffered TCP data
-    int sdBytesToRecord;        // Amount of buffered microSD card logging data
-
-    int btConnected; // Is the device in a state to send Bluetooth data?
+    // Initialize the tails
+    btRingBufferTail = 0;
+    pvtClientZeroTail();
+    pvtServerZeroTail();
+    sdRingBufferTail = 0;
 
     while (true)
     {
-        // Determine the amount of Bluetooth data in the buffer
-        btBytesToSend = 0;
-
-        // Determine BT connection state
-        btConnected = (bluetoothGetState() == BT_CONNECTED) && (systemState != STATE_BASE_TEMP_SETTLE) &&
-                      (systemState != STATE_BASE_TEMP_SURVEY_STARTED);
-
-        if (btConnected)
+        // Display an alive message
+        if (PERIODIC_DISPLAY(PD_TASK_HANDLE_GNSS_DATA))
         {
-            btBytesToSend = dataHead - btTail;
-            if (btBytesToSend < 0)
-                btBytesToSend += settings.gnssHandlerBufferSize;
+            PERIODIC_CLEAR(PD_TASK_HANDLE_GNSS_DATA);
+            systemPrintln("handleGnssDataTask running");
         }
 
-        // Determine the amount of TCP data in the buffer
-        tcpBytesToSendWiFi = 0;
-        if (settings.enableTcpServer || settings.enableTcpClient)
-        {
-            tcpBytesToSendWiFi = dataHead - tcpTailWiFi;
-            if (tcpBytesToSendWiFi < 0)
-                tcpBytesToSendWiFi += settings.gnssHandlerBufferSize;
-        }
-
-        tcpBytesToSendEthernet = 0;
-        if (settings.enableTcpClientEthernet)
-        {
-            tcpBytesToSendEthernet = dataHead - tcpTailEthernet;
-            if (tcpBytesToSendEthernet < 0)
-                tcpBytesToSendEthernet += settings.gnssHandlerBufferSize;
-        }
-
-        // Determine the amount of microSD card logging data in the buffer
-        sdBytesToRecord = 0;
-        if (online.logging)
-        {
-            sdBytesToRecord = dataHead - sdTail;
-            if (sdBytesToRecord < 0)
-                sdBytesToRecord += settings.gnssHandlerBufferSize;
-        }
+        usedSpace = 0;
 
         //----------------------------------------------------------------------
         // Send data over Bluetooth
         //----------------------------------------------------------------------
 
-        if (!btConnected)
+        startMillis = millis();
+
+        // Determine BT connection state
+        bool connected = (bluetoothGetState() == BT_CONNECTED) && (systemState != STATE_BASE_TEMP_SETTLE) &&
+                         (systemState != STATE_BASE_TEMP_SURVEY_STARTED);
+        if (!connected)
             // Discard the data
-            btTail = dataHead;
-        else if (btBytesToSend > 0)
+            btRingBufferTail = dataHead;
+        else
         {
-            // Reduce bytes to send if we have more to send then the end of the buffer
-            // We'll wrap next loop
-            if ((btTail + btBytesToSend) > settings.gnssHandlerBufferSize)
-                btBytesToSend = settings.gnssHandlerBufferSize - btTail;
-
-            // If we are in the config menu, supress data flowing from ZED to cell phone
-            if (btPrintEcho == false)
-                // Push new data to BT SPP
-                btBytesToSend = bluetoothWrite(&ringBuffer[btTail], btBytesToSend);
-
-            if (btBytesToSend > 0)
+            // Determine the amount of Bluetooth data in the buffer
+            bytesToSend = dataHead - btRingBufferTail;
+            if (bytesToSend < 0)
+                bytesToSend += settings.gnssHandlerBufferSize;
+            if (bytesToSend > 0)
             {
-                // If we are in base mode, assume part of the outgoing data is RTCM
-                if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
-                    bluetoothOutgoingRTCM = true;
+                // Reduce bytes to send if we have more to send then the end of
+                // the buffer, we'll wrap next loop
+                if ((btRingBufferTail + bytesToSend) > settings.gnssHandlerBufferSize)
+                    bytesToSend = settings.gnssHandlerBufferSize - btRingBufferTail;
 
-                // Account for the sent or dropped data
-                btTail += btBytesToSend;
-                if (btTail >= settings.gnssHandlerBufferSize)
-                    btTail -= settings.gnssHandlerBufferSize;
+                // If we are in the config menu, supress data flowing from ZED to cell phone
+                if (btPrintEcho == false)
+                    // Push new data to BT SPP
+                    bytesToSend = bluetoothWrite(&ringBuffer[btRingBufferTail], bytesToSend);
+
+                // Account for the data that was sent
+                if (bytesToSend > 0)
+                {
+                    // If we are in base mode, assume part of the outgoing data is RTCM
+                    if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
+                        bluetoothOutgoingRTCM = true;
+
+                    // Account for the sent or dropped data
+                    btRingBufferTail += bytesToSend;
+                    if (btRingBufferTail >= settings.gnssHandlerBufferSize)
+                        btRingBufferTail -= settings.gnssHandlerBufferSize;
+
+                    // Remember the maximum transfer time
+                    deltaMillis = millis() - startMillis;
+                    if (maxMillis[RBC_BLUETOOTH] < deltaMillis)
+                        maxMillis[RBC_BLUETOOTH] = deltaMillis;
+
+                    // Display the data movement
+                    if (PERIODIC_DISPLAY(PD_BLUETOOTH_DATA_TX))
+                    {
+                        PERIODIC_CLEAR(PD_BLUETOOTH_DATA_TX);
+                        systemPrintf("Bluetooth: %d bytes written\r\n", bytesToSend);
+                    }
+                }
+                else
+                    log_w("BT failed to send");
+
+                // Determine the amount of data that remains in the buffer
+                bytesToSend = dataHead - btRingBufferTail;
+                if (bytesToSend < 0)
+                    bytesToSend += settings.gnssHandlerBufferSize;
+                if (usedSpace < bytesToSend)
+                {
+                    usedSpace = bytesToSend;
+                    slowConsumer = "Bluetooth";
+                }
             }
-            else
-                log_w("BT failed to send");
         }
 
         //----------------------------------------------------------------------
-        // Send data to the TCP clients
+        // Send data to the network clients
         //----------------------------------------------------------------------
 
-        if (((!online.tcpServer) && (!online.tcpClient)) || (!wifiTcpConnected))
-            tcpTailWiFi = dataHead;
-        else if (tcpBytesToSendWiFi > 0)
+        startMillis = millis();
+
+        // Update space available for use in UART task
+        bytesToSend = pvtClientSendData(dataHead);
+        if (usedSpace < bytesToSend)
         {
-            // Reduce bytes to send if we have more to send then the end of the buffer
-            // We'll wrap next loop
-            if ((tcpTailWiFi + tcpBytesToSendWiFi) > settings.gnssHandlerBufferSize)
-                tcpBytesToSendWiFi = settings.gnssHandlerBufferSize - tcpTailWiFi;
-
-            // Send the data to the TCP clients
-            wifiSendTcpData(&ringBuffer[tcpTailWiFi], tcpBytesToSendWiFi);
-
-            // Assume all data was sent, wrap the buffer pointer
-            tcpTailWiFi += tcpBytesToSendWiFi;
-            if (tcpTailWiFi >= settings.gnssHandlerBufferSize)
-                tcpTailWiFi -= settings.gnssHandlerBufferSize;
+            usedSpace = bytesToSend;
+            slowConsumer = "PVT client";
         }
 
-        if ((!online.tcpClientEthernet) || (!ethernetTcpConnected))
-            tcpTailEthernet = dataHead;
-        else if (tcpBytesToSendEthernet > 0)
+        // Remember the maximum transfer time
+        deltaMillis = millis() - startMillis;
+        if (maxMillis[RBC_PVT_CLIENT] < deltaMillis)
+            maxMillis[RBC_PVT_CLIENT] = deltaMillis;
+
+        startMillis = millis();
+
+        // Update space available for use in UART task
+        bytesToSend = pvtServerSendData(dataHead);
+        if (usedSpace < bytesToSend)
         {
-            // Reduce bytes to send if we have more to send then the end of the buffer
-            // We'll wrap next loop
-            if ((tcpTailEthernet + tcpBytesToSendEthernet) > settings.gnssHandlerBufferSize)
-                tcpBytesToSendEthernet = settings.gnssHandlerBufferSize - tcpTailEthernet;
-
-            // Send the data to the TCP clients
-            ethernetSendTcpData(&ringBuffer[tcpTailEthernet], tcpBytesToSendEthernet);
-
-            // Assume all data was sent, wrap the buffer pointer
-            tcpTailEthernet += tcpBytesToSendEthernet;
-            if (tcpTailEthernet >= settings.gnssHandlerBufferSize)
-                tcpTailEthernet -= settings.gnssHandlerBufferSize;
+            usedSpace = bytesToSend;
+            slowConsumer = "PVT server";
         }
+
+        // Remember the maximum transfer time
+        deltaMillis = millis() - startMillis;
+        if (maxMillis[RBC_PVT_SERVER] < deltaMillis)
+            maxMillis[RBC_PVT_SERVER] = deltaMillis;
 
         //----------------------------------------------------------------------
         // Log data to the SD card
         //----------------------------------------------------------------------
 
+        // Determine if the SD card is enabled for logging
+        connected = online.logging && ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes);
+
         // If user wants to log, record to SD
-        if (!online.logging)
+        if (!connected)
             // Discard the data
-            sdTail = dataHead;
-        else if (sdBytesToRecord > 0)
+            sdRingBufferTail = dataHead;
+        else
         {
-            // Check if we are inside the max time window for logging
-            if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+            // Determine the amount of microSD card logging data in the buffer
+            bytesToSend = dataHead - sdRingBufferTail;
+            if (bytesToSend < 0)
+                bytesToSend += settings.gnssHandlerBufferSize;
+            if (bytesToSend > 0)
             {
                 // Attempt to gain access to the SD card, avoids collisions with file
                 // writing from other functions like recordSystemSettingsToFile()
@@ -468,9 +822,8 @@ void handleGnssDataTask(void *e)
                     markSemaphore(FUNCTION_WRITESD);
 
                     // Reduce bytes to record if we have more then the end of the buffer
-                    int sliceToRecord = sdBytesToRecord;
-                    if ((sdTail + sliceToRecord) > settings.gnssHandlerBufferSize)
-                        sliceToRecord = settings.gnssHandlerBufferSize - sdTail;
+                    if ((sdRingBufferTail + bytesToSend) > settings.gnssHandlerBufferSize)
+                        bytesToSend = settings.gnssHandlerBufferSize - sdRingBufferTail;
 
                     if (settings.enablePrintSDBuffers && (!inMainMenu))
                     {
@@ -491,14 +844,20 @@ void handleGnssDataTask(void *e)
                             availableUARTSpace = settings.gnssHandlerBufferSize - bufferAvailable;
                         systemPrintf("SD Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: "
                                      "%04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\r\n",
-                                     bufferAvailable, 0, 0, availableUARTSpace, availableHandlerSpace, sliceToRecord, 0,
+                                     bufferAvailable, 0, 0, availableUARTSpace, availableHandlerSpace, bytesToSend, 0,
                                      bufferOverruns);
                     }
 
                     // Write the data to the file
                     long startTime = millis();
+                    startMillis = millis();
 
-                    int sdBytesRecorded = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
+                    bytesToSend = ubxFile->write(&ringBuffer[sdRingBufferTail], bytesToSend);
+                    if (PERIODIC_DISPLAY(PD_SD_LOG_WRITE) && (bytesToSend > 0))
+                    {
+                        PERIODIC_CLEAR(PD_SD_LOG_WRITE);
+                        systemPrintf("SD %d bytes written to log file\r\n", bytesToSend);
+                    }
 
                     static unsigned long lastFlush = 0;
                     if (USE_MMC_MICROSD)
@@ -511,7 +870,7 @@ void handleGnssDataTask(void *e)
                     }
                     fileSize = ubxFile->fileSize(); // Update file size
 
-                    sdFreeSpace -= sdBytesRecorded; // Update remaining space on SD
+                    sdFreeSpace -= bytesToSend; // Update remaining space on SD
 
                     // Force file sync every 60s
                     if (millis() - lastUBXLogSyncTime > 60000)
@@ -530,6 +889,10 @@ void handleGnssDataTask(void *e)
                         lastUBXLogSyncTime = millis();
                     }
 
+                    // Remember the maximum transfer time
+                    deltaMillis = millis() - startMillis;
+                    if (maxMillis[RBC_SD_CARD] < deltaMillis)
+                        maxMillis[RBC_SD_CARD] = deltaMillis;
                     long endTime = millis();
 
                     if (settings.enablePrintBufferOverrun)
@@ -537,17 +900,17 @@ void handleGnssDataTask(void *e)
                         if (endTime - startTime > 150)
                             systemPrintf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / "
                                          "spaceRemaining %d bytes\r\n",
-                                         endTime - startTime, fileSize, sdBytesRecorded, combinedSpaceRemaining);
+                                         endTime - startTime, fileSize, bytesToSend, combinedSpaceRemaining);
                     }
 
                     xSemaphoreGive(sdCardSemaphore);
 
                     // Account for the sent data or dropped
-                    if (sdBytesRecorded > 0)
+                    if (bytesToSend > 0)
                     {
-                        sdTail += sdBytesRecorded;
-                        if (sdTail >= settings.gnssHandlerBufferSize)
-                            sdTail -= settings.gnssHandlerBufferSize;
+                        sdRingBufferTail += bytesToSend;
+                        if (sdRingBufferTail >= settings.gnssHandlerBufferSize)
+                            sdRingBufferTail -= settings.gnssHandlerBufferSize;
                     }
                 } // End sdCardSemaphore
                 else
@@ -560,45 +923,51 @@ void handleGnssDataTask(void *e)
                     delay(1); // Needed to prevent WDT resets during long Record Settings locks
                     taskYIELD();
                 }
-            } // End maxLogTime
-        }     // End logging
 
-        // Update space available for use in UART task
-        btBytesToSend = dataHead - btTail;
-        if (btBytesToSend < 0)
-            btBytesToSend += settings.gnssHandlerBufferSize;
+                // Update space available for use in UART task
+                bytesToSend = dataHead - sdRingBufferTail;
+                if (bytesToSend < 0)
+                    bytesToSend += settings.gnssHandlerBufferSize;
+                if (usedSpace < bytesToSend)
+                {
+                    usedSpace = bytesToSend;
+                    slowConsumer = "SD card";
+                }
+            } // bytesToSend
+        }     // End connected
 
-        tcpBytesToSendWiFi = dataHead - tcpTailWiFi;
-        if (tcpBytesToSendWiFi < 0)
-            tcpBytesToSendWiFi += settings.gnssHandlerBufferSize;
+        //----------------------------------------------------------------------
+        // Update the available space in the ring buffer
+        //----------------------------------------------------------------------
 
-        tcpBytesToSendEthernet = dataHead - tcpTailEthernet;
-        if (tcpBytesToSendEthernet < 0)
-            tcpBytesToSendEthernet += settings.gnssHandlerBufferSize;
-
-        sdBytesToRecord = dataHead - sdTail;
-        if (sdBytesToRecord < 0)
-            sdBytesToRecord += settings.gnssHandlerBufferSize;
-
-        // Determine the inteface that is most behind: SD writing, SPP transmission, or TCP transmission
-        int usedSpace = 0;
-        if (tcpBytesToSendWiFi >= btBytesToSend && tcpBytesToSendWiFi >= sdBytesToRecord &&
-            tcpBytesToSendWiFi >= tcpBytesToSendEthernet)
-            usedSpace = tcpBytesToSendWiFi;
-        else if (tcpBytesToSendEthernet >= btBytesToSend && tcpBytesToSendEthernet >= sdBytesToRecord &&
-                 tcpBytesToSendEthernet >= tcpBytesToSendWiFi)
-            usedSpace = tcpBytesToSendEthernet;
-        else if (btBytesToSend >= sdBytesToRecord && btBytesToSend >= tcpBytesToSendWiFi &&
-                 btBytesToSend >= tcpBytesToSendEthernet)
-            usedSpace = btBytesToSend;
-        else
-            usedSpace = sdBytesToRecord;
-
-        availableHandlerSpace = settings.gnssHandlerBufferSize - usedSpace;
+        freeSpace = settings.gnssHandlerBufferSize - usedSpace;
 
         // Don't fill the last byte to prevent buffer overflow
-        if (availableHandlerSpace)
-            availableHandlerSpace -= 1;
+        if (freeSpace)
+            freeSpace -= 1;
+        availableHandlerSpace = freeSpace;
+
+        //----------------------------------------------------------------------
+        // Display the millisecond values for the different ring buffer consumers
+        //----------------------------------------------------------------------
+
+        if (PERIODIC_DISPLAY(PD_RING_BUFFER_MILLIS))
+        {
+            int milliseconds;
+            int seconds;
+
+            PERIODIC_CLEAR(PD_RING_BUFFER_MILLIS);
+            for (int index = 0; index < RBC_MAX; index++)
+            {
+                milliseconds = maxMillis[index];
+                if (milliseconds > 1)
+                {
+                    seconds = milliseconds / MILLISECONDS_IN_A_SECOND;
+                    milliseconds %= MILLISECONDS_IN_A_SECOND;
+                    systemPrintf("%s: %d:%03d Sec\r\n", ringBufferConsumer[index], seconds, milliseconds);
+                }
+            }
+        }
 
         //----------------------------------------------------------------------
         // Let other tasks run, prevent watch dog timer (WDT) resets
@@ -660,6 +1029,13 @@ void ButtonCheckTask(void *e)
 
     while (true)
     {
+        // Display an alive message
+        if (PERIODIC_DISPLAY(PD_TASK_BUTTON_CHECK))
+        {
+            PERIODIC_CLEAR(PD_TASK_BUTTON_CHECK);
+            systemPrintln("ButtonCheckTask running");
+        }
+
         /* RTK Surveyor
 
                                       .----------------------------.
@@ -695,36 +1071,40 @@ void ButtonCheckTask(void *e)
 
         if (productVariant == RTK_SURVEYOR)
         {
-            setupBtn->read();
-
-            // When switch is set to '1' = BASE, pin will be shorted to ground
-            if (setupBtn->isPressed()) // Switch is set to base mode
+            if (setupBtn && (settings.disableSetupButton == false)) // Allow check of the setup button if not overridden by settings
             {
-                if (buttonPreviousState == BUTTON_ROVER)
-                {
-                    lastRockerSwitchChange = millis(); // Record for WiFi AP access
-                    buttonPreviousState = BUTTON_BASE;
-                    requestChangeState(STATE_BASE_NOT_STARTED);
-                }
-            }
-            else if (setupBtn->wasReleased()) // Switch is set to Rover
-            {
-                if (buttonPreviousState == BUTTON_BASE)
-                {
-                    buttonPreviousState = BUTTON_ROVER;
+                setupBtn->read();
 
-                    // If quick toggle is detected (less than 500ms), enter WiFi AP Config mode
-                    if (millis() - lastRockerSwitchChange < 500)
+                // When switch is set to '1' = BASE, pin will be shorted to ground
+                if (setupBtn->isPressed()) // Switch is set to base mode
+                {
+                    if (buttonPreviousState == BUTTON_ROVER)
                     {
-                        if (systemState == STATE_ROVER_NOT_STARTED && online.display == true) // Catch during Power On
-                            requestChangeState(STATE_TEST); // If RTK Surveyor, with display attached, during Rover not
-                                                            // started, then enter test mode
-                        else
-                            requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
+                        lastRockerSwitchChange = millis(); // Record for WiFi AP access
+                        buttonPreviousState = BUTTON_BASE;
+                        requestChangeState(STATE_BASE_NOT_STARTED);
                     }
-                    else
+                }
+                else if (setupBtn->wasReleased()) // Switch is set to Rover
+                {
+                    if (buttonPreviousState == BUTTON_BASE)
                     {
-                        requestChangeState(STATE_ROVER_NOT_STARTED);
+                        buttonPreviousState = BUTTON_ROVER;
+
+                        // If quick toggle is detected (less than 500ms), enter WiFi AP Config mode
+                        if (millis() - lastRockerSwitchChange < 500)
+                        {
+                            if (systemState == STATE_ROVER_NOT_STARTED &&
+                                online.display == true)         // Catch during Power On
+                                requestChangeState(STATE_TEST); // If RTK Surveyor, with display attached, during Rover
+                                                                // not started, then enter test mode
+                            else
+                                requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
+                        }
+                        else
+                        {
+                            requestChangeState(STATE_ROVER_NOT_STARTED);
+                        }
                     }
                 }
             }
@@ -759,117 +1139,121 @@ void ButtonCheckTask(void *e)
             }
             else if (setupBtn != nullptr && setupBtn->wasReleased())
             {
-                switch (systemState)
+                if (settings.disableSetupButton ==
+                    false) // Allow check of the setup button if not overridden by settings
                 {
-                // If we are in any running state, change to STATE_DISPLAY_SETUP
-                case STATE_ROVER_NOT_STARTED:
-                case STATE_ROVER_NO_FIX:
-                case STATE_ROVER_FIX:
-                case STATE_ROVER_RTK_FLOAT:
-                case STATE_ROVER_RTK_FIX:
-                case STATE_BASE_NOT_STARTED:
-                case STATE_BASE_TEMP_SETTLE:
-                case STATE_BASE_TEMP_SURVEY_STARTED:
-                case STATE_BASE_TEMP_TRANSMITTING:
-                case STATE_BASE_FIXED_NOT_STARTED:
-                case STATE_BASE_FIXED_TRANSMITTING:
-                case STATE_BUBBLE_LEVEL:
-                case STATE_WIFI_CONFIG_NOT_STARTED:
-                case STATE_WIFI_CONFIG:
-                case STATE_ESPNOW_PAIRING_NOT_STARTED:
-                case STATE_ESPNOW_PAIRING:
-                    lastSystemState =
-                        systemState; // Remember this state to return after we mark an event or ESP-Now pair
-                    requestChangeState(STATE_DISPLAY_SETUP);
-                    setupState = STATE_MARK_EVENT;
-                    lastSetupMenuChange = millis();
-                    break;
-
-                case STATE_MARK_EVENT:
-                    // If the user presses the setup button during a mark event, do nothing
-                    // Allow system to return to lastSystemState
-                    break;
-
-                case STATE_PROFILE:
-                    // If the user presses the setup button during a profile change, do nothing
-                    // Allow system to return to lastSystemState
-                    break;
-
-                case STATE_TEST:
-                    // Do nothing. User is releasing the setup button.
-                    break;
-
-                case STATE_TESTING:
-                    // If we are in testing, return to Rover Not Started
-                    requestChangeState(STATE_ROVER_NOT_STARTED);
-                    break;
-
-                case STATE_DISPLAY_SETUP:
-                    // If we are displaying the setup menu, cycle through possible system states
-                    // Exit display setup and enter new system state after ~1500ms in updateSystemState()
-                    lastSetupMenuChange = millis();
-
-                    forceDisplayUpdate = true; // User is interacting so repaint display quickly
-
-                    switch (setupState)
+                    switch (systemState)
                     {
-                    case STATE_MARK_EVENT:
-                        setupState = STATE_ROVER_NOT_STARTED;
-                        break;
+                    // If we are in any running state, change to STATE_DISPLAY_SETUP
                     case STATE_ROVER_NOT_STARTED:
-                        // If F9R, skip base state
-                        if (zedModuleType == PLATFORM_F9R)
+                    case STATE_ROVER_NO_FIX:
+                    case STATE_ROVER_FIX:
+                    case STATE_ROVER_RTK_FLOAT:
+                    case STATE_ROVER_RTK_FIX:
+                    case STATE_BASE_NOT_STARTED:
+                    case STATE_BASE_TEMP_SETTLE:
+                    case STATE_BASE_TEMP_SURVEY_STARTED:
+                    case STATE_BASE_TEMP_TRANSMITTING:
+                    case STATE_BASE_FIXED_NOT_STARTED:
+                    case STATE_BASE_FIXED_TRANSMITTING:
+                    case STATE_BUBBLE_LEVEL:
+                    case STATE_WIFI_CONFIG_NOT_STARTED:
+                    case STATE_WIFI_CONFIG:
+                    case STATE_ESPNOW_PAIRING_NOT_STARTED:
+                    case STATE_ESPNOW_PAIRING:
+                        lastSystemState =
+                            systemState; // Remember this state to return after we mark an event or ESP-Now pair
+                        requestChangeState(STATE_DISPLAY_SETUP);
+                        setupState = STATE_MARK_EVENT;
+                        lastSetupMenuChange = millis();
+                        break;
+
+                    case STATE_MARK_EVENT:
+                        // If the user presses the setup button during a mark event, do nothing
+                        // Allow system to return to lastSystemState
+                        break;
+
+                    case STATE_PROFILE:
+                        // If the user presses the setup button during a profile change, do nothing
+                        // Allow system to return to lastSystemState
+                        break;
+
+                    case STATE_TEST:
+                        // Do nothing. User is releasing the setup button.
+                        break;
+
+                    case STATE_TESTING:
+                        // If we are in testing, return to Rover Not Started
+                        requestChangeState(STATE_ROVER_NOT_STARTED);
+                        break;
+
+                    case STATE_DISPLAY_SETUP:
+                        // If we are displaying the setup menu, cycle through possible system states
+                        // Exit display setup and enter new system state after ~1500ms in updateSystemState()
+                        lastSetupMenuChange = millis();
+
+                        forceDisplayUpdate = true; // User is interacting so repaint display quickly
+
+                        switch (setupState)
                         {
+                        case STATE_MARK_EVENT:
+                            setupState = STATE_ROVER_NOT_STARTED;
+                            break;
+                        case STATE_ROVER_NOT_STARTED:
+                            // If F9R, skip base state
+                            if (zedModuleType == PLATFORM_F9R)
+                            {
+                                // If accel offline, skip bubble
+                                if (online.accelerometer == true)
+                                    setupState = STATE_BUBBLE_LEVEL;
+                                else
+                                    setupState = STATE_WIFI_CONFIG_NOT_STARTED;
+                            }
+                            else
+                                setupState = STATE_BASE_NOT_STARTED;
+                            break;
+                        case STATE_BASE_NOT_STARTED:
                             // If accel offline, skip bubble
                             if (online.accelerometer == true)
                                 setupState = STATE_BUBBLE_LEVEL;
                             else
                                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
-                        }
-                        else
-                            setupState = STATE_BASE_NOT_STARTED;
-                        break;
-                    case STATE_BASE_NOT_STARTED:
-                        // If accel offline, skip bubble
-                        if (online.accelerometer == true)
-                            setupState = STATE_BUBBLE_LEVEL;
-                        else
+                            break;
+                        case STATE_BUBBLE_LEVEL:
                             setupState = STATE_WIFI_CONFIG_NOT_STARTED;
-                        break;
-                    case STATE_BUBBLE_LEVEL:
-                        setupState = STATE_WIFI_CONFIG_NOT_STARTED;
-                        break;
-                    case STATE_WIFI_CONFIG_NOT_STARTED:
-                        setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
-                        break;
-                    case STATE_ESPNOW_PAIRING_NOT_STARTED:
-                        // If only one active profile do not show any profiles
-                        index = getProfileNumberFromUnit(0);
-                        displayProfile = getProfileNumberFromUnit(1);
-                        setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
-                        displayProfile = 0;
-                        break;
-                    case STATE_PROFILE:
-                        // Done when no more active profiles
-                        displayProfile++;
-                        if (!getProfileNumberFromUnit(displayProfile))
+                            break;
+                        case STATE_WIFI_CONFIG_NOT_STARTED:
+                            setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
+                            break;
+                        case STATE_ESPNOW_PAIRING_NOT_STARTED:
+                            // If only one active profile do not show any profiles
+                            index = getProfileNumberFromUnit(0);
+                            displayProfile = getProfileNumberFromUnit(1);
+                            setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
+                            displayProfile = 0;
+                            break;
+                        case STATE_PROFILE:
+                            // Done when no more active profiles
+                            displayProfile++;
+                            if (!getProfileNumberFromUnit(displayProfile))
+                                setupState = STATE_MARK_EVENT;
+                            break;
+                        default:
+                            systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
                             setupState = STATE_MARK_EVENT;
+                            break;
+                        }
                         break;
+
                     default:
-                        systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
-                        setupState = STATE_MARK_EVENT;
+                        systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
+                        requestChangeState(STATE_ROVER_NOT_STARTED);
                         break;
                     }
-                    break;
-
-                default:
-                    systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
-                    requestChangeState(STATE_ROVER_NOT_STARTED);
-                    break;
-                }
+                } // End disabdisableSetupButton check
             }
         }                                                                          // End Platform = RTK Express
-        else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND) // Check one momentary button
+        else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT) // Check one momentary button
         {
             if (powerBtn != nullptr)
                 powerBtn->read();
@@ -896,114 +1280,118 @@ void ButtonCheckTask(void *e)
             }
             else if (powerBtn != nullptr && powerBtn->wasReleased() && firstRoverStart == false)
             {
-                switch (systemState)
+                if (settings.disableSetupButton ==
+                    false) // Allow check of the setup button if not overridden by settings
                 {
-                // If we are in any running state, change to STATE_DISPLAY_SETUP
-                case STATE_ROVER_NOT_STARTED:
-                case STATE_ROVER_NO_FIX:
-                case STATE_ROVER_FIX:
-                case STATE_ROVER_RTK_FLOAT:
-                case STATE_ROVER_RTK_FIX:
-                case STATE_BASE_NOT_STARTED:
-                case STATE_BASE_TEMP_SETTLE:
-                case STATE_BASE_TEMP_SURVEY_STARTED:
-                case STATE_BASE_TEMP_TRANSMITTING:
-                case STATE_BASE_FIXED_NOT_STARTED:
-                case STATE_BASE_FIXED_TRANSMITTING:
-                case STATE_BUBBLE_LEVEL:
-                case STATE_WIFI_CONFIG_NOT_STARTED:
-                case STATE_WIFI_CONFIG:
-                case STATE_ESPNOW_PAIRING_NOT_STARTED:
-                case STATE_ESPNOW_PAIRING:
-                    lastSystemState =
-                        systemState; // Remember this state to return after we mark an event or ESP-Now pair
-                    requestChangeState(STATE_DISPLAY_SETUP);
-                    setupState = STATE_MARK_EVENT;
-                    lastSetupMenuChange = millis();
-                    break;
-
-                case STATE_MARK_EVENT:
-                    // If the user presses the setup button during a mark event, do nothing
-                    // Allow system to return to lastSystemState
-                    break;
-
-                case STATE_PROFILE:
-                    // If the user presses the setup button during a profile change, do nothing
-                    // Allow system to return to lastSystemState
-                    break;
-
-                case STATE_TEST:
-                    // Do nothing. User is releasing the setup button.
-                    break;
-
-                case STATE_TESTING:
-                    // If we are in testing, return to Rover Not Started
-                    requestChangeState(STATE_ROVER_NOT_STARTED);
-                    break;
-
-                case STATE_DISPLAY_SETUP:
-                    // If we are displaying the setup menu, cycle through possible system states
-                    // Exit display setup and enter new system state after ~1500ms in updateSystemState()
-                    lastSetupMenuChange = millis();
-
-                    forceDisplayUpdate = true; // User is interacting so repaint display quickly
-
-                    switch (setupState)
+                    switch (systemState)
                     {
-                    case STATE_MARK_EVENT:
-                        setupState = STATE_ROVER_NOT_STARTED;
-                        break;
+                    // If we are in any running state, change to STATE_DISPLAY_SETUP
                     case STATE_ROVER_NOT_STARTED:
-                        // If F9R, skip base state
-                        if (zedModuleType == PLATFORM_F9R)
+                    case STATE_ROVER_NO_FIX:
+                    case STATE_ROVER_FIX:
+                    case STATE_ROVER_RTK_FLOAT:
+                    case STATE_ROVER_RTK_FIX:
+                    case STATE_BASE_NOT_STARTED:
+                    case STATE_BASE_TEMP_SETTLE:
+                    case STATE_BASE_TEMP_SURVEY_STARTED:
+                    case STATE_BASE_TEMP_TRANSMITTING:
+                    case STATE_BASE_FIXED_NOT_STARTED:
+                    case STATE_BASE_FIXED_TRANSMITTING:
+                    case STATE_BUBBLE_LEVEL:
+                    case STATE_WIFI_CONFIG_NOT_STARTED:
+                    case STATE_WIFI_CONFIG:
+                    case STATE_ESPNOW_PAIRING_NOT_STARTED:
+                    case STATE_ESPNOW_PAIRING:
+                        lastSystemState =
+                            systemState; // Remember this state to return after we mark an event or ESP-Now pair
+                        requestChangeState(STATE_DISPLAY_SETUP);
+                        setupState = STATE_MARK_EVENT;
+                        lastSetupMenuChange = millis();
+                        break;
+
+                    case STATE_MARK_EVENT:
+                        // If the user presses the setup button during a mark event, do nothing
+                        // Allow system to return to lastSystemState
+                        break;
+
+                    case STATE_PROFILE:
+                        // If the user presses the setup button during a profile change, do nothing
+                        // Allow system to return to lastSystemState
+                        break;
+
+                    case STATE_TEST:
+                        // Do nothing. User is releasing the setup button.
+                        break;
+
+                    case STATE_TESTING:
+                        // If we are in testing, return to Rover Not Started
+                        requestChangeState(STATE_ROVER_NOT_STARTED);
+                        break;
+
+                    case STATE_DISPLAY_SETUP:
+                        // If we are displaying the setup menu, cycle through possible system states
+                        // Exit display setup and enter new system state after ~1500ms in updateSystemState()
+                        lastSetupMenuChange = millis();
+
+                        forceDisplayUpdate = true; // User is interacting so repaint display quickly
+
+                        switch (setupState)
                         {
+                        case STATE_MARK_EVENT:
+                            setupState = STATE_ROVER_NOT_STARTED;
+                            break;
+                        case STATE_ROVER_NOT_STARTED:
+                            // If F9R, skip base state
+                            if (zedModuleType == PLATFORM_F9R)
+                            {
+                                // If accel offline, skip bubble
+                                if (online.accelerometer == true)
+                                    setupState = STATE_BUBBLE_LEVEL;
+                                else
+                                    setupState = STATE_WIFI_CONFIG_NOT_STARTED;
+                            }
+                            else
+                                setupState = STATE_BASE_NOT_STARTED;
+                            break;
+                        case STATE_BASE_NOT_STARTED:
                             // If accel offline, skip bubble
                             if (online.accelerometer == true)
                                 setupState = STATE_BUBBLE_LEVEL;
                             else
                                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
-                        }
-                        else
-                            setupState = STATE_BASE_NOT_STARTED;
-                        break;
-                    case STATE_BASE_NOT_STARTED:
-                        // If accel offline, skip bubble
-                        if (online.accelerometer == true)
-                            setupState = STATE_BUBBLE_LEVEL;
-                        else
+                            break;
+                        case STATE_BUBBLE_LEVEL:
                             setupState = STATE_WIFI_CONFIG_NOT_STARTED;
-                        break;
-                    case STATE_BUBBLE_LEVEL:
-                        setupState = STATE_WIFI_CONFIG_NOT_STARTED;
-                        break;
-                    case STATE_WIFI_CONFIG_NOT_STARTED:
-                        setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
-                        break;
-                    case STATE_ESPNOW_PAIRING_NOT_STARTED:
-                        // If only one active profile do not show any profiles
-                        index = getProfileNumberFromUnit(0);
-                        displayProfile = getProfileNumberFromUnit(1);
-                        setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
-                        displayProfile = 0;
-                        break;
-                    case STATE_PROFILE:
-                        // Done when no more active profiles
-                        displayProfile++;
-                        if (!getProfileNumberFromUnit(displayProfile))
+                            break;
+                        case STATE_WIFI_CONFIG_NOT_STARTED:
+                            setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
+                            break;
+                        case STATE_ESPNOW_PAIRING_NOT_STARTED:
+                            // If only one active profile do not show any profiles
+                            index = getProfileNumberFromUnit(0);
+                            displayProfile = getProfileNumberFromUnit(1);
+                            setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
+                            displayProfile = 0;
+                            break;
+                        case STATE_PROFILE:
+                            // Done when no more active profiles
+                            displayProfile++;
+                            if (!getProfileNumberFromUnit(displayProfile))
+                                setupState = STATE_MARK_EVENT;
+                            break;
+                        default:
+                            systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
                             setupState = STATE_MARK_EVENT;
+                            break;
+                        }
                         break;
+
                     default:
-                        systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
-                        setupState = STATE_MARK_EVENT;
+                        systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
+                        requestChangeState(STATE_ROVER_NOT_STARTED);
                         break;
                     }
-                    break;
-
-                default:
-                    systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
-                    requestChangeState(STATE_ROVER_NOT_STARTED);
-                    break;
-                }
+                } // End disableSetupButton check
             }
         }                                             // End Platform = RTK Facet
         else if (productVariant == REFERENCE_STATION) // Check one momentary button
@@ -1033,108 +1421,113 @@ void ButtonCheckTask(void *e)
             }
             else if (setupBtn != nullptr && setupBtn->wasReleased() && firstRoverStart == false)
             {
-                switch (systemState)
+                if (settings.disableSetupButton ==
+                    false) // Allow check of the setup button if not overridden by settings
                 {
-                // If we are in any running state, change to STATE_DISPLAY_SETUP
-                case STATE_BASE_NOT_STARTED:
-                case STATE_BASE_TEMP_SETTLE:
-                case STATE_BASE_TEMP_SURVEY_STARTED:
-                case STATE_BASE_TEMP_TRANSMITTING:
-                case STATE_BASE_FIXED_NOT_STARTED:
-                case STATE_BASE_FIXED_TRANSMITTING:
-                case STATE_ROVER_NOT_STARTED:
-                case STATE_ROVER_NO_FIX:
-                case STATE_ROVER_FIX:
-                case STATE_ROVER_RTK_FLOAT:
-                case STATE_ROVER_RTK_FIX:
-                case STATE_NTPSERVER_NOT_STARTED:
-                case STATE_NTPSERVER_NO_SYNC:
-                case STATE_NTPSERVER_SYNC:
-                case STATE_WIFI_CONFIG_NOT_STARTED:
-                case STATE_WIFI_CONFIG:
-                case STATE_CONFIG_VIA_ETH_NOT_STARTED:
-                case STATE_ESPNOW_PAIRING_NOT_STARTED:
-                case STATE_ESPNOW_PAIRING:
-                    lastSystemState = systemState; // Remember this state to return after ESP-Now pair
-                    requestChangeState(STATE_DISPLAY_SETUP);
-                    setupState = STATE_BASE_NOT_STARTED;
-                    lastSetupMenuChange = millis();
-                    break;
 
-                case STATE_CONFIG_VIA_ETH_STARTED:
-                case STATE_CONFIG_VIA_ETH:
-                    // If the user presses the button during configure-via-ethernet, then do a complete restart into
-                    // Base mode
-                    requestChangeState(STATE_CONFIG_VIA_ETH_RESTART_BASE);
-                    break;
-
-                case STATE_PROFILE:
-                    // If the user presses the setup button during a profile change, do nothing
-                    // Allow system to return to lastSystemState
-                    break;
-
-                case STATE_TEST:
-                    // Do nothing. User is releasing the setup button.
-                    break;
-
-                case STATE_TESTING:
-                    // If we are in testing, return to Base Not Started
-                    requestChangeState(STATE_BASE_NOT_STARTED);
-                    break;
-
-                case STATE_DISPLAY_SETUP:
-                    // If we are displaying the setup menu, cycle through possible system states
-                    // Exit display setup and enter new system state after ~1500ms in updateSystemState()
-                    lastSetupMenuChange = millis();
-
-                    forceDisplayUpdate = true; // User is interacting so repaint display quickly
-
-                    switch (setupState)
+                    switch (systemState)
                     {
+                    // If we are in any running state, change to STATE_DISPLAY_SETUP
                     case STATE_BASE_NOT_STARTED:
-                        setupState = STATE_ROVER_NOT_STARTED;
-                        break;
+                    case STATE_BASE_TEMP_SETTLE:
+                    case STATE_BASE_TEMP_SURVEY_STARTED:
+                    case STATE_BASE_TEMP_TRANSMITTING:
+                    case STATE_BASE_FIXED_NOT_STARTED:
+                    case STATE_BASE_FIXED_TRANSMITTING:
                     case STATE_ROVER_NOT_STARTED:
-                        setupState = STATE_NTPSERVER_NOT_STARTED;
-                        break;
+                    case STATE_ROVER_NO_FIX:
+                    case STATE_ROVER_FIX:
+                    case STATE_ROVER_RTK_FLOAT:
+                    case STATE_ROVER_RTK_FIX:
                     case STATE_NTPSERVER_NOT_STARTED:
-                        setupState = STATE_CONFIG_VIA_ETH_NOT_STARTED;
-                        break;
-                    case STATE_CONFIG_VIA_ETH_NOT_STARTED:
-                        setupState = STATE_WIFI_CONFIG_NOT_STARTED;
-                        break;
+                    case STATE_NTPSERVER_NO_SYNC:
+                    case STATE_NTPSERVER_SYNC:
                     case STATE_WIFI_CONFIG_NOT_STARTED:
-                        setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
-                        break;
+                    case STATE_WIFI_CONFIG:
+                    case STATE_CONFIG_VIA_ETH_NOT_STARTED:
                     case STATE_ESPNOW_PAIRING_NOT_STARTED:
-                        // If only one active profile do not show any profiles
-                        index = getProfileNumberFromUnit(0);
-                        displayProfile = getProfileNumberFromUnit(1);
-                        setupState = (index >= displayProfile) ? STATE_BASE_NOT_STARTED : STATE_PROFILE;
-                        displayProfile = 0;
+                    case STATE_ESPNOW_PAIRING:
+                        lastSystemState = systemState; // Remember this state to return after ESP-Now pair
+                        requestChangeState(STATE_DISPLAY_SETUP);
+                        setupState = STATE_BASE_NOT_STARTED;
+                        lastSetupMenuChange = millis();
                         break;
+
+                    case STATE_CONFIG_VIA_ETH_STARTED:
+                    case STATE_CONFIG_VIA_ETH:
+                        // If the user presses the button during configure-via-ethernet, then do a complete restart into
+                        // Base mode
+                        requestChangeState(STATE_CONFIG_VIA_ETH_RESTART_BASE);
+                        break;
+
                     case STATE_PROFILE:
-                        // Done when no more active profiles
-                        displayProfile++;
-                        if (!getProfileNumberFromUnit(displayProfile))
+                        // If the user presses the setup button during a profile change, do nothing
+                        // Allow system to return to lastSystemState
+                        break;
+
+                    case STATE_TEST:
+                        // Do nothing. User is releasing the setup button.
+                        break;
+
+                    case STATE_TESTING:
+                        // If we are in testing, return to Base Not Started
+                        requestChangeState(STATE_BASE_NOT_STARTED);
+                        break;
+
+                    case STATE_DISPLAY_SETUP:
+                        // If we are displaying the setup menu, cycle through possible system states
+                        // Exit display setup and enter new system state after ~1500ms in updateSystemState()
+                        lastSetupMenuChange = millis();
+
+                        forceDisplayUpdate = true; // User is interacting so repaint display quickly
+
+                        switch (setupState)
+                        {
+                        case STATE_BASE_NOT_STARTED:
+                            setupState = STATE_ROVER_NOT_STARTED;
+                            break;
+                        case STATE_ROVER_NOT_STARTED:
+                            setupState = STATE_NTPSERVER_NOT_STARTED;
+                            break;
+                        case STATE_NTPSERVER_NOT_STARTED:
+                            setupState = STATE_CONFIG_VIA_ETH_NOT_STARTED;
+                            break;
+                        case STATE_CONFIG_VIA_ETH_NOT_STARTED:
+                            setupState = STATE_WIFI_CONFIG_NOT_STARTED;
+                            break;
+                        case STATE_WIFI_CONFIG_NOT_STARTED:
+                            setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
+                            break;
+                        case STATE_ESPNOW_PAIRING_NOT_STARTED:
+                            // If only one active profile do not show any profiles
+                            index = getProfileNumberFromUnit(0);
+                            displayProfile = getProfileNumberFromUnit(1);
+                            setupState = (index >= displayProfile) ? STATE_BASE_NOT_STARTED : STATE_PROFILE;
+                            displayProfile = 0;
+                            break;
+                        case STATE_PROFILE:
+                            // Done when no more active profiles
+                            displayProfile++;
+                            if (!getProfileNumberFromUnit(displayProfile))
+                                setupState = STATE_BASE_NOT_STARTED;
+                            break;
+                        case STATE_MARK_EVENT: // Skip the warning message if setupState is still in the default Mark
+                                               // Event state
                             setupState = STATE_BASE_NOT_STARTED;
+                            break;
+                        default:
+                            systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
+                            setupState = STATE_BASE_NOT_STARTED;
+                            break;
+                        }
                         break;
-                    case STATE_MARK_EVENT: // Skip the warning message if setupState is still in the default Mark Event
-                                           // state
-                        setupState = STATE_BASE_NOT_STARTED;
-                        break;
+
                     default:
-                        systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
-                        setupState = STATE_BASE_NOT_STARTED;
+                        systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
+                        requestChangeState(STATE_BASE_NOT_STARTED);
                         break;
                     }
-                    break;
-
-                default:
-                    systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
-                    requestChangeState(STATE_BASE_NOT_STARTED);
-                    break;
-                }
+                } //End disableSetupButton check
             }
         } // End Platform = REFERENCE_STATION
 
@@ -1194,8 +1587,19 @@ void idleTask(void *e)
 
 // Serial Read/Write tasks for the F9P must be started after BT is up and running otherwise SerialBT->available will
 // cause reboot
-void tasksStartUART2()
+bool tasksStartUART2()
 {
+    // Verify that the ring buffer was successfully allocated
+    if (!ringBuffer)
+    {
+        systemPrintln("ERROR: Ring buffer allocation failure!");
+        systemPrintln("Decrease GNSS handler (ring) buffer size");
+        displayNoRingBuffer(5000);
+        return false;
+    }
+
+    availableHandlerSpace = settings.gnssHandlerBufferSize;
+
     // Reads data from ZED and stores data into circular buffer
     if (gnssReadTaskHandle == nullptr)
         xTaskCreatePinnedToCore(gnssReadTask,                  // Function to call
@@ -1206,7 +1610,7 @@ void tasksStartUART2()
                                 &gnssReadTaskHandle,           // Task handle
                                 settings.gnssReadTaskCore);    // Core where task should run, 0=core, 1=Arduino
 
-    // Reads data from circular buffer and sends data to SD, SPP, or TCP
+    // Reads data from circular buffer and sends data to SD, SPP, or network clients
     if (handleGnssDataTaskHandle == nullptr)
         xTaskCreatePinnedToCore(handleGnssDataTask,                  // Function to call
                                 "handleGNSSData",                    // Just for humans
@@ -1225,6 +1629,7 @@ void tasksStartUART2()
                                 settings.btReadTaskPriority, // Priority
                                 &btReadTaskHandle,           // Task handle
                                 settings.btReadTaskCore);    // Core where task should run, 0=core, 1=Arduino
+    return true;
 }
 
 // Stop tasks - useful when running firmware update or WiFi AP is running
@@ -1259,6 +1664,13 @@ void sdSizeCheckTask(void *e)
 {
     while (true)
     {
+        // Display an alive message
+        if (PERIODIC_DISPLAY(PD_TASK_SD_SIZE_CHECK))
+        {
+            PERIODIC_CLEAR(PD_TASK_SD_SIZE_CHECK);
+            systemPrintln("sdSizeCheckTask running");
+        }
+
         if (online.microSD && sdCardSize == 0)
         {
             // Attempt to gain access to the SD card
@@ -1285,7 +1697,7 @@ void sdSizeCheckTask(void *e)
                     sdCardSize = SD_MMC.cardSize();
                     sdFreeSpace = SD_MMC.totalBytes() - SD_MMC.usedBytes();
                 }
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
 
                 xSemaphoreGive(sdCardSemaphore);
 
@@ -1312,4 +1724,11 @@ void sdSizeCheckTask(void *e)
         delay(1);
         taskYIELD(); // Let other tasks run
     }
+}
+
+// Validate the task table lengths
+void tasksValidateTables()
+{
+    if (ringBufferConsumerEntries != RBC_MAX)
+        reportFatalError("Fix ringBufferConsumer table to match RingBufferConsumers");
 }

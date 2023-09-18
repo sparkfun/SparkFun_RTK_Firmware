@@ -19,13 +19,17 @@
   Settings are loaded from microSD if available otherwise settings are pulled from ESP32's file system LittleFS.
 */
 
+#define COMPILE_ETHERNET // Comment out to remove Ethernet (W5500) support
 #define COMPILE_WIFI     // Comment out to remove WiFi functionality
+
+#ifdef  COMPILE_WIFI
 #define COMPILE_AP       // Requires WiFi. Comment out to remove Access Point functionality
 #define COMPILE_ESPNOW   // Requires WiFi. Comment out to remove ESP-Now functionality.
+#endif  // COMPILE_WIFI
+
 #define COMPILE_BT       // Comment out to remove Bluetooth functionality
 #define COMPILE_L_BAND   // Comment out to remove L-Band functionality
 #define COMPILE_SD_MMC   // Comment out to remove REFERENCE_STATION microSD SD_MMC support
-#define COMPILE_ETHERNET // Comment out to remove REFERENCE_STATION Ethernet (W5500) support
 // #define REF_STN_GNSS_DEBUG //Uncomment this line to output GNSS library debug messages on serialGNSS. Ref Stn only.
 // Needs ENABLE_DEVELOPER
 
@@ -67,6 +71,10 @@
 #define MILLISECONDS_IN_A_MINUTE (60 * MILLISECONDS_IN_A_SECOND)
 #define MILLISECONDS_IN_AN_HOUR (60 * MILLISECONDS_IN_A_MINUTE)
 #define MILLISECONDS_IN_A_DAY (24 * MILLISECONDS_IN_AN_HOUR)
+
+#define SECONDS_IN_A_MINUTE     60
+#define SECONDS_IN_AN_HOUR      (60 * SECONDS_IN_A_MINUTE)
+#define SECONDS_IN_A_DAY        (24 * SECONDS_IN_AN_HOUR)
 
 // Hardware connections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -217,32 +225,13 @@ unsigned int binBytesSent = 0;         // Tracks firmware bytes sent over WiFi O
 #include <WiFi.h>             //Built-in.
 #include <WiFiClientSecure.h> //Built-in.
 #include <WiFiMulti.h>        //Built-in.
+#include <DNSServer.h>        //Built-in.
 
 #include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
 
 #endif  // COMPILE_WIFI
 
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
-
-static int ntripClientConnectionAttempts = 0; // Count the number of connection attempts between restarts
-static int ntripServerConnectionAttempts = 0; // Count the number of connection attempts between restarts
-
-volatile uint8_t wifiTcpConnected = 0;
-
-// NTRIP client timer usage:
-//  * Measure the connection response time
-//  * Receive NTRIP data timeout
-static uint32_t ntripClientTimer;
-static uint32_t ntripClientStartTime;          // For calculating uptime
-static int ntripClientConnectionAttemptsTotal; // Count the number of connection attempts absolutely
-
-// NTRIP server timer usage:
-//  * Measure the connection response time
-//  * Receive RTCM correction data timeout
-//  * Monitor last RTCM byte received for frame counting
-static uint32_t ntripServerTimer;
-static uint32_t ntripServerStartTime;
-static int ntripServerConnectionAttemptsTotal; // Count the number of connection attempts absolutely
 
 bool enableRCFirmware = false;                // Goes true from AP config page
 bool currentlyParsingData = false;            // Goes true when we hit 750ms timeout with new data
@@ -411,6 +400,12 @@ TaskHandle_t btReadTaskHandle =
     nullptr; // Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const int btReadTaskStackSize = 2000;
 
+// Array of start of sentence offsets into the ring buffer
+#define AMOUNT_OF_RING_BUFFER_DATA_TO_DISCARD (settings.gnssHandlerBufferSize >> 2)
+#define AVERAGE_SENTENCE_LENGTH_IN_BYTES    32
+RING_BUFFER_OFFSET * rbOffsetArray;
+uint16_t rbOffsetEntries;
+
 uint8_t *ringBuffer; // Buffer for reading from F9P. At 230400bps, 23040 bytes/s. If SD blocks for 250ms, we need 23040
                      // * 0.25 = 5760 bytes worst case.
 TaskHandle_t gnssReadTaskHandle =
@@ -547,9 +542,6 @@ IPAddress ethernetDNS;
 IPAddress ethernetGateway;
 IPAddress ethernetSubnetMask;
 
-// Client for Ethernet TCP host
-EthernetClient *ethernetTcpClient = nullptr;
-
 class derivedEthernetUDP : public EthernetUDP
 {
   public:
@@ -558,17 +550,13 @@ class derivedEthernetUDP : public EthernetUDP
         return sockindex; // sockindex is protected in EthernetUDP. A derived class can access it.
     }
 };
-derivedEthernetUDP *ethernetNTPServer = nullptr; // This will be instantiated when we know the NTP port
-volatile uint8_t ntpSockIndex; // The W5500 socket index for NTP - so we can enable and read the correct interrupt
 volatile struct timeval ethernetNtpTv; // This will hold the time the Ethernet NTP packet arrived
-uint32_t lastLoggedNTPRequest = 0;
-bool ntpLogIncreasing = false;
+bool ntpLogIncreasing;
 
 #include "SparkFun_WebServer_ESP32_W5500.h" //http://librarymanager/All#SparkFun_WebServer_ESP32_W5500 v1.5.5
 #endif  // COMPILE_ETHERNET
 
 unsigned long lastEthernetCheck = 0; // Prevents cable checking from continually happening
-volatile bool ethernetTcpConnected = false;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "NetworkClient.h" //Supports both WiFiClient and EthernetClient
@@ -687,6 +675,75 @@ int lbandRestarts = 0;
 unsigned long lbandTimeToFix = 0;
 unsigned long lbandLastReport = 0;
 
+volatile PeriodicDisplay_t periodicDisplay;
+
+unsigned long shutdownNoChargeTimer = 0;
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+#define DEAD_MAN_WALKING_ENABLED    0
+
+#if DEAD_MAN_WALKING_ENABLED
+
+// Developer subsitutions enabled by changing DEAD_MAN_WALKING_ENABLED
+// from 0 to 1
+volatile bool deadManWalking;
+#define DMW_if                  if (deadManWalking)
+#define DMW_c(string)           DMW_if systemPrintf("%s called\r\n", string);
+#define DMW_m(string)           DMW_if systemPrintln(string);
+#define DMW_r(string)           DMW_if systemPrintf("%s returning\r\n",string);
+#define DMW_rs(string, status)  DMW_if systemPrintf("%s returning %d\r\n",string, (int32_t)status);
+#define DMW_st(routine, state)  DMW_if routine(state);
+
+#define START_DEAD_MAN_WALKING                          \
+{                                                       \
+    deadManWalking = true;                              \
+                                                        \
+    /* Output as much as possible to identify the location of the failure */    \
+    settings.printDebugMessages = true;                 \
+    settings.enableI2Cdebug = true;                     \
+    settings.enableHeapReport = true;                   \
+    settings.enableTaskReports = true;                  \
+    settings.enablePrintState = true;                   \
+    settings.enablePrintPosition = true;                \
+    settings.enablePrintIdleTime = true;                \
+    settings.enablePrintBatteryMessages = true;         \
+    settings.enablePrintRoverAccuracy = true;           \
+    settings.enablePrintBadMessages = true;             \
+    settings.enablePrintLogFileMessages = true;         \
+    settings.enablePrintLogFileStatus = true;           \
+    settings.enablePrintRingBufferOffsets = true;       \
+    settings.enablePrintStates = true;                  \
+    settings.enablePrintDuplicateStates = true;         \
+    settings.enablePrintRtcSync = true;                 \
+    settings.enablePrintBufferOverrun = true;           \
+    settings.enablePrintSDBuffers = true;               \
+    settings.periodicDisplay = (PeriodicDisplay_t)-1;   \
+    settings.enablePrintEthernetDiag = true;            \
+    settings.debugWifiState = true;                     \
+    settings.debugNetworkLayer = true;                  \
+    settings.printNetworkStatus = true;                 \
+    settings.debugNtripClientRtcm = true;               \
+    settings.debugNtripClientState = true;              \
+    settings.debugNtripServerRtcm = true;               \
+    settings.debugNtripServerState = true;              \
+    settings.debugPvtClient = true;                     \
+    settings.debugPvtServer = true;                     \
+}
+
+#else   // 0
+
+// Production substitutions
+#define deadManWalking              0
+#define DMW_if                      if (0)
+#define DMW_c(string)
+#define DMW_m(string)
+#define DMW_r(string)
+#define DMW_rs(string, status)
+#define DMW_st(routine, state)
+
+#endif  // 0
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*
                      +---------------------------------------+      +----------+
@@ -768,10 +825,6 @@ void initializeGlobals()
     gnssSyncTv.tv_usec = 0;
     previousGnssSyncTv.tv_sec = 0;
     previousGnssSyncTv.tv_usec = 0;
-#ifdef COMPILE_ETHERNET
-    ethernetNtpTv.tv_sec = 0;
-    ethernetNtpTv.tv_usec = 0;
-#endif  // COMPILE_ETHERNET
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -782,107 +835,150 @@ void setup()
 
     Serial.begin(115200); // UART0 for programming and debugging
 
+    DMW_c("identifyBoard");
     identifyBoard(); // Determine what hardware platform we are running on
 
+    DMW_c("initializePowerPins");
     initializePowerPins(); // Initialize any essential power pins - e.g. enable power for the Display
 
+    DMW_c("beginMux");
     beginMux(); // Must come before I2C activity to avoid external devices from corrupting the bus. See issue #474:
                 // https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/474
 
+    DMW_c("beginI2C");
     beginI2C();
 
+    DMW_c("beginDisplay");
     beginDisplay(); // Start display to be able to display any errors
 
+    DMW_c("beginFS");
     beginFS(); // Start LittleFS file system for settings
 
+    DMW_c("checkConfigureViaEthernet");
     configureViaEthernet =
         checkConfigureViaEthernet(); // Check if going into dedicated configureViaEthernet (STATE_CONFIG_VIA_ETH) mode
 
+    DMW_c("beginGNSS");
     beginGNSS(); // Connect to GNSS to get module type
 
-    beginBoard(); // Now finish settup up the board and check the on button
+    DMW_c("beginBoard");
+    beginBoard(); // Now finish setting up the board and check the on button
 
+    DMW_c("displaySplash");
     displaySplash(); // Display the RTK product name and firmware version
 
+    DMW_c("beginLEDs");
     beginLEDs(); // LED and PWM setup
 
+    DMW_c("verifyTables");
+    verifyTables (); // Verify the consistency of the internal tables
+
+    DMW_c("beginSD");
     beginSD(); // Test if SD is present
 
+    DMW_c("loadSettings");
     loadSettings(); // Attempt to load settings after SD is started so we can read the settings file if available
 
+    DMW_c("beginIdleTasks");
     beginIdleTasks(); // Enable processor load calculations
 
+    DMW_c("beginUART2");
     beginUART2(); // Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 
+    DMW_c("beginFuelGauge");
     beginFuelGauge(); // Configure battery fuel guage monitor
 
+    DMW_c("configureGNSS");
     configureGNSS(); // Configure ZED module
 
-    beginEthernet(); // Start-up the Ethernet connection
+    DMW_c("ethernetBegin");
+    ethernetBegin(); // Start-up the Ethernet connection
 
-    beginEthernetNTPServer(); // Start the NTP server
-
+    DMW_c("beginAccelerometer");
     beginAccelerometer();
 
+    DMW_c("beginLBand");
     beginLBand(); // Begin L-Band
 
+    DMW_c("beginExternalTriggers");
     beginExternalTriggers(); // Configure the time pulse output and TM2 input
 
+    DMW_c("beginInterrupts");
     beginInterrupts(); // Begin the TP and W5500 interrupts
 
+    DMW_c("beginSystemState");
     beginSystemState(); // Determine initial system state. Start task for button monitoring.
 
+    DMW_c("updateRTC");
     updateRTC(); // The GNSS likely has time/date. Update ESP32 RTC to match. Needed for PointPerfect key expiration.
 
     Serial.flush(); // Complete any previous prints
 
     log_d("Boot time: %d", millis());
 
+    DMW_c("danceLEDs");
     danceLEDs(); // Turn on LEDs like a car dashboard
 }
 
 void loop()
 {
+    static uint32_t lastPeriodicDisplay;
+
+    // Determine which items are periodically displayed
+    if ((millis() - lastPeriodicDisplay) >= settings.periodicDisplayInterval)
+    {
+        lastPeriodicDisplay = millis();
+        periodicDisplay = settings.periodicDisplay;
+
+        // Reboot the system after a specified timeout
+        if (((lastPeriodicDisplay / 1000) > settings.rebootSeconds) && (!inMainMenu))
+            ESP.restart();
+    }
+    if (deadManWalking)
+        periodicDisplay = (PeriodicDisplay_t)-1;
+
     if (online.gnss == true)
     {
+        DMW_c("theGNSS.checkUblox");
         theGNSS.checkUblox();     // Regularly poll to get latest data and any RTCM
+        DMW_c("theGNSS.checkCallbacks");
         theGNSS.checkCallbacks(); // Process any callbacks: ie, eventTriggerReceived
     }
 
+    DMW_c("updateSystemState");
     updateSystemState();
 
+    DMW_c("updateBattery");
     updateBattery();
 
+    DMW_c("updateDisplay");
     updateDisplay();
 
+    DMW_c("updateRTC");
     updateRTC(); // Set system time to GNSS once we have fix
 
+    DMW_c("updateSD");
     updateSD(); // Check if SD needs to be started or is at max capacity
 
+    DMW_c("updateLogs");
     updateLogs(); // Record any new data. Create or close files as needed.
 
+    DMW_c("reportHeap");
     reportHeap(); // If debug enabled, report free heap
 
+    DMW_c("updateSerial");
     updateSerial(); // Menu system via ESP32 USB connection
 
-    wifiUpdate(); // Bring up WiFi when services need it
+    DMW_c("networkUpdate");
+    networkUpdate(); // Maintain the network connections
 
+    DMW_c("updateLBand");
     updateLBand(); // Check if we've recently received PointPerfect corrections or not
 
+    DMW_c("updateRadio");
     updateRadio(); // Check if we need to finish sending any RTCM over link radio
 
-    ntripClientUpdate(); // Check the NTRIP client connection and move data NTRIP --> ZED
-
-    ntripServerUpdate(); // Check the NTRIP server connection and move data ZED --> NTRIP
-
-    tcpUpdate(); // Turn on TCP Client or Server as needed
-
-    updateEthernet(); // Maintain the ethernet connection
-
-    updateEthernetNTPServer(); // Process any received NTP requests
-
-    tcpUpdateEthernet(); // Turn on TCP Client as needed
-
+    DMW_c("printPosition");
     printPosition(); // Periodically print GNSS coordinates if enabled
 
     // A small delay prevents panic if no other I2C or functions are called

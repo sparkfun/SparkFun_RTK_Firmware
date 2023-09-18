@@ -15,7 +15,7 @@ bool configureUbloxModule()
         if (ENABLE_DEVELOPER && productVariant == REFERENCE_STATION)
             theGNSS.enableDebugging(serialGNSS); // Output all debug messages over serialGNSS
         else
-#endif  // REF_STN_GNSS_DEBUG
+#endif                                             // REF_STN_GNSS_DEBUG
             theGNSS.enableDebugging(Serial, true); // Enable only the critical debug messages over Serial
     }
     else
@@ -138,12 +138,9 @@ bool configureUbloxModule()
 
         if (commandSupported(UBLOX_CFG_I2CINPROT_SPARTN) == true)
         {
-            if (productVariant == RTK_FACET_LBAND)
-                response &= theGNSS.addCfgValset(
-                    UBLOX_CFG_I2CINPROT_SPARTN,
-                    1); // We push NEO-D9S correction data (SPARTN) to ZED-F9P over the I2C interface
-            else
-                response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_SPARTN, 0);
+            // We push NEO-D9S correction data over the I2C interface via the PMP message. This uses the UBX protocol.
+            // SPARTN is not needed on I2C
+            response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_SPARTN, 0);
         }
     }
 
@@ -333,21 +330,20 @@ void checkBatteryLevels()
         battChangeRate = 0;
     }
 
+    if (battChangeRate >= -0.01)
+        externalPowerConnected = true;
+    else
+        externalPowerConnected = false;
+
     if (settings.enablePrintBatteryMessages)
     {
-        systemPrintf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
-
         char tempStr[25];
-        if (battChangeRate >= -0.01)
-        {
+        if (externalPowerConnected)
             snprintf(tempStr, sizeof(tempStr), "C");
-            externalPowerConnected = true;
-        }
         else
-        {
             snprintf(tempStr, sizeof(tempStr), "Disc");
-            externalPowerConnected = false;
-        }
+
+        systemPrintf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
 
         systemPrintf(" %sharging: %0.02f%%/hr ", tempStr, battChangeRate);
 
@@ -361,6 +357,21 @@ void checkBatteryLevels()
             snprintf(tempStr, sizeof(tempStr), "No batt");
 
         systemPrintf("%s\r\n", tempStr);
+    }
+
+    // Check if we need to shutdown due to no charging
+    if (settings.shutdownNoChargeTimeout_s > 0)
+    {
+        if (externalPowerConnected == false)
+        {
+            int secondsSinceLastCharger = (millis() - shutdownNoChargeTimer) / 1000;
+            if (secondsSinceLastCharger > settings.shutdownNoChargeTimeout_s)
+                powerDown(true);
+        }
+        else
+        {
+            shutdownNoChargeTimer = millis(); // Reset timer because power is attached
+        }
     }
 
     if (productVariant == RTK_SURVEYOR)
@@ -406,7 +417,7 @@ bool createTestFile()
     char testFileName[40] = "/testfile.txt";
 
     // Attempt to write to the file system
-    if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) != true)
+    if ((!testFile) || (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) != true))
     {
         systemPrintln("createTestFile: failed to create (open) test file");
         return (false);
@@ -430,15 +441,15 @@ bool createTestFile()
             SD_MMC.remove(testFileName);
         return (!SD_MMC.exists(testFileName));
     }
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
 
     return (false);
 }
 
 // If debug option is on, print available heap
-void reportHeapNow()
+void reportHeapNow(bool alwaysPrint)
 {
-    if (settings.enableHeapReport == true)
+    if (alwaysPrint || (settings.enableHeapReport == true))
     {
         lastHeapReport = millis();
         systemPrintf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\r\n", ESP.getFreeHeap(),
@@ -453,7 +464,7 @@ void reportHeap()
     {
         if (millis() - lastHeapReport > 1000)
         {
-            reportHeapNow();
+            reportHeapNow(false);
         }
     }
 }
@@ -565,9 +576,8 @@ void createNMEASentence(customNmeaType_e textID, char *nmeaMessage, size_t sizeO
 // Reset settings struct to default initializers
 void settingsToDefaults()
 {
-    Settings *defaultSettings = new Settings;
-    memcpy(&settings, defaultSettings, sizeof(Settings));
-    delete defaultSettings;
+    static const Settings defaultSettings;
+    memcpy(&settings, &defaultSettings, sizeof(defaultSettings));
 }
 
 // Given a spot in the ubxMsg array, return true if this message is supported on this platform and firmware version
@@ -927,7 +937,7 @@ CoordinateInputType coordinateIdentifyInputType(char *userEntryOriginal, double 
 
         // Find '.'
         char *decimalPtr = strchr(userEntry, '.');
-        if (decimalPtr == NULL)
+        if (decimalPtr == nullptr)
             coordinateInputType = COORDINATE_INPUT_TYPE_DDMMSS_NO_DECIMAL;
 
         double seconds = atof(userEntry); // Get DDDMMSS.ssssss
@@ -978,7 +988,7 @@ CoordinateInputType coordinateIdentifyInputType(char *userEntryOriginal, double 
 
         // Find '.'
         char *decimalPtr = strchr(userEntry, '.');
-        if (decimalPtr == NULL)
+        if (decimalPtr == nullptr)
             coordinateInputType = COORDINATE_INPUT_TYPE_DD_MM_SS_DASH_NO_DECIMAL;
 
         double seconds = atof(token); // Get SS.ssssss
@@ -1019,7 +1029,7 @@ CoordinateInputType coordinateIdentifyInputType(char *userEntryOriginal, double 
 
         // Find '.'
         char *decimalPtr = strchr(token, '.');
-        if (decimalPtr == NULL)
+        if (decimalPtr == nullptr)
             coordinateInputType = COORDINATE_INPUT_TYPE_DD_MM_SS_NO_DECIMAL;
 
         double seconds = atof(token); // Get SS.ssssss
@@ -1150,4 +1160,16 @@ const char *coordinatePrintableInputType(CoordinateInputType coordinateInputType
         break;
     }
     return ("Unknown");
+}
+
+// Print the error message every 15 seconds
+void reportFatalError(const char *errorMsg)
+{
+    while (1)
+    {
+        systemPrint("ERROR: ");
+        systemPrint(errorMsg);
+        systemPrintln();
+        sleep(15);
+    }
 }

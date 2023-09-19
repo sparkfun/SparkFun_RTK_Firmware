@@ -583,7 +583,7 @@ void otaUpdate()
         {
             systemPrintln("Installing new firmware");
             ota.SetCallback(otaPullCallback);
-            ota.CheckForOTAUpdate(url, versionString); // Install new firmware, no reset
+            ota.CheckForOTAUpdate(url, &versionString[1]); // Install new firmware, no reset
 
             if (apConfigFirmwareUpdateInProcess)
             {

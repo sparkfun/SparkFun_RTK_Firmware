@@ -63,7 +63,9 @@ void menuFirmware()
                         // We got a version number, now determine if it's newer or not
                         char currentVersion[21];
                         getFirmwareVersion(currentVersion, sizeof(currentVersion), enableRCFirmware);
-                        if (isReportedVersionNewer(reportedVersion, &currentVersion[1]) == true)
+
+                        //Allow update if locally compiled developer version
+                        if (isReportedVersionNewer(reportedVersion, &currentVersion[1]) == true || FIRMWARE_VERSION_MAJOR == 99)
                         {
                             log_d("New version detected");
                             newOTAFirmwareAvailable = true;
@@ -581,7 +583,7 @@ void otaUpdate()
         {
             systemPrintln("Installing new firmware");
             ota.SetCallback(otaPullCallback);
-            ota.CheckForOTAUpdate(url, versionString); // Install new firmware, no reset
+            ota.CheckForOTAUpdate(url, &versionString[1]); // Install new firmware, no reset
 
             if (apConfigFirmwareUpdateInProcess)
             {

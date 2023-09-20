@@ -1125,7 +1125,7 @@ void menuPeriodicPrint()
         systemPrintf("%s\r\n", PERIODIC_SETTING(PD_SD_LOG_WRITE) ? "Enabled" : "Disabled");
 
         systemPrint("6) WiFi IP Address: ");
-        systemPrintf("%s\r\n", PERIODIC_DISPLAY(PD_WIFI_IP_ADDRESS) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_WIFI_IP_ADDRESS) ? "Enabled" : "Disabled");
 
         systemPrint("7) WiFi state: ");
         systemPrintf("%s\r\n", PERIODIC_SETTING(PD_WIFI_STATE) ? "Enabled" : "Disabled");

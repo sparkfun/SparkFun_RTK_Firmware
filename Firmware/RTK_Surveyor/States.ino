@@ -908,6 +908,9 @@ void updateSystemState()
                 // No WiFi. No RTC. We don't know if the keys we have are expired. Attempt to use them.
                 changeState(STATE_KEYS_LBAND_CONFIGURE);
             }
+
+            // Turn off WiFi
+            wifiShutdown();
         }
         break;
 

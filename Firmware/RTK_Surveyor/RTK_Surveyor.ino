@@ -1008,8 +1008,9 @@ void updateSD()
         }
         else if (sdPresent() == true) // Poll card to see if a card is inserted
         {
-            systemPrintln("SD inserted");
             beginSD(); // Attempt to start SD
+            if(online.microSD == true)
+                systemPrintln("SD inserted");
         }
     }
 

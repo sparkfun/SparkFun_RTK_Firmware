@@ -397,10 +397,7 @@ void beginSD()
                 tries++;
             }
             if (tries == maxTries)
-            {
-                log_d("sdPresent failed");
                 break; // Give up loop
-            }
 
             // If an SD card is present, allow SdFat to take over
             log_d("SD card detected - using SPI and SdFat");

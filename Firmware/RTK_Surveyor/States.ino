@@ -812,7 +812,7 @@ void updateSystemState()
         case (STATE_KEYS_WIFI_STARTED): {
             if (wifiIsConnected())
                 changeState(STATE_KEYS_WIFI_CONNECTED);
-            else if (wifiState == WIFI_OFF)
+            else
             {
                 wifiMaxConnectionAttempts =
                     wifiOriginalMaxConnectionAttempts; // Override setting to 2 attemps during keys

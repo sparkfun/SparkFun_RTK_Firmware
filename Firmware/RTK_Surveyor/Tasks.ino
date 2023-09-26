@@ -180,6 +180,11 @@ void btReadTask(void *e)
                     btEscapeCharsReceived = 0; // Update timeout check for escape char and partial frame
 
                     bluetoothIncomingRTCM = true;
+
+                    // Record the arrival of RTCM from the Bluetooth connection (a phone or tablet is providing the RTCM
+                    // via NTRIP). This resets the RTCM timeout used on the L-Band.
+                    rtcmLastPacketReceived = millis();
+
                 } // End just a character in the stream
 
             } // End btPrintEcho == false && bluetoothRxDataAvailable()

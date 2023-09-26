@@ -778,6 +778,8 @@ void menuOperation()
         systemPrint("11) Use I2C for L-Band Corrections: ");
         systemPrintf("%s\r\n", settings.useI2cForLbandCorrections ? "Enabled" : "Disabled");
 
+        systemPrintf("12) RTCM timeout before L-Band override (seconds): %d\r\n", settings.rtcmTimeoutBeforeUsingLBand_s);
+
         systemPrintln("----  Interrupts  ----");
         systemPrint("30) Bluetooth Interrupts Core: ");
         systemPrintln(settings.bluetoothInterruptsCore);
@@ -947,6 +949,18 @@ void menuOperation()
         {
             settings.useI2cForLbandCorrectionsConfigured = true; //Record that the user has manually modified the settings.
             settings.useI2cForLbandCorrections ^= 1;
+        }
+        else if (incoming == 12)
+        {
+            systemPrint("Enter the number of seconds before L-Band is used once RTCM is absent (1 to 255): ");
+            int rtcmTimeoutBeforeUsingLBand_s = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((rtcmTimeoutBeforeUsingLBand_s != INPUT_RESPONSE_GETNUMBER_EXIT) && (rtcmTimeoutBeforeUsingLBand_s != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (rtcmTimeoutBeforeUsingLBand_s < 1 || rtcmTimeoutBeforeUsingLBand_s > 255)
+                    systemPrintln("Error: RTCM timeout out of range");
+                else
+                    settings.rtcmTimeoutBeforeUsingLBand_s = rtcmTimeoutBeforeUsingLBand_s; // Recorded to NVM and file
+            }
         }
 
         else if (incoming == 30)

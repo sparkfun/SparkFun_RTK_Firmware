@@ -379,6 +379,8 @@ void ntripServerPrintStatus ()
 // This function gets called as each RTCM byte comes in
 void ntripServerProcessRTCM(uint8_t incoming)
 {
+    static uint32_t zedBytesSent;
+
     if (ntripServerState == NTRIP_SERVER_CASTING)
     {
         // Generate and print timestamp if needed
@@ -400,7 +402,8 @@ void ntripServerProcessRTCM(uint8_t incoming)
                 struct tm timeinfo = rtc.getTimeStruct();
                 char timestamp[30];
                 strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
-                systemPrintf("    Tx RTCM: %s.%03ld, %d bytes sent\r\n", timestamp, rtc.getMillis(), ntripServerBytesSent);
+                systemPrintf("    Tx RTCM: %s.%03ld, %d bytes sent\r\n", timestamp, rtc.getMillis(), zedBytesSent);
+                zedBytesSent = 0;
             }
             previousMilliseconds = currentMilliseconds;
         }
@@ -418,6 +421,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
         {
             ntripServer->write(incoming); // Send this byte to socket
             ntripServerBytesSent++;
+            zedBytesSent++;
             ntripServerTimer = millis();
             netOutgoingRTCM = true;
         }

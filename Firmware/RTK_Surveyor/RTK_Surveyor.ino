@@ -678,7 +678,7 @@ bool externalPowerConnected = false; // Goes true when a high voltage is seen on
 //  This is to allow SparkFun_WebServer_ESP32_W5500 to have _exclusive_ access to WiFi, SPI and Interrupts.
 bool configureViaEthernet = false;
 
-unsigned long lbandStartTimer = 0; // Monitors the ZED during L-Band reception if a fix takes too long
+unsigned long lbandTimeFloatStarted = 0; // Monitors the ZED during L-Band reception if a fix takes too long
 int lbandRestarts = 0;
 unsigned long lbandTimeToFix = 0;
 unsigned long lbandLastReport = 0;

@@ -152,7 +152,10 @@ void updateSystemState()
             updateAccuracyLEDs();
 
             if (carrSoln == 1) // RTK Float
+            {
+                lbandTimeFloatStarted = millis(); //Restart timer for L-Band. Don't immediately reset ZED to achieve fix.
                 changeState(STATE_ROVER_RTK_FLOAT);
+            }
             else if (carrSoln == 2) // RTK Fix
                 changeState(STATE_ROVER_RTK_FIX);
         }
@@ -174,7 +177,10 @@ void updateSystemState()
             if (carrSoln == 0) // No RTK
                 changeState(STATE_ROVER_FIX);
             if (carrSoln == 1) // RTK Float
+            {
+                lbandTimeFloatStarted = millis(); //Restart timer for L-Band. Don't immediately reset ZED to achieve fix.
                 changeState(STATE_ROVER_RTK_FLOAT);
+            }
         }
         break;
 

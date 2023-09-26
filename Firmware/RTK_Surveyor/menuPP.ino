@@ -1038,8 +1038,6 @@ void beginLBand()
 
     i2cLBand.softwareResetGNSSOnly(); // Do a restart
 
-    lbandStartTimer = millis();
-
     log_d("L-Band online");
 
     online.lband = true;
@@ -1224,15 +1222,16 @@ void updateLBand()
             {
                 lbandLastReport = millis();
                 log_d("ZED restarts: %d Time remaining before L-Band forced restart: %ds", lbandRestarts,
-                      settings.lbandFixTimeout_seconds - ((millis() - lbandStartTimer) / 1000));
+                      settings.lbandFixTimeout_seconds - ((millis() - lbandTimeFloatStarted) / 1000));
             }
 
             if (settings.lbandFixTimeout_seconds > 0)
             {
-                if ((millis() - lbandStartTimer) > (settings.lbandFixTimeout_seconds * 1000L))
+                if ((millis() - lbandTimeFloatStarted) > (settings.lbandFixTimeout_seconds * 1000L))
                 {
-                    lbandStartTimer = millis(); // Reset timer
                     lbandRestarts++;
+
+                    lbandTimeFloatStarted = millis(); //Restart timer for L-Band. Don't immediately reset ZED to achieve fix.
 
                     // Hotstart ZED to try to get RTK lock
                     theGNSS.softwareResetGNSSOnly();

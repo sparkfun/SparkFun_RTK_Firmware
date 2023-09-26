@@ -154,6 +154,8 @@ void bluetoothStart()
             strncpy(stateName, "Rover-", sizeof(stateName) - 1);
         else if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
             strncpy(stateName, "Base-", sizeof(stateName) - 1);
+        else
+            log_d("State out of range for Bluetooth Broadcast: %d", systemState);
 
         snprintf(deviceName, sizeof(deviceName), "%s %s%02X%02X", platformPrefix, stateName, btMACAddress[4],
                  btMACAddress[5]);

@@ -316,6 +316,12 @@ class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
 
 SFE_UBLOX_GNSS_SUPER_DERIVED theGNSS;
 
+#ifdef COMPILE_L_BAND
+static SFE_UBLOX_GNSS_SUPER i2cLBand; // NEO-D9S
+
+void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct);
+#endif
+
 volatile struct timeval
     gnssSyncTv; // This holds the time the RTC was sync'd to GNSS time via Time Pulse interrupt - used by NTP
 struct timeval previousGnssSyncTv; // This holds the time of the previous RTC sync
@@ -360,6 +366,8 @@ int64_t ARPECEFZ = 0;
 uint16_t ARPECEFH = 0;
 
 const byte haeNumberOfDecimals = 8; // Used for printing and transmitting lat/lon
+bool lBandCommunicationEnabled = false;
+unsigned long rtcmLastPacketReceived = 0; //Monitors the last time we received RTCM. Proctors PMP vs RTCM prioritization.
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 // Battery fuel gauge and PWM LEDs

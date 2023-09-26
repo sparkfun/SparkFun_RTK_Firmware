@@ -1060,6 +1060,12 @@ typedef struct
     bool debugPvtServer = false;
     bool enablePvtServer = false;
     uint16_t pvtServerPort = 2948; // PVT server port, 2948 is GPS Daemon: http://tcp-udp-ports.com/port-2948.htm
+
+    uint8_t rtcmTimeoutBeforeUsingLBand_s = 10; //If 10s have passed without RTCM, enable PMP corrections over L-Band if available
+    
+    //Add new settings above
+    //<------------------------------------------------------------>
+
 } Settings;
 Settings settings;
 

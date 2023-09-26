@@ -130,5 +130,6 @@ void wifiPrintNetworkInfo() {}
 void wifiStart() {}
 void wifiStop() {}
 void wifiUpdate() {}
+void wifiShutdown() {}
 
 #endif // COMPILE_WIFI

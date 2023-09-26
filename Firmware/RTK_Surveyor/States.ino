@@ -820,6 +820,8 @@ void updateSystemState()
                 changeState(STATE_KEYS_WIFI_CONNECTED);
             else
             {
+                wifiShutdown(); // Turn off WiFi
+
                 wifiMaxConnectionAttempts =
                     wifiOriginalMaxConnectionAttempts; // Override setting to 2 attemps during keys
                 changeState(STATE_KEYS_WIFI_TIMEOUT);
@@ -914,9 +916,6 @@ void updateSystemState()
                 // No WiFi. No RTC. We don't know if the keys we have are expired. Attempt to use them.
                 changeState(STATE_KEYS_LBAND_CONFIGURE);
             }
-
-            // Turn off WiFi
-            wifiShutdown();
         }
         break;
 
@@ -933,7 +932,10 @@ void updateSystemState()
             if (wifiIsConnected())
                 changeState(STATE_KEYS_PROVISION_WIFI_CONNECTED);
             else
+            {
+                wifiShutdown(); // Turn off WiFi
                 changeState(STATE_KEYS_WIFI_TIMEOUT);
+            }
         }
         break;
 

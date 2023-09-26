@@ -521,7 +521,7 @@ void menuDebugNetwork()
         systemPrintf("%s\r\n", settings.debugPvtClient ? "Enabled" : "Disabled");
 
         // PVT Server
-        systemPrint("26 53) Debug PVT server: ");
+        systemPrint("26) Debug PVT server: ");
         systemPrintf("%s\r\n", settings.debugPvtServer ? "Enabled" : "Disabled");
 
         systemPrintln("r) Force system reset");

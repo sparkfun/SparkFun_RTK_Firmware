@@ -848,8 +848,7 @@ void updateSystemState()
                     displayKeysUpdated();
             }
 
-            // WiFi will be turned off once we exit this state, if no other service needs it
-
+            wifiShutdown(); // Turn off WiFi
             forceSystemStateUpdate = true; // Imediately go to this new state
             changeState(STATE_KEYS_DAYS_REMAINING);
         }
@@ -952,6 +951,7 @@ void updateSystemState()
                 paintKeyProvisionFail(10000); // Device not whitelisted. Show device ID.
                 changeState(STATE_KEYS_LBAND_ENCRYPTED);
             }
+            wifiShutdown(); // Turn off WiFi
         }
         break;
 #endif // COMPILE_L_BAND

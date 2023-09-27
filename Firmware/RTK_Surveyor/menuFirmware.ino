@@ -19,6 +19,13 @@ const char * const firmwareUpdateStateNames[] =
 const int firmwareUpdateStateEntries = sizeof(firmwareUpdateStateNames) / sizeof(firmwareUpdateStateNames[0]);
 
 //----------------------------------------
+// Locals
+//----------------------------------------
+
+static FirmwareUpdateState firmwareUpdateState;
+static uint32_t lastFirmwareCheck;
+
+//----------------------------------------
 // Menu
 //----------------------------------------
 
@@ -843,6 +850,99 @@ int mapMonthName(char *mmm)
             return i + 1;
     }
     return -1;
+}
+
+// Get the firmware update state
+const char * getFirmwareUpdateState(FirmwareUpdateState state, char * string)
+{
+    if (state < UPDATE_STATE_MAX)
+        return firmwareUpdateStateNames[state];
+    sprintf(string, "Unknown state (%d)", state);
+    return string;
+}
+
+// Set the next firmware update state
+void firmwareUpdateSetState(FirmwareUpdateState newState)
+{
+    char string1[40];
+    char string2[40];
+    const char * arrow;
+    const char * asterisk;
+    const char * initialState;
+    const char * endingState;
+
+    // Display the state transition
+    if (settings.debugFirmwareUpdate)
+    {
+        arrow = "";
+        asterisk = "";
+        initialState = "";
+        if (newState == firmwareUpdateState)
+            asterisk = "*";
+        else
+        {
+            initialState = getFirmwareUpdateState(firmwareUpdateState, string1);
+            arrow = " --> ";
+        }
+    }
+
+    // Set the new state
+    firmwareUpdateState = newState;
+    if (settings.debugFirmwareUpdate)
+    {
+        // Display the new firmware update state
+        endingState = getFirmwareUpdateState(newState, string2);
+        if (!online.rtc)
+            systemPrintf("%s%s%s%s\r\n", asterisk, initialState, arrow, endingState);
+        else
+        {
+            // Timestamp the state change
+            //          1         2
+            // 12345678901234567890123456
+            // YYYY-mm-dd HH:MM:SS.xxxrn0
+            struct tm timeinfo = rtc.getTimeStruct();
+            char s[30];
+            strftime(s, sizeof(s), "%Y-%m-%d %H:%M:%S", &timeinfo);
+            systemPrintf("%s%s%s%s, %s.%03ld\r\n", asterisk, initialState, arrow, endingState, s, rtc.getMillis());
+        }
+    }
+
+    // Validate the firmware update state
+    if (newState >= UPDATE_STATE_MAX)
+        reportFatalError("Invalid firmware update state");
+}
+
+// Perform firmware checks and updates on a repeated basis
+void updateFirmware()
+{
+    uint32_t checkIntervalMillis;
+
+    // Determine if the user enabled automatic firmware updates
+    if (settings.enableAutoFirmwareUpdate)
+    {
+        // Wait until it is time to check for a firmware update
+        checkIntervalMillis = settings.autoFirmwareCheckMinutes * 60 * 1000;
+        if ((millis() - lastFirmwareCheck) >= checkIntervalMillis)
+        {
+            lastFirmwareCheck = millis();
+            firmwareUpdateSetState(UPDATE_STATE_START_WIFI);
+        }
+    }
+
+    // Perform the firmware update
+    if (firmwareUpdateState && (!inMainMenu))
+    {
+        // Walk the state machine to do the firmware update
+        switch (firmwareUpdateState)
+        {
+        default:
+            systemPrintf("ERROR: Unknown firmware update state (%d)\r\n", firmwareUpdateState);
+            break;
+
+        case UPDATE_STATE_OFF:
+            break;
+        }
+    }
 }
 
 // Verify the firmware update tables

@@ -186,6 +186,7 @@ const char * const networkUser[] =
     "NTRIP Server",
     "PVT Client",
     "PVT Server",
+    "Firmware Update",
 };
 const int networkUserEntries = sizeof(networkUser) / sizeof(networkUser[0]);
 

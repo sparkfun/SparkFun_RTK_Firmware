@@ -1,3 +1,27 @@
+/*------------------------------------------------------------------------------
+menuFirmware.ino
+
+  This module implements the firmware menu and update code.
+------------------------------------------------------------------------------*/
+//----------------------------------------
+// Constants
+//----------------------------------------
+
+const char * const firmwareUpdateStateNames[] =
+{
+    "UPDATE_STATE_OFF",
+    "UPDATE_STATE_START_WIFI",
+    "UPDATE_STATE_WAIT_FOR_WIFI",
+    "UPDATE_STATE_GET_FIRMWARE_VERSION",
+    "UPDATE_STATE_CHECK_FIRMWARE_VERSION",
+    "UPDATE_STATE_UPDATE_FIRMWARE",
+};
+const int firmwareUpdateStateEntries = sizeof(firmwareUpdateStateNames) / sizeof(firmwareUpdateStateNames[0]);
+
+//----------------------------------------
+// Menu
+//----------------------------------------
+
 // Update firmware if bin files found
 void menuFirmware()
 {
@@ -188,6 +212,10 @@ void menuFirmware()
 
     clearBuffer(); // Empty buffer of any newline chars
 }
+
+//----------------------------------------
+// Firmware update code
+//----------------------------------------
 
 void mountSDThenUpdate(const char *firmwareFileName)
 {
@@ -815,4 +843,12 @@ int mapMonthName(char *mmm)
             return i + 1;
     }
     return -1;
+}
+
+// Verify the firmware update tables
+void firmwareUpdateVerifyTables()
+{
+    // Verify the table lengths
+    if (firmwareUpdateStateEntries != UPDATE_STATE_MAX)
+        reportFatalError("Fix firmwareUpdateStateNames table to match FirmwareUpdateState");
 }

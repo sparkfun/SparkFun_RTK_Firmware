@@ -183,6 +183,7 @@ enum NetworkUsers
     NETWORK_USER_NTRIP_SERVER,     // NTRIP server
     NETWORK_USER_PVT_CLIENT,       // PVT client
     NETWORK_USER_PVT_SERVER,       // PVT server
+    NETWORK_USER_FIRMWARE_UPDATE,  // Firmware update
     // Last network user
     NETWORK_USER_MAX
 };
@@ -493,6 +494,20 @@ enum PeriodDisplayValues
 #define PERIODIC_CLEAR(x) periodicDisplay &= ~PERIODIC_MASK(x)
 #define PERIODIC_SETTING(x) (settings.periodicDisplay & PERIODIC_MASK(x))
 #define PERIODIC_TOGGLE(x) settings.periodicDisplay ^= PERIODIC_MASK(x)
+
+// Automatic firmware update support
+typedef enum
+{
+    //34567890123456789012345678901234567890
+    UPDATE_STATE_OFF = 0,
+    UPDATE_STATE_START_WIFI,
+    UPDATE_STATE_WAIT_FOR_WIFI,
+    UPDATE_STATE_GET_FIRMWARE_VERSION,
+    UPDATE_STATE_CHECK_FIRMWARE_VERSION,
+    UPDATE_STATE_UPDATE_FIRMWARE,
+    // Add new states here
+    UPDATE_STATE_MAX
+} FirmwareUpdateState;
 
 // These are the allowable messages to broadcast and log (if enabled)
 
@@ -1094,6 +1109,7 @@ struct struct_online
     bool pvtServer = false;
     ethernetStatus_e ethernetStatus = ETH_NOT_STARTED;
     bool NTPServer = false; // EthernetUDP
+    bool firmwareUpdate = false;
 } online;
 
 #ifdef COMPILE_WIFI

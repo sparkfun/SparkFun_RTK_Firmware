@@ -1166,6 +1166,7 @@ void verifyTables ()
 {
     // Verify the consistency of the internal tables
     ethernetVerifyTables();
+    firmwareUpdateVerifyTables();
     networkVerifyTables();
     ntpValidateTables();
     ntripClientValidateTables();

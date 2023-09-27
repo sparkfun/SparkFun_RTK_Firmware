@@ -432,6 +432,11 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "i2cInterruptsCore", settings.i2cInterruptsCore);
     settingsFile->printf("%s=%d\r\n", "rtcmTimeoutBeforeUsingLBand_s", settings.rtcmTimeoutBeforeUsingLBand_s);
 
+    // Automatic Firmware Update
+    settingsFile->printf("%s=%d\r\n", "autoFirmwareCheckMinutes", settings.autoFirmwareCheckMinutes);
+    settingsFile->printf("%s=%d\r\n", "debugFirmwareUpdate", settings.debugFirmwareUpdate);
+    settingsFile->printf("%s=%d\r\n", "enableAutoFirmwareUpdate", settings.enableAutoFirmwareUpdate);
+
     //Add new settings above
     //<------------------------------------------------------------>
 }
@@ -1334,6 +1339,14 @@ bool parseLine(char *str, Settings *settings)
         settings->printNetworkStatus = d;
     else if (strcmp(settingName, "rtcmTimeoutBeforeUsingLBand_s") == 0)
         settings->rtcmTimeoutBeforeUsingLBand_s = d;
+
+    // Automatic Firmware Update
+    else if (strcmp(settingName, "autoFirmwareCheckMinutes") == 0)
+        settings->autoFirmwareCheckMinutes = d;
+    else if (strcmp(settingName, "debugFirmwareUpdate") == 0)
+        settings->debugFirmwareUpdate = d;
+    else if (strcmp(settingName, "enableAutoFirmwareUpdate") == 0)
+        settings->enableAutoFirmwareUpdate = d;
 
     //Add new settings above
     //<------------------------------------------------------------>

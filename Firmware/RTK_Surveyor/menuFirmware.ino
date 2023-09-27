@@ -22,6 +22,7 @@ const int firmwareUpdateStateEntries = sizeof(firmwareUpdateStateNames) / sizeof
 // Locals
 //----------------------------------------
 
+static byte firmwareUpdateBluetoothState = BT_OFF;
 static FirmwareUpdateState firmwareUpdateState;
 static uint32_t lastFirmwareCheck;
 
@@ -912,20 +913,57 @@ void firmwareUpdateSetState(FirmwareUpdateState newState)
         reportFatalError("Invalid firmware update state");
 }
 
+// Stop the firmware update
+void firmwareUpdateStop()
+{
+    if (settings.debugFirmwareUpdate)
+        systemPrintln("firmwareUpdateStop called");
+
+    if (firmwareUpdateState != UPDATE_STATE_OFF)
+    {
+        // Stop WiFi
+        systemPrintln("Firmware update stopping WiFi");
+        online.firmwareUpdate = false;
+        if (networkGetUserNetwork(NETWORK_USER_FIRMWARE_UPDATE))
+            networkUserClose(NETWORK_USER_FIRMWARE_UPDATE);
+
+        // Stop the firmware update
+        firmwareUpdateSetState(UPDATE_STATE_OFF);
+        lastFirmwareCheck = millis();
+
+        // Restart bluetooth if necessary
+        if (firmwareUpdateBluetoothState == BT_CONNECTED)
+        {
+            firmwareUpdateBluetoothState = BT_OFF;
+            if (settings.debugFirmwareUpdate)
+                systemPrintln("Firmware update restarting Bluetooth");
+            bluetoothStart(); // Restart BT according to settings
+        }
+    }
+};
+
 // Perform firmware checks and updates on a repeated basis
 void updateFirmware()
 {
     uint32_t checkIntervalMillis;
 
     // Determine if the user enabled automatic firmware updates
-    if (settings.enableAutoFirmwareUpdate)
+    if (settings.enableAutoFirmwareUpdate && (!online.firmwareUpdate))
     {
         // Wait until it is time to check for a firmware update
         checkIntervalMillis = settings.autoFirmwareCheckMinutes * 60 * 1000;
         if ((millis() - lastFirmwareCheck) >= checkIntervalMillis)
         {
             lastFirmwareCheck = millis();
-            firmwareUpdateSetState(UPDATE_STATE_START_WIFI);
+
+            // Start the firmware update
+            if (wifiNetworkCount())
+            {
+                online.firmwareUpdate = true;
+                firmwareUpdateSetState(UPDATE_STATE_START_WIFI);
+            }
+            else
+                systemPrintln("Firmware update requires at least one valid WiFi SSID and password");
         }
     }
 
@@ -940,6 +978,44 @@ void updateFirmware()
             break;
 
         case UPDATE_STATE_OFF:
+            break;
+
+        // Start the WiFi network
+        case UPDATE_STATE_START_WIFI:
+            if (settings.debugFirmwareUpdate)
+                systemPrintln("Firmware update starting WiFi");
+            if (!networkUserOpen(NETWORK_USER_FIRMWARE_UPDATE, NETWORK_TYPE_WIFI))
+            {
+                systemPrintln("Firmware update failed, unable to start WiFi");
+                firmwareUpdateStop();
+            }
+            else
+                firmwareUpdateSetState(UPDATE_STATE_WAIT_FOR_WIFI);
+            break;
+
+        // Wait for connection to the access point
+        case UPDATE_STATE_WAIT_FOR_WIFI:
+            // Determine if the network has failed
+            if (networkIsShuttingDown(NETWORK_USER_FIRMWARE_UPDATE))
+                firmwareUpdateStop();
+
+            // Determine if the network is connected to the media
+            else if (networkUserConnected(NETWORK_USER_FIRMWARE_UPDATE))
+            {
+                if (settings.debugFirmwareUpdate)
+                    systemPrintln("Firmware update connected to WiFi");
+
+                // Stop Bluetooth
+                firmwareUpdateBluetoothState = bluetoothGetState();
+                if (firmwareUpdateBluetoothState != BT_OFF)
+                {
+                    if (settings.debugFirmwareUpdate)
+                        systemPrintln("Firmware update stopping Bluetooth");
+                    bluetoothStop();
+                }
+
+                firmwareUpdateStop();
+            }
             break;
         }
     }

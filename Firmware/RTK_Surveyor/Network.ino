@@ -817,6 +817,12 @@ void networkStop(uint8_t networkType)
                 // Stop the network client
                 switch(user)
                 {
+                case NETWORK_USER_FIRMWARE_UPDATE:
+                    if (settings.debugNetworkLayer)
+                        systemPrintln("Network layer stopping firmware update");
+                    firmwareUpdateStop();
+                    break;
+
                 case NETWORK_USER_NTP_SERVER:
                     if (settings.debugNetworkLayer)
                         systemPrintln("Network layer stopping NTP server");

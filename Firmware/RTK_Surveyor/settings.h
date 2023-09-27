@@ -1073,6 +1073,11 @@ typedef struct
     
     uint8_t rtcmTimeoutBeforeUsingLBand_s = 10; //If 10s have passed without RTCM, enable PMP corrections over L-Band if available
 
+    // Automatic Firmware Update
+    bool debugFirmwareUpdate = false;
+    bool enableAutoFirmwareUpdate = false;
+    uint32_t autoFirmwareCheckMinutes = 24 * 60;
+
     //Add new settings above
     //<------------------------------------------------------------>
 

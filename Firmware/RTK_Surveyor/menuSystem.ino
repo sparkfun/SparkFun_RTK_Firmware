@@ -644,6 +644,10 @@ void menuDebugSoftware()
         else
             systemPrintln("Disabled");
 
+        // Automatic Firmware Update
+        systemPrintf("60) Print firmware update states: %s\r\n",
+                     settings.debugFirmwareUpdate ? "Enabled" : "Disabled");
+
         systemPrintln("e) Erase LittleFS");
 
         systemPrintln("r) Force system reset");
@@ -703,6 +707,8 @@ void menuDebugSoftware()
         }
         else if (incoming == 50)
             settings.enableTaskReports ^= 1;
+        else if (incoming == 60)
+            settings.debugFirmwareUpdate ^= 1;
         else if (incoming == 'e')
         {
             systemPrintln("Erasing LittleFS and resetting");

@@ -997,6 +997,9 @@ void loop()
     DMW_c("printPosition");
     printPosition(); // Periodically print GNSS coordinates if enabled
 
+    DMW_c("updateFirmware");
+    updateFirmware();
+
     // A small delay prevents panic if no other I2C or functions are called
     delay(10);
 }

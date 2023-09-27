@@ -384,7 +384,7 @@ void beginSD()
 
             // Do a quick test to see if a card is present
             int tries = 0;
-            int maxTries = 2;
+            int maxTries = 5;
             while (tries < maxTries)
             {
                 if (sdPresent() == true)

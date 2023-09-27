@@ -177,6 +177,10 @@ void menuPointPerfectKeys()
 bool pointperfectProvisionDevice()
 {
 #ifdef COMPILE_WIFI
+    bool bluetoothOriginallyConnected = false;
+    if(bluetoothState == BT_CONNECTED)
+        bluetoothOriginallyConnected = true;
+
     bluetoothStop(); // Free heap before starting secure client (requires ~70KB)
 
     DynamicJsonDocument *jsonZtp = nullptr;
@@ -202,7 +206,6 @@ bool pointperfectProvisionDevice()
         char givenName[100];
         char versionString[9];
         getFirmwareVersion(versionString, sizeof(versionString), false);
-        systemPrintf("versionString: %s\r\n", versionString);
 
         if (productVariant == RTK_FACET_LBAND)
         {
@@ -334,7 +337,8 @@ bool pointperfectProvisionDevice()
     if (jsonZtp)
         delete jsonZtp;
 
-    bluetoothStart();
+    if(bluetoothOriginallyConnected == true)
+        bluetoothStart();
 
     return (retVal);
 #else  // COMPILE_WIFI
@@ -433,6 +437,10 @@ void erasePointperfectCredentials()
 bool pointperfectUpdateKeys()
 {
 #ifdef COMPILE_WIFI
+    bool bluetoothOriginallyConnected = false;
+    if(bluetoothState == BT_CONNECTED)
+        bluetoothOriginallyConnected = true;
+
     bluetoothStop(); // Release available heap to allow room for TLS
 
     char *certificateContents = nullptr; // Holds the contents of the keys prior to MQTT connection
@@ -550,7 +558,8 @@ bool pointperfectUpdateKeys()
     if (certificateContents)
         free(certificateContents);
 
-    bluetoothStart();
+    if(bluetoothOriginallyConnected == true)
+        bluetoothStart();
 
     // Return the key status
     return (gotKeys);

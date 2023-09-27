@@ -475,7 +475,7 @@ bool loadSystemSettingsFromFileSD(char *fileName, Settings *settings)
                     break;
                 }
 
-                char line[60];
+                char line[100];
                 int lineNumber = 0;
 
                 while (settingsFile.available())
@@ -532,7 +532,7 @@ bool loadSystemSettingsFromFileSD(char *fileName, Settings *settings)
                     break;
                 }
 
-                char line[60];
+                char line[100];
                 int lineNumber = 0;
 
                 while (settingsFile.available())

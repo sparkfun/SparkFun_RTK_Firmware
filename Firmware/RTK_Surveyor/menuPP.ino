@@ -8,8 +8,6 @@
 
 #define MQTT_CERT_SIZE 2000
 
-static SFE_UBLOX_GNSS_SUPER i2cLBand; // NEO-D9S
-
 // The PointPerfect token is provided at compile time via build flags
 #ifndef POINTPERFECT_TOKEN
 #define POINTPERFECT_TOKEN                                                                                             \
@@ -179,6 +177,10 @@ void menuPointPerfectKeys()
 bool pointperfectProvisionDevice()
 {
 #ifdef COMPILE_WIFI
+    bool bluetoothOriginallyConnected = false;
+    if(bluetoothState == BT_CONNECTED)
+        bluetoothOriginallyConnected = true;
+
     bluetoothStop(); // Free heap before starting secure client (requires ~70KB)
 
     DynamicJsonDocument *jsonZtp = nullptr;
@@ -204,7 +206,6 @@ bool pointperfectProvisionDevice()
         char givenName[100];
         char versionString[9];
         getFirmwareVersion(versionString, sizeof(versionString), false);
-        systemPrintf("versionString: %s\r\n", versionString);
 
         if (productVariant == RTK_FACET_LBAND)
         {
@@ -336,7 +337,8 @@ bool pointperfectProvisionDevice()
     if (jsonZtp)
         delete jsonZtp;
 
-    bluetoothStart();
+    if(bluetoothOriginallyConnected == true)
+        bluetoothStart();
 
     return (retVal);
 #else  // COMPILE_WIFI
@@ -435,6 +437,10 @@ void erasePointperfectCredentials()
 bool pointperfectUpdateKeys()
 {
 #ifdef COMPILE_WIFI
+    bool bluetoothOriginallyConnected = false;
+    if(bluetoothState == BT_CONNECTED)
+        bluetoothOriginallyConnected = true;
+
     bluetoothStop(); // Release available heap to allow room for TLS
 
     char *certificateContents = nullptr; // Holds the contents of the keys prior to MQTT connection
@@ -552,7 +558,8 @@ bool pointperfectUpdateKeys()
     if (certificateContents)
         free(certificateContents);
 
-    bluetoothStart();
+    if(bluetoothOriginallyConnected == true)
+        bluetoothStart();
 
     // Return the key status
     return (gotKeys);
@@ -1031,45 +1038,14 @@ void beginLBand()
     response &=
         i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1, 0); // Diasable UBX-RXM-PMP on UART1. Not used.
 
-    // Determine if we should use callback to harvest/sent encrypted messages over I2C
-    // If not, it is assumed the ZED UART2 is directly connected to NEO UART2
-    if (settings.useI2cForLbandCorrections == true)
-    {
-        // Enable PMP over I2C. Disable UARTs
-        response &= theGNSS.setVal32(UBLOX_CFG_UART2INPROT_UBX, settings.enableUART2UBXIn);
-
-        i2cLBand.setRXMPMPmessageCallbackPtr(&pushRXMPMP); // Enable PMP callback
-
-        response &=
-            i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C, 1); // Ensure UBX-RXM-PMP is enabled on I2C port
-
-        response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX, 0);         // Disable UBX output on UART2
-        response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2, 0); // Disable UBX-RXM-PMP on UART2
-        response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud); // match baudrate with ZED
-    }
-    else // Setup for ZED to NEO serial communication
-    {
-        response &= theGNSS.setVal32(UBLOX_CFG_UART2INPROT_UBX, true); // Configure ZED for UBX input on UART2
-
-        // Disable PMP callback over I2C. Enable UARTs.
-        i2cLBand.setRXMPMPmessageCallbackPtr(nullptr);                          // Enable PMP callback
-        response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C, 0); // Disable UBX-RXM-PMP on I2C port
-
-        response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX, 1);         // Enable UBX output on UART2
-        response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2, 1); // Output UBX-RXM-PMP on UART2
-        response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud); // match baudrate with ZED
-    }
-
     response &= i2cLBand.sendCfgValset();
 
-    theGNSS.setRXMCORcallbackPtr(&checkRXMCOR); // Callback to check if the PMP data is being decrypted successfully
+    lBandCommunicationEnabled = zedEnableLBandCommunication();
 
     if (response == false)
         systemPrintln("L-Band failed to configure");
 
     i2cLBand.softwareResetGNSSOnly(); // Do a restart
-
-    lbandStartTimer = millis();
 
     log_d("L-Band online");
 
@@ -1255,15 +1231,16 @@ void updateLBand()
             {
                 lbandLastReport = millis();
                 log_d("ZED restarts: %d Time remaining before L-Band forced restart: %ds", lbandRestarts,
-                      settings.lbandFixTimeout_seconds - ((millis() - lbandStartTimer) / 1000));
+                      settings.lbandFixTimeout_seconds - ((millis() - lbandTimeFloatStarted) / 1000));
             }
 
             if (settings.lbandFixTimeout_seconds > 0)
             {
-                if ((millis() - lbandStartTimer) > (settings.lbandFixTimeout_seconds * 1000L))
+                if ((millis() - lbandTimeFloatStarted) > (settings.lbandFixTimeout_seconds * 1000L))
                 {
-                    lbandStartTimer = millis(); // Reset timer
                     lbandRestarts++;
+
+                    lbandTimeFloatStarted = millis(); //Restart timer for L-Band. Don't immediately reset ZED to achieve fix.
 
                     // Hotstart ZED to try to get RTK lock
                     theGNSS.softwareResetGNSSOnly();
@@ -1277,6 +1254,28 @@ void updateLBand()
             lbandTimeToFix = millis();
             log_d("Time to first L-Band fix: %ds", lbandTimeToFix / 1000);
         }
+
+        if ((millis() - rtcmLastPacketReceived) / 1000 > settings.rtcmTimeoutBeforeUsingLBand_s)
+        {
+            // If we have not received RTCM in a certain amount of time,
+            // and if communication was disabled because RTCM was being received at some point,
+            // re-enableL-Band communcation
+            if (lBandCommunicationEnabled == false)
+            {
+                log_d("Enabling L-Band communication due to RTCM timeout");
+                lBandCommunicationEnabled = zedEnableLBandCommunication();
+            }
+        }
+        else
+        {
+            // If we *have* recently received RTCM then disable corrections from then NEO-D9S L-Band receiver
+            if (lBandCommunicationEnabled == true)
+            {
+                log_d("Disabling L-Band communication due to RTCM reception");
+                lBandCommunicationEnabled = !zedDisableLBandCommunication(); //zedDisableLBandCommunication() returns true if we successfully disabled
+            }
+        }
     }
+
 #endif // COMPILE_L_BAND
 }

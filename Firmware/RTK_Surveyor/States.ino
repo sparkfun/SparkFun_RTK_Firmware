@@ -152,7 +152,10 @@ void updateSystemState()
             updateAccuracyLEDs();
 
             if (carrSoln == 1) // RTK Float
+            {
+                lbandTimeFloatStarted = millis(); //Restart timer for L-Band. Don't immediately reset ZED to achieve fix.
                 changeState(STATE_ROVER_RTK_FLOAT);
+            }
             else if (carrSoln == 2) // RTK Fix
                 changeState(STATE_ROVER_RTK_FIX);
         }
@@ -174,7 +177,10 @@ void updateSystemState()
             if (carrSoln == 0) // No RTK
                 changeState(STATE_ROVER_FIX);
             if (carrSoln == 1) // RTK Float
+            {
+                lbandTimeFloatStarted = millis(); //Restart timer for L-Band. Don't immediately reset ZED to achieve fix.
                 changeState(STATE_ROVER_RTK_FLOAT);
+            }
         }
         break;
 
@@ -812,8 +818,10 @@ void updateSystemState()
         case (STATE_KEYS_WIFI_STARTED): {
             if (wifiIsConnected())
                 changeState(STATE_KEYS_WIFI_CONNECTED);
-            else if (wifiState == WIFI_OFF)
+            else
             {
+                wifiShutdown(); // Turn off WiFi
+
                 wifiMaxConnectionAttempts =
                     wifiOriginalMaxConnectionAttempts; // Override setting to 2 attemps during keys
                 changeState(STATE_KEYS_WIFI_TIMEOUT);
@@ -840,8 +848,7 @@ void updateSystemState()
                     displayKeysUpdated();
             }
 
-            // WiFi will be turned off once we exit this state, if no other service needs it
-
+            wifiShutdown(); // Turn off WiFi
             forceSystemStateUpdate = true; // Imediately go to this new state
             changeState(STATE_KEYS_DAYS_REMAINING);
         }
@@ -924,7 +931,10 @@ void updateSystemState()
             if (wifiIsConnected())
                 changeState(STATE_KEYS_PROVISION_WIFI_CONNECTED);
             else
+            {
+                wifiShutdown(); // Turn off WiFi
                 changeState(STATE_KEYS_WIFI_TIMEOUT);
+            }
         }
         break;
 
@@ -941,13 +951,7 @@ void updateSystemState()
                 paintKeyProvisionFail(10000); // Device not whitelisted. Show device ID.
                 changeState(STATE_KEYS_LBAND_ENCRYPTED);
             }
-        }
-        break;
-
-        case (STATE_KEYS_PROVISION_WIFI_TIMEOUT): {
-            paintKeyWiFiFail(2000);
-
-            changeState(settings.lastState); // Go to either rover or base
+            wifiShutdown(); // Turn off WiFi
         }
         break;
 #endif // COMPILE_L_BAND
@@ -1168,9 +1172,116 @@ void requestChangeState(SystemState requestedState)
     log_d("Requested System State: %d", requestedSystemState);
 }
 
+// Print the current state
+const char * getState(SystemState state, char * buffer)
+{
+    switch (state)
+    {
+    case (STATE_ROVER_NOT_STARTED):
+        return "STATE_ROVER_NOT_STARTED";
+    case (STATE_ROVER_NO_FIX):
+        return "STATE_ROVER_NO_FIX";
+    case (STATE_ROVER_FIX):
+        return "STATE_ROVER_FIX";
+    case (STATE_ROVER_RTK_FLOAT):
+        return "STATE_ROVER_RTK_FLOAT";
+    case (STATE_ROVER_RTK_FIX):
+        return "STATE_ROVER_RTK_FIX";
+    case (STATE_BASE_NOT_STARTED):
+        return "STATE_BASE_NOT_STARTED";
+    case (STATE_BASE_TEMP_SETTLE):
+        return "STATE_BASE_TEMP_SETTLE";
+    case (STATE_BASE_TEMP_SURVEY_STARTED):
+        return "STATE_BASE_TEMP_SURVEY_STARTED";
+    case (STATE_BASE_TEMP_TRANSMITTING):
+        return "STATE_BASE_TEMP_TRANSMITTING";
+    case (STATE_BASE_FIXED_NOT_STARTED):
+        return "STATE_BASE_FIXED_NOT_STARTED";
+    case (STATE_BASE_FIXED_TRANSMITTING):
+        return "STATE_BASE_FIXED_TRANSMITTING";
+    case (STATE_BUBBLE_LEVEL):
+        return "STATE_BUBBLE_LEVEL";
+    case (STATE_MARK_EVENT):
+        return "STATE_MARK_EVENT";
+    case (STATE_DISPLAY_SETUP):
+        return "STATE_DISPLAY_SETUP";
+    case (STATE_WIFI_CONFIG_NOT_STARTED):
+        return "STATE_WIFI_CONFIG_NOT_STARTED";
+    case (STATE_WIFI_CONFIG):
+        return "STATE_WIFI_CONFIG";
+    case (STATE_TEST):
+        return "STATE_TEST";
+    case (STATE_TESTING):
+        return "STATE_TESTING";
+    case (STATE_PROFILE):
+        return "STATE_PROFILE";
+#ifdef COMPILE_L_BAND
+    case (STATE_KEYS_STARTED):
+        return "STATE_KEYS_STARTED";
+    case (STATE_KEYS_NEEDED):
+        return "STATE_KEYS_NEEDED";
+    case (STATE_KEYS_WIFI_STARTED):
+        return "STATE_KEYS_WIFI_STARTED";
+    case (STATE_KEYS_WIFI_CONNECTED):
+        return "STATE_KEYS_WIFI_CONNECTED";
+    case (STATE_KEYS_WIFI_TIMEOUT):
+        return "STATE_KEYS_WIFI_TIMEOUT";
+    case (STATE_KEYS_EXPIRED):
+        return "STATE_KEYS_EXPIRED";
+    case (STATE_KEYS_DAYS_REMAINING):
+        return "STATE_KEYS_DAYS_REMAINING";
+    case (STATE_KEYS_LBAND_CONFIGURE):
+        return "STATE_KEYS_LBAND_CONFIGURE";
+    case (STATE_KEYS_LBAND_ENCRYPTED):
+        return "STATE_KEYS_LBAND_ENCRYPTED";
+    case (STATE_KEYS_PROVISION_WIFI_STARTED):
+        return "STATE_KEYS_PROVISION_WIFI_STARTED";
+    case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
+        return "STATE_KEYS_PROVISION_WIFI_CONNECTED";
+#endif // COMPILE_L_BAND
+
+    case (STATE_ESPNOW_PAIRING_NOT_STARTED):
+        return "STATE_ESPNOW_PAIRING_NOT_STARTED";
+    case (STATE_ESPNOW_PAIRING):
+        return "STATE_ESPNOW_PAIRING";
+
+    case (STATE_NTPSERVER_NOT_STARTED):
+        return "STATE_NTPSERVER_NOT_STARTED";
+    case (STATE_NTPSERVER_NO_SYNC):
+        return "STATE_NTPSERVER_NO_SYNC";
+    case (STATE_NTPSERVER_SYNC):
+        return "STATE_NTPSERVER_SYNC";
+
+    case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
+        return "STATE_CONFIG_VIA_ETH_NOT_STARTED";
+    case (STATE_CONFIG_VIA_ETH_STARTED):
+        return "STATE_CONFIG_VIA_ETH_STARTED";
+    case (STATE_CONFIG_VIA_ETH):
+        return "STATE_CONFIG_VIA_ETH";
+    case (STATE_CONFIG_VIA_ETH_RESTART_BASE):
+        return "STATE_CONFIG_VIA_ETH_RESTART_BASE";
+
+    case (STATE_SHUTDOWN):
+        return "STATE_SHUTDOWN";
+    case (STATE_NOT_SET):
+        return "STATE_NOT_SET";
+    }
+
+    // Handle the unknown case
+    sprintf(buffer, "Unknown: %d", state);
+    return buffer;
+}
+
 // Change states and print the new state
 void changeState(SystemState newState)
 {
+    char string1[30];
+    char string2[30];
+    const char * arrow;
+    const char * asterisk;
+    const char * initialState;
+    const char * endingState;
+
     // Log the heap size at the state change
     reportHeapNow(false);
 
@@ -1178,154 +1289,29 @@ void changeState(SystemState newState)
     if ((!settings.enablePrintDuplicateStates) && (newState == systemState))
         return;
 
-    if (settings.enablePrintStates && (newState == systemState))
-        systemPrint("*");
+    if (settings.enablePrintStates)
+    {
+        arrow = "";
+        asterisk = "";
+        initialState = "";
+        if (newState == systemState)
+            asterisk = "*";
+        else
+        {
+            initialState = getState(systemState, string1);
+            arrow = " --> ";
+        }
+    }
 
     // Set the new state
     systemState = newState;
-
     if (settings.enablePrintStates)
     {
-        switch (systemState)
-        {
-        case (STATE_ROVER_NOT_STARTED):
-            systemPrint("State: Rover - Not Started");
-            break;
-        case (STATE_ROVER_NO_FIX):
-            systemPrint("State: Rover - No Fix");
-            break;
-        case (STATE_ROVER_FIX):
-            systemPrint("State: Rover - Fix");
-            break;
-        case (STATE_ROVER_RTK_FLOAT):
-            systemPrint("State: Rover - RTK Float");
-            break;
-        case (STATE_ROVER_RTK_FIX):
-            systemPrint("State: Rover - RTK Fix");
-            break;
-        case (STATE_BASE_NOT_STARTED):
-            systemPrint("State: Base - Not Started");
-            break;
-        case (STATE_BASE_TEMP_SETTLE):
-            systemPrint("State: Base-Temp - Settle");
-            break;
-        case (STATE_BASE_TEMP_SURVEY_STARTED):
-            systemPrint("State: Base-Temp - Survey Started");
-            break;
-        case (STATE_BASE_TEMP_TRANSMITTING):
-            systemPrint("State: Base-Temp - Transmitting");
-            break;
-        case (STATE_BASE_FIXED_NOT_STARTED):
-            systemPrint("State: Base-Fixed - Not Started");
-            break;
-        case (STATE_BASE_FIXED_TRANSMITTING):
-            systemPrint("State: Base-Fixed - Transmitting");
-            break;
-        case (STATE_BUBBLE_LEVEL):
-            systemPrint("State: Bubble level");
-            break;
-        case (STATE_MARK_EVENT):
-            systemPrint("State: Mark Event");
-            break;
-        case (STATE_DISPLAY_SETUP):
-            systemPrint("State: Display Setup");
-            break;
-        case (STATE_WIFI_CONFIG_NOT_STARTED):
-            systemPrint("State: WiFi Config Not Started");
-            break;
-        case (STATE_WIFI_CONFIG):
-            systemPrint("State: WiFi Config");
-            break;
-        case (STATE_TEST):
-            systemPrint("State: System Test Setup");
-            break;
-        case (STATE_TESTING):
-            systemPrint("State: System Testing");
-            break;
-        case (STATE_PROFILE):
-            systemPrint("State: Profile");
-            break;
-#ifdef COMPILE_L_BAND
-        case (STATE_KEYS_STARTED):
-            systemPrint("State: Keys Started ");
-            break;
-        case (STATE_KEYS_NEEDED):
-            systemPrint("State: Keys Needed");
-            break;
-        case (STATE_KEYS_WIFI_STARTED):
-            systemPrint("State: Keys WiFi Started");
-            break;
-        case (STATE_KEYS_WIFI_CONNECTED):
-            systemPrint("State: Keys WiFi Connected");
-            break;
-        case (STATE_KEYS_WIFI_TIMEOUT):
-            systemPrint("State: Keys WiFi Timeout");
-            break;
-        case (STATE_KEYS_EXPIRED):
-            systemPrint("State: Keys Expired");
-            break;
-        case (STATE_KEYS_DAYS_REMAINING):
-            systemPrint("State: Keys Days Remaining");
-            break;
-        case (STATE_KEYS_LBAND_CONFIGURE):
-            systemPrint("State: Keys L-Band Configure");
-            break;
-        case (STATE_KEYS_LBAND_ENCRYPTED):
-            systemPrint("State: Keys L-Band Encrypted");
-            break;
-        case (STATE_KEYS_PROVISION_WIFI_STARTED):
-            systemPrint("State: Keys Provision - WiFi Started");
-            break;
-        case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
-            systemPrint("State: Keys Provision - WiFi Connected");
-            break;
-        case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
-            systemPrint("State: Keys Provision - WiFi Timeout");
-            break;
-#endif // COMPILE_L_BAND
+        endingState = getState(newState, string2);
 
-        case (STATE_ESPNOW_PAIRING_NOT_STARTED):
-            systemPrint("State: ESP-Now Pairing Not Started");
-            break;
-        case (STATE_ESPNOW_PAIRING):
-            systemPrint("State: ESP-Now Pairing");
-            break;
-
-        case (STATE_NTPSERVER_NOT_STARTED):
-            systemPrint("State: NTP Server - Not Started");
-            break;
-        case (STATE_NTPSERVER_NO_SYNC):
-            systemPrint("State: NTP Server - No Sync");
-            break;
-        case (STATE_NTPSERVER_SYNC):
-            systemPrint("State: NTP Server - Sync");
-            break;
-
-        case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
-            systemPrint("State: Configure Via Ethernet - Not Started");
-            break;
-        case (STATE_CONFIG_VIA_ETH_STARTED):
-            systemPrint("State: Configure Via Ethernet - Started");
-            break;
-        case (STATE_CONFIG_VIA_ETH):
-            systemPrint("State: Configure Via Ethernet");
-            break;
-        case (STATE_CONFIG_VIA_ETH_RESTART_BASE):
-            systemPrint("State: Configure Via Ethernet - Restarting Base");
-            break;
-
-        case (STATE_SHUTDOWN):
-            systemPrint("State: Shut Down");
-            break;
-        case (STATE_NOT_SET):
-            systemPrint("State: Not Set");
-            break;
-        default:
-            systemPrintf("Change State Unknown: %d", systemState);
-            break;
-        }
-
-        if (online.rtc)
+        if (!online.rtc)
+            systemPrintf("%s%s%s%s\r\n", asterisk, initialState, arrow, endingState);
+        else
         {
             // Timestamp the state change
             //          1         2
@@ -1334,9 +1320,7 @@ void changeState(SystemState newState)
             struct tm timeinfo = rtc.getTimeStruct();
             char s[30];
             strftime(s, sizeof(s), "%Y-%m-%d %H:%M:%S", &timeinfo);
-            systemPrintf(", %s.%03ld", s, rtc.getMillis());
+            systemPrintf("%s%s%s%s, %s.%03ld\r\n", asterisk, initialState, arrow, endingState, s, rtc.getMillis());
         }
-
-        systemPrintln();
     }
 }

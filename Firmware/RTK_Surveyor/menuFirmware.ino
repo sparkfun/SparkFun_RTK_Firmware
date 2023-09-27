@@ -85,6 +85,10 @@ void menuFirmware()
                 {
                     bool previouslyConnected = wifiIsConnected();
 
+                    bool bluetoothOriginallyConnected = false;
+                    if(bluetoothState == BT_CONNECTED)
+                        bluetoothOriginallyConnected = true;
+
                     bluetoothStop(); // Stop Bluetooth to allow for SSL on the heap
 
                     // Attempt to connect to local WiFi
@@ -118,7 +122,8 @@ void menuFirmware()
                     if (previouslyConnected == false)
                         wifiStop();
 
-                    bluetoothStart(); // Restart BT according to settings
+                    if(bluetoothOriginallyConnected == true)
+                        bluetoothStart(); // Restart BT according to settings
                 }
             } //End wifiNetworkCount() check
         }

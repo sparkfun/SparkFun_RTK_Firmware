@@ -428,9 +428,6 @@ void updateDisplay()
                 iconsRadio = setWiFiIcon(); // Blink WiFi in center
                 paintGettingKeys();
                 break;
-            case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
-                // Do nothing. Quick, fall through state.
-                break;
 
             case (STATE_ESPNOW_PAIRING_NOT_STARTED):
                 paintEspNowPairing();

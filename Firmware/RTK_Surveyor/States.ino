@@ -954,13 +954,6 @@ void updateSystemState()
             }
         }
         break;
-
-        case (STATE_KEYS_PROVISION_WIFI_TIMEOUT): {
-            paintKeyWiFiFail(2000);
-
-            changeState(settings.lastState); // Go to either rover or base
-        }
-        break;
 #endif // COMPILE_L_BAND
 
         case (STATE_ESPNOW_PAIRING_NOT_STARTED): {
@@ -1245,8 +1238,6 @@ const char * getState(SystemState state, char * buffer)
         return "STATE_KEYS_PROVISION_WIFI_STARTED";
     case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
         return "STATE_KEYS_PROVISION_WIFI_CONNECTED";
-    case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
-        return "STATE_KEYS_PROVISION_WIFI_TIMEOUT";
 #endif // COMPILE_L_BAND
 
     case (STATE_ESPNOW_PAIRING_NOT_STARTED):

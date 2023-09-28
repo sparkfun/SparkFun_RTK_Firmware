@@ -16,8 +16,8 @@
 #define POINTPERFECT_TOKEN      DEVELOPMENT_TOKEN
 #endif // POINTPERFECT_TOKEN
 
-static uint8_t developmentTokenArray[16] = {DEVELOPMENT_TOKEN};   // Token in HEX form
-static uint8_t pointPerfectTokenArray[16] = {POINTPERFECT_TOKEN}; // Token in HEX form
+static const uint8_t developmentTokenArray[16] = {DEVELOPMENT_TOKEN};   // Token in HEX form
+static const uint8_t pointPerfectTokenArray[16] = {POINTPERFECT_TOKEN}; // Token in HEX form
 
 static const char *pointPerfectAPI = "https://api.thingstream.io/ztp/pointperfect/credentials";
 
@@ -236,7 +236,7 @@ bool pointperfectProvisionDevice()
         {
             // Convert uint8_t array into string with dashes in spots
             // We must assume u-blox will not change the position of their dashes or length of their token
-            if (memcmp(pointPerfectTokenArray, developmentTokenArray, sizeof(developmentTokenArray)))
+            if (!memcmp(pointPerfectTokenArray, developmentTokenArray, sizeof(developmentTokenArray)))
                 systemPrintln("Warning: Using the development token!");
             for (int x = 0; x < sizeof(pointPerfectTokenArray); x++)
             {
@@ -1115,6 +1115,8 @@ void menuPointPerfect()
 
         systemPrintln("4) Show device ID");
 
+        systemPrintln("c) Clear the Keys");
+
         systemPrintln("k) Manual Key Entry");
 
         systemPrintln("x) Exit");
@@ -1185,6 +1187,11 @@ void menuPointPerfect()
             snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1],
                      lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]);
             systemPrintf("Device ID: %s\r\n", hardwareID);
+        }
+        else if (incoming == 'c')
+        {
+            settings.pointPerfectCurrentKey[0] = 0;
+            settings.pointPerfectNextKey[0] = 0;
         }
         else if (incoming == 'k')
         {

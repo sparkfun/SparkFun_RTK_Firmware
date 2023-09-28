@@ -946,6 +946,7 @@ void firmwareUpdateStop()
 void updateFirmware()
 {
     uint32_t checkIntervalMillis;
+    char reportedVersion[50];
 
     // Determine if the user enabled automatic firmware updates
     if (settings.enableAutoFirmwareUpdate && (!online.firmwareUpdate))
@@ -1014,8 +1015,61 @@ void updateFirmware()
                     bluetoothStop();
                 }
 
+                // Get the latest firmware version
+                firmwareUpdateSetState(UPDATE_STATE_GET_FIRMWARE_VERSION);
+            }
+            break;
+
+        // Check for newer firmware
+        case UPDATE_STATE_GET_FIRMWARE_VERSION:
+            // Determine if the network has failed
+            if (networkIsShuttingDown(NETWORK_USER_FIRMWARE_UPDATE))
+                firmwareUpdateStop();
+            if (settings.debugFirmwareUpdate)
+                systemPrintln("Firmware update checking SparkFun released firmware version");
+
+            // Only update to production firmware, disable release candidates
+            enableRCFirmware = 0;
+
+            // Get firmware version from server
+            reportedVersion[0] = 0;
+            if (otaCheckVersion(reportedVersion, sizeof(reportedVersion)))
+            {
+                // We got a version number, now determine if it's newer or not
+                char currentVersion[21];
+                getFirmwareVersion(currentVersion, sizeof(currentVersion), enableRCFirmware);
+
+                //Allow update if locally compiled developer version
+                if ((isReportedVersionNewer(reportedVersion, &currentVersion[1]) == true)
+                    || (currentVersion[0] == 'd')
+                    || (FIRMWARE_VERSION_MAJOR == 99))
+                {
+                    if (settings.debugFirmwareUpdate)
+                        systemPrintf("Firmware update detected new firmware version %s\r\n", reportedVersion);
+                    firmwareUpdateSetState(UPDATE_STATE_UPDATE_FIRMWARE);
+                }
+                else
+                {
+                    if (settings.debugFirmwareUpdate)
+                        systemPrintln("Firmware update, no new firmware available");
+                    firmwareUpdateStop();
+                }
+            }
+            else
+            {
+                // Failed to get version number
+                systemPrintln("Failed to get version number from server.");
                 firmwareUpdateStop();
             }
+            break;
+
+        // Update the firmware
+        case UPDATE_STATE_UPDATE_FIRMWARE:
+            // Determine if the network has failed
+            if (networkIsShuttingDown(NETWORK_USER_FIRMWARE_UPDATE))
+                firmwareUpdateStop();
+            else
+                firmwareUpdateStop();
             break;
         }
     }

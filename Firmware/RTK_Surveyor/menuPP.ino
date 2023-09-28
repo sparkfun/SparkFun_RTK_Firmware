@@ -1177,7 +1177,7 @@ void menuPointPerfect()
                 }
             }
 
-            wifiStop();
+            WIFI_STOP();
         }
         else if (incoming == 4)
         {

@@ -120,7 +120,7 @@ void menuFirmware()
                         systemPrintln("Firmware update failed to connect to WiFi.");
 
                     if (previouslyConnected == false)
-                        wifiStop();
+                        WIFI_STOP();
 
                     if(bluetoothOriginallyConnected == true)
                         bluetoothStart(); // Restart BT according to settings
@@ -141,7 +141,7 @@ void menuFirmware()
             // We get here if WiFi failed or the server was not available
 
             if (previouslyConnected == false)
-                wifiStop();
+                WIFI_STOP();
         }
 
         else if (incoming == 'e')
@@ -315,7 +315,7 @@ void updateFromSD(const char *firmwareFileName)
 
     // Turn off any tasks so that we are not disrupted
     espnowStop();
-    wifiStop();
+    WIFI_STOP();
     bluetoothStop();
 
     // Delete tasks if running
@@ -551,12 +551,12 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
 
     if (systemState != STATE_WIFI_CONFIG)
     {
-        // wifiStop() turns off the entire radio including the webserver. We need to turn off Station mode only.
+        // WIFI_STOP() turns off the entire radio including the webserver. We need to turn off Station mode only.
         // For now, unit exits AP mode via reset so if we are in AP config mode, leave WiFi Station running.
 
         // If WiFi was originally off, turn it off again
         if (previouslyConnected == false)
-            wifiStop();
+            WIFI_STOP();
     }
 
     if (gotVersion == true)
@@ -619,7 +619,7 @@ void otaUpdate()
 
     // Update failed. If WiFi was originally off, turn it off again
     if (previouslyConnected == false)
-        wifiStop();
+        WIFI_STOP();
 
 #endif // COMPILE_WIFI
 }

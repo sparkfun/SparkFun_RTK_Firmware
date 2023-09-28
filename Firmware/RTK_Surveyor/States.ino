@@ -120,7 +120,7 @@ void updateSystemState()
 
             setMuxport(settings.dataPortChannel); // Return mux to original channel
 
-            wifiStop();       // Stop WiFi, ntripClient will start as needed.
+            WIFI_STOP();      // Stop WiFi, ntripClient will start as needed.
             bluetoothStart(); // Turn on Bluetooth with 'Rover' name
             radioStart();     // Start internal radio if enabled, otherwise disable
 
@@ -249,7 +249,7 @@ void updateSystemState()
 
             // Allow WiFi to continue running if NTRIP Client is needed for assisted survey in
             if (wifiIsNeeded() == false)
-                wifiStop();
+                WIFI_STOP();
 
             bluetoothStop();
             bluetoothStart(); // Restart Bluetooth with 'Base' identifier

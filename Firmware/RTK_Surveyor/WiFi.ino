@@ -149,7 +149,7 @@ void menuWiFi()
             if (wifiIsConnected())
             {
                 log_d("Menu caused restarting of WiFi");
-                wifiStop();
+                WIFI_STOP();
                 wifiStart();
                 wifiConnectionAttempts = 0; // Reset the timeout
             }
@@ -222,7 +222,7 @@ bool wifiStartAP(bool forceAP)
     if (settings.wifiConfigOverAP == true || forceAP)
     {
         // Stop any current WiFi activity
-        wifiStop();
+        WIFI_STOP();
 
         // Start in AP mode
         WiFi.mode(WIFI_AP);
@@ -347,7 +347,7 @@ void wifiUpdate()
                 {
                     systemPrintln("WiFi connection failed. Giving up.");
                     displayNoWiFi(2000);
-                    wifiStop(); // Move back to WIFI_OFF
+                    WIFI_STOP(); // Move back to WIFI_OFF
                 }
             }
         }
@@ -365,7 +365,7 @@ void wifiUpdate()
 
         // If WiFi is connected, and no services require WiFi, shut it off
         else if (wifiIsNeeded() == false)
-            wifiStop();
+            WIFI_STOP();
 
         break;
     }
@@ -387,7 +387,7 @@ void wifiStart()
     {
         systemPrintln("Error: Please enter at least one SSID before using WiFi");
         // paintNoWiFi(2000); //TODO
-        wifiStop();
+        WIFI_STOP();
         return;
     }
 
@@ -441,7 +441,7 @@ void wifiShutdown()
         // esp_wifi_set_protocol requires WiFi to be started
         esp_err_t response = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
         if (response != ESP_OK)
-            systemPrintf("wifiStop: Error setting ESP-Now lone protocol: %s\r\n", esp_err_to_name(response));
+            systemPrintf("wifiShutdown: Error setting ESP-Now lone protocol: %s\r\n", esp_err_to_name(response));
         else
             log_d("WiFi disabled, ESP-Now left in place");
     }

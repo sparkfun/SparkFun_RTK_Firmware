@@ -631,54 +631,48 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
 
 // Force updates firmware using OTA pull
 // Exits by either updating firmware and resetting, or failing to connect
+void overTheAirUpdate()
+{
+    char versionString[9];
+    formatFirmwareVersion(0, 0, versionString, sizeof(versionString), false);
+
+    ESP32OTAPull ota;
+
+    int response;
+    const char *url = otaGetUrl();
+    response = ota.CheckForOTAUpdate(url, &versionString[1], ESP32OTAPull::DONT_DO_UPDATE);
+
+    if (response == ESP32OTAPull::UPDATE_AVAILABLE)
+    {
+        systemPrintln("Installing new firmware");
+        ota.SetCallback(otaPullCallback);
+        ota.CheckForOTAUpdate(url, &versionString[1]); // Install new firmware, no reset
+
+        if (apConfigFirmwareUpdateInProcess)
+        {
+#ifdef COMPILE_AP
+            // Tell AP page to display reset info
+            websocket->textAll("confirmReset,1,");
+#endif // COMPILE_AP
+        }
+        ESP.restart();
+    }
+    else if (response == ESP32OTAPull::NO_UPDATE_AVAILABLE)
+        systemPrintln("OTA Update: Current firmware is up to date");
+    else if (response == ESP32OTAPull::HTTP_FAILED)
+        systemPrintln("OTA Update: Firmware server not available");
+    else
+        systemPrintln("OTA Update: OTA failed");
+}
+
+// Start WiFi and perform the over-the-air update
 void otaUpdate()
 {
 #ifdef COMPILE_WIFI
     bool previouslyConnected = wifiIsConnected();
 
     if (wifiConnect(10000) == true)
-    {
-        char versionString[9];
-        formatFirmwareVersion(0, 0, versionString, sizeof(versionString), false);
-
-        ESP32OTAPull ota;
-
-        int response;
-        const char *url = otaGetUrl();
-        response = ota.CheckForOTAUpdate(url, &versionString[1], ESP32OTAPull::DONT_DO_UPDATE);
-
-        if (response == ESP32OTAPull::UPDATE_AVAILABLE)
-        {
-            systemPrintln("Installing new firmware");
-            ota.SetCallback(otaPullCallback);
-            ota.CheckForOTAUpdate(url, &versionString[1]); // Install new firmware, no reset
-
-            if (apConfigFirmwareUpdateInProcess)
-            {
-#ifdef COMPILE_AP
-                // Tell AP page to display reset info
-                websocket->textAll("confirmReset,1,");
-#endif // COMPILE_AP
-            }
-            ESP.restart();
-        }
-        else if (response == ESP32OTAPull::NO_UPDATE_AVAILABLE)
-        {
-            systemPrintln("OTA Update: Current firmware is up to date");
-        }
-        else if (response == ESP32OTAPull::HTTP_FAILED)
-        {
-            systemPrintln("OTA Update: Firmware server not available");
-        }
-        else
-        {
-            systemPrintln("OTA Update: OTA failed");
-        }
-    }
-    else
-    {
-        systemPrintln("WiFi not available.");
-    }
+        overTheAirUpdate();
 
     // Update failed. If WiFi was originally off, turn it off again
     if (previouslyConnected == false)
@@ -1069,7 +1063,11 @@ void updateFirmware()
             if (networkIsShuttingDown(NETWORK_USER_FIRMWARE_UPDATE))
                 firmwareUpdateStop();
             else
+            {
+                // Perform the firmware update
+                overTheAirUpdate();
                 firmwareUpdateStop();
+            }
             break;
         }
     }

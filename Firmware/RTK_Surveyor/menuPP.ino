@@ -9,11 +9,14 @@
 #define MQTT_CERT_SIZE 2000
 
 // The PointPerfect token is provided at compile time via build flags
-#ifndef POINTPERFECT_TOKEN
-#define POINTPERFECT_TOKEN                                                                                             \
+#define DEVELOPMENT_TOKEN   \
     0xAA, 0xBB, 0xCC, 0xDD, 0x00, 0x11, 0x22, 0x33, 0x0A, 0x0B, 0x0C, 0x0D, 0x00, 0x01, 0x02, 0x03
+#ifndef POINTPERFECT_TOKEN
+#warning Using the DEVELOPMENT_TOKEN for point perfect!
+#define POINTPERFECT_TOKEN      DEVELOPMENT_TOKEN
 #endif // POINTPERFECT_TOKEN
 
+static uint8_t developmentTokenArray[16] = {DEVELOPMENT_TOKEN};   // Token in HEX form
 static uint8_t pointPerfectTokenArray[16] = {POINTPERFECT_TOKEN}; // Token in HEX form
 
 static const char *pointPerfectAPI = "https://api.thingstream.io/ztp/pointperfect/credentials";
@@ -233,6 +236,8 @@ bool pointperfectProvisionDevice()
         {
             // Convert uint8_t array into string with dashes in spots
             // We must assume u-blox will not change the position of their dashes or length of their token
+            if (memcmp(pointPerfectTokenArray, developmentTokenArray, sizeof(developmentTokenArray)))
+                systemPrintln("Warning: Using the development token!");
             for (int x = 0; x < sizeof(pointPerfectTokenArray); x++)
             {
                 char temp[3];

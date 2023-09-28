@@ -67,12 +67,12 @@ void menuFirmware()
                         //Allow update if locally compiled developer version
                         if (isReportedVersionNewer(reportedVersion, &currentVersion[1]) == true || FIRMWARE_VERSION_MAJOR == 99)
                         {
-                            log_d("New version detected");
+                            systemPrintln("New version detected");
                             newOTAFirmwareAvailable = true;
                         }
                         else
                         {
-                            log_d("No new firmware available");
+                            systemPrintln("No new firmware available");
                         }
                     }
                     else
@@ -102,12 +102,12 @@ void menuFirmware()
                             getFirmwareVersion(currentVersion, sizeof(currentVersion), enableRCFirmware);
                             if (isReportedVersionNewer(reportedVersion, &currentVersion[1]) == true)
                             {
-                                log_d("New version detected");
+                                systemPrintln("New version detected");
                                 newOTAFirmwareAvailable = true;
                             }
                             else
                             {
-                                log_d("No new firmware available");
+                                systemPrintln("No new firmware available");
                             }
                         }
                         else

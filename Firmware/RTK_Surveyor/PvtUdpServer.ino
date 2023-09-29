@@ -29,6 +29,34 @@ pvtUdpServer.ino
            '------------> Cell Phone <-------------------------------'
                           for display
 
+    PVT UDP Server Testing:
+
+     RTK Express(+) with WiFi enabled, PvtUdpServer enabled, PvtUdpPort setup,
+     Smartphone with QField:
+        
+        Network Setup:
+            Connect the Smartphone and the RTK Express to the same Network (e.g. the Smartphones HotSpot). 
+
+        QField Setup:
+            * Open a project
+            * Open the left menu
+            * Click on the gear icon
+            * Click on Settings
+            * Click on Positioning
+            * Add a new Positioning device
+            * Set Connection type to UDP (NMEA)
+            * Set the Adress to <broadcast>
+            * Set the Port to the value of the specified PvtUdpPort (default 10110)
+            * Optional: give it a name (e.g. RTK Express UDP)
+            * Click on the Checkmark
+            * Make sure the new device is set as the Postioning device in use
+            * Exit the menus
+
+        1. Long press on the location icon in the lower right corner
+        
+        2. Enable Show Position Information
+
+        3. Verify that the displayed coordinates, fix tpe etc. are valid   
 */
 
 #ifdef COMPILE_WIFI

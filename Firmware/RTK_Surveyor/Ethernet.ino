@@ -146,7 +146,7 @@ void ethernetBegin()
         Ethernet.init(pin_Ethernet_CS);
 
         // First we start Ethernet without DHCP to detect if a cable is connected
-        // DHCP causes system freeze for ~62 seconds so we avoid it until a cable is conncted
+        // DHCP causes system freeze for ~62 seconds so we avoid it until a cable is connected
         Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS, settings.ethernetGateway,
                        settings.ethernetSubnet);
 

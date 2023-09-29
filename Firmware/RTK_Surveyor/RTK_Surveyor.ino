@@ -576,6 +576,7 @@ unsigned long lastEthernetCheck = 0; // Prevents cable checking from continually
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "NetworkClient.h" //Supports both WiFiClient and EthernetClient
+#include "NetworkUDP.h" //Supports both WiFiUdp and EthernetUdp
 
 // Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -745,6 +746,7 @@ volatile bool deadManWalking;
     settings.debugNtripServerState = true;              \
     settings.debugPvtClient = true;                     \
     settings.debugPvtServer = true;                     \
+    settings.debugPvtUdpServer = true;                     \
 }
 
 #else   // 0

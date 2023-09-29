@@ -1274,8 +1274,8 @@
                     </div>
 
                     <div class="form-check mt-3">
-                        <label class="form-check-label" for="enableTcpClient">TCP Client</label>
-                        <input class="form-check-input" type="checkbox" value="" id="enableTcpClient"
+                        <label class="form-check-label" for="enablePvtClient">TCP Client</label>
+                        <input class="form-check-input" type="checkbox" value="" id="enablePvtClient"
                             onClick="tcpBoxes()">
                         <span class="tt" data-bs-placement="right"
                             title="If enabled, device will connect to WiFi and push NMEA over the given TCP port.">
@@ -1283,12 +1283,12 @@
                         </span>
                     </div>
                     <div class="form-group row">
-                        <p id="enableTcpClientError" class="inlineError"></p>
+                        <p id="enablePvtClientError" class="inlineError"></p>
                     </div>
 
                     <div class="form-check mt-3">
-                        <label class="form-check-label" for="enableTcpServer">TCP Server</label>
-                        <input class="form-check-input" type="checkbox" value="" id="enableTcpServer"
+                        <label class="form-check-label" for="enablePvtServer">TCP Server</label>
+                        <input class="form-check-input" type="checkbox" value="" id="enablePvtServer"
                             onClick="tcpBoxes()">
                         <span class="tt" data-bs-placement="right"
                             title="If enabled, device will allow inbound TCP connections and push NMEA when a client is connected.">
@@ -1296,19 +1296,46 @@
                         </span>
                     </div>
                     <div class="form-group row">
-                        <p id="enableTcpServerError" class="inlineError"></p>
+                        <p id="enablePvtServerError" class="inlineError"></p>
                     </div>
 
                     <div id="tcpSettingsConfig">
                         <div class="form-group row">
-                            <label for="wifiTcpPort" class="box-margin20 col-sm-3 col-4 col-form-label">Port:
+                            <label for="pvtServerPort" class="box-margin20 col-sm-3 col-4 col-form-label">Port:
                                 <span class="tt" data-bs-placement="right" title="TCP port to use. Default: 2947">
                                     <span class="icon-info-circle text-primary ms-2"></span>
                                 </span>
                             </label>
                             <div class="col-sm-8 col-7">
-                                <input type="text" class="form-control" id="wifiTcpPort">
-                                <p id="wifiTcpPortError" class="inlineError"></p>
+                                <input type="text" class="form-control" id="pvtServerPort">
+                                <p id="pvtServerPortError" class="inlineError"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <label class="form-check-label" for="enablePvtUdpServer">UDP Server</label>
+                        <input class="form-check-input" type="checkbox" value="" id="enablePvtUdpServer"
+                            onClick="udpBoxes()">
+                        <span class="tt" data-bs-placement="right"
+                            title="If enabled, device will broadcast NMEA sentences over UPD">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <p id="enablePvtUdpServerError" class="inlineError"></p>
+                    </div>
+
+                    <div id="udpSettingsConfig">
+                        <div class="form-group row">
+                            <label for="pvtUdpServerPort" class="box-margin20 col-sm-3 col-4 col-form-label">Port:
+                                <span class="tt" data-bs-placement="right" title="UDP port to use. Default: 10110">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </label>
+                            <div class="col-sm-8 col-7">
+                                <input type="text" class="form-control" id="pvtUdpServerPort">
+                                <p id="pvtUdpServerPortError" class="inlineError"></p>
                             </div>
                         </div>
                     </div>

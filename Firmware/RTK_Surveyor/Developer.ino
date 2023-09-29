@@ -114,6 +114,14 @@ void pvtServerValidateTables() {}
 void discardPvtServerBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail) {}
 
 //----------------------------------------
+// PVT UDP server
+//----------------------------------------
+
+int pvtUdpServerSendData(uint16_t dataHead) {return 0;}
+void pvtUdpServerUpdate() {}
+void pvtUdpServerZeroTail() {}
+
+//----------------------------------------
 // WiFi
 //----------------------------------------
 

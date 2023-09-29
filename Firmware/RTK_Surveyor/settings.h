@@ -183,6 +183,7 @@ enum NetworkUsers
     NETWORK_USER_NTRIP_SERVER,     // NTRIP server
     NETWORK_USER_PVT_CLIENT,       // PVT client
     NETWORK_USER_PVT_SERVER,       // PVT server
+    NETWORK_USER_PVT_UDP_SERVER,   // PVT UDP server
     // Last network user
     NETWORK_USER_MAX
 };
@@ -471,21 +472,25 @@ enum PeriodDisplayValues
     PD_PVT_SERVER_STATE,        // 15
     PD_PVT_SERVER_CLIENT_DATA,  // 16
 
-    PD_RING_BUFFER_MILLIS,      // 17
+    PD_PVT_UDP_SERVER_DATA,         // 17
+    PD_PVT_UDP_SERVER_STATE,        // 18
+    PD_PVT_UDP_SERVER_BROADCAST_DATA,  // 19
 
-    PD_SD_LOG_WRITE,            // 18
+    PD_RING_BUFFER_MILLIS,      // 20
 
-    PD_TASK_BLUETOOTH_READ,     // 19
-    PD_TASK_BUTTON_CHECK,       // 20
-    PD_TASK_GNSS_READ,          // 21
-    PD_TASK_HANDLE_GNSS_DATA,   // 22
-    PD_TASK_SD_SIZE_CHECK,      // 23
+    PD_SD_LOG_WRITE,            // 21
 
-    PD_WIFI_IP_ADDRESS,         // 24
-    PD_WIFI_STATE,              // 25
+    PD_TASK_BLUETOOTH_READ,     // 22
+    PD_TASK_BUTTON_CHECK,       // 23
+    PD_TASK_GNSS_READ,          // 24
+    PD_TASK_HANDLE_GNSS_DATA,   // 25
+    PD_TASK_SD_SIZE_CHECK,      // 26
 
-    PD_ZED_DATA_RX,             // 26
-    PD_ZED_DATA_TX,             // 27
+    PD_WIFI_IP_ADDRESS,         // 27
+    PD_WIFI_STATE,              // 28
+
+    PD_ZED_DATA_RX,             // 29
+    PD_ZED_DATA_TX,             // 30
 };
 
 #define PERIODIC_MASK(x) (1 << x)
@@ -1060,6 +1065,12 @@ typedef struct
     bool enablePvtServer = false;
     uint16_t pvtServerPort = 2948; // PVT server port, 2948 is GPS Daemon: http://tcp-udp-ports.com/port-2948.htm
 
+    // UDP Server
+    bool debugPvtUdpServer = false;
+    bool enablePvtUdpServer = false;
+    uint16_t pvtUdpServerPort =
+        10110; //https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=nmea
+    
     uint8_t rtcmTimeoutBeforeUsingLBand_s = 10; //If 10s have passed without RTCM, enable PMP corrections over L-Band if available
 
     //Add new settings above
@@ -1087,6 +1098,7 @@ struct struct_online
     bool i2c = false;
     bool pvtClient = false;
     bool pvtServer = false;
+    bool pvtUdpServer = false;
     ethernetStatus_e ethernetStatus = ETH_NOT_STARTED;
     bool NTPServer = false; // EthernetUDP
 } online;

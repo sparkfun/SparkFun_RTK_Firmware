@@ -524,6 +524,10 @@ void menuDebugNetwork()
         systemPrint("26) Debug PVT server: ");
         systemPrintf("%s\r\n", settings.debugPvtServer ? "Enabled" : "Disabled");
 
+        // PVT Server
+        systemPrint("27) Debug PVT UDP server: ");
+        systemPrintf("%s\r\n", settings.debugPvtUdpServer ? "Enabled" : "Disabled");
+
         systemPrintln("r) Force system reset");
 
         systemPrintln("x) Exit");
@@ -554,6 +558,8 @@ void menuDebugNetwork()
             settings.debugPvtClient ^= 1;
         else if (incoming == 26)
             settings.debugPvtServer ^= 1;
+        else if (incoming == 27)
+            settings.debugPvtUdpServer ^= 1;
 
         // Menu exit control
         else if (incoming == 'r')

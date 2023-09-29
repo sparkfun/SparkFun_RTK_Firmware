@@ -37,6 +37,7 @@
 // within a reasonable amount of time, there is no SD card on the bus.
 // Returns false if not card is detected
 // Returns true if a card responds
+// This test takes approximately 13ms to complete
 bool sdPresent(void)
 {
     if (productVariant == REFERENCE_STATION)

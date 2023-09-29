@@ -11,7 +11,7 @@ pvtServer.ino
 // Ethernet
 //----------------------------------------
 
-void menuEthernet() {systemPrintln("NOT compiled");}
+void menuEthernet() {systemPrintln("Ethernet not compiled");}
 void ethernetBegin() {}
 IPAddress ethernetGetIpAddress() {return IPAddress((uint32_t)0);}
 void ethernetUpdate() {}
@@ -27,10 +27,11 @@ void ethernetWebServerStopESP32W5500() {}
 // NTP: Network Time Protocol
 //----------------------------------------
 
-void menuNTP() {systemPrint("NOT compiled");}
+void menuNTP() {systemPrint("NTP not compiled");}
 void ntpServerBegin() {}
 void ntpServerUpdate() {}
 void ntpValidateTables() {}
+void ntpServerStop() {}
 
 #endif // COMPILE_ETHERNET
 
@@ -40,7 +41,7 @@ void ntpValidateTables() {}
 // Network layer
 //----------------------------------------
 
-void menuNetwork() {systemPrint("NOT compiled");}
+void menuNetwork() {systemPrint("Network not compiled");}
 void networkUpdate() {}
 void networkVerifyTables() {}
 
@@ -48,7 +49,7 @@ void networkVerifyTables() {}
 // NTRIP client
 //----------------------------------------
 
-void ntripClientPrintStatus() {systemPrint("NOT compiled");}
+void ntripClientPrintStatus() {systemPrint("NTRIP Client not compiled");}
 void ntripClientStart()
 {
     systemPrintln("NTRIP Client not available: Ethernet and WiFi not compiled");
@@ -62,7 +63,7 @@ void ntripClientValidateTables() {}
 //----------------------------------------
 
 bool ntripServerIsCasting() {return false;}
-void ntripServerPrintStatus() {systemPrint("NOT compiled");}
+void ntripServerPrintStatus() {systemPrint("NTRIP Server not compiled");}
 void ntripServerProcessRTCM(uint8_t incoming) {}
 void ntripServerStart()
 {
@@ -80,7 +81,11 @@ void ntripServerValidateTables() {}
 
 #ifndef COMPILE_AP
 
-bool startWebServer(bool startWiFi = true, int httpPort = 80) {return false;}
+bool startWebServer(bool startWiFi = true, int httpPort = 80)
+{
+    systemPrintln("AP not compiled");
+    return false;
+}
 void stopWebServer() {}
 bool parseIncomingSettings() {return false;}
 
@@ -95,6 +100,8 @@ uint16_t pvtClientSendData(uint16_t dataHead) {return 0;};
 void pvtClientUpdate() {}
 void pvtClientValidateTables() {}
 void pvtClientZeroTail() {}
+void discardPvtClientBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail) {}
+
 
 //----------------------------------------
 // PVT server
@@ -103,6 +110,8 @@ void pvtClientZeroTail() {}
 int pvtServerSendData(uint16_t dataHead) {return 0;}
 void pvtServerUpdate() {}
 void pvtServerZeroTail() {}
+void pvtServerValidateTables() {}
+void discardPvtServerBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail) {}
 
 //----------------------------------------
 // PVT UDP server
@@ -116,7 +125,7 @@ void pvtUdpServerZeroTail() {}
 // WiFi
 //----------------------------------------
 
-void menuWiFi() {systemPrintln("NOT compiled");};
+void menuWiFi() {systemPrintln("WiFi not compiled");};
 bool wifiConnect(unsigned long timeout) {return false;}
 IPAddress wifiGetGatewayIpAddress() {return IPAddress((uint32_t)0);}
 IPAddress wifiGetIpAddress() {return IPAddress((uint32_t)0);}
@@ -129,5 +138,7 @@ void wifiPrintNetworkInfo() {}
 void wifiStart() {}
 void wifiStop() {}
 void wifiUpdate() {}
+void wifiShutdown() {}
+#define WIFI_STOP() {}
 
 #endif // COMPILE_WIFI

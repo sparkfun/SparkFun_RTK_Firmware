@@ -63,14 +63,16 @@ void menuFirmware()
                         // We got a version number, now determine if it's newer or not
                         char currentVersion[21];
                         getFirmwareVersion(currentVersion, sizeof(currentVersion), enableRCFirmware);
-                        if (isReportedVersionNewer(reportedVersion, &currentVersion[1]) == true)
+
+                        //Allow update if locally compiled developer version
+                        if (isReportedVersionNewer(reportedVersion, &currentVersion[1]) == true || FIRMWARE_VERSION_MAJOR == 99)
                         {
-                            log_d("New version detected");
+                            systemPrintln("New version detected");
                             newOTAFirmwareAvailable = true;
                         }
                         else
                         {
-                            log_d("No new firmware available");
+                            systemPrintln("No new firmware available");
                         }
                     }
                     else
@@ -82,6 +84,10 @@ void menuFirmware()
                 else if (incoming == 'c' && btPrintEcho == false)
                 {
                     bool previouslyConnected = wifiIsConnected();
+
+                    bool bluetoothOriginallyConnected = false;
+                    if(bluetoothState == BT_CONNECTED)
+                        bluetoothOriginallyConnected = true;
 
                     bluetoothStop(); // Stop Bluetooth to allow for SSL on the heap
 
@@ -96,12 +102,12 @@ void menuFirmware()
                             getFirmwareVersion(currentVersion, sizeof(currentVersion), enableRCFirmware);
                             if (isReportedVersionNewer(reportedVersion, &currentVersion[1]) == true)
                             {
-                                log_d("New version detected");
+                                systemPrintln("New version detected");
                                 newOTAFirmwareAvailable = true;
                             }
                             else
                             {
-                                log_d("No new firmware available");
+                                systemPrintln("No new firmware available");
                             }
                         }
                         else
@@ -114,9 +120,10 @@ void menuFirmware()
                         systemPrintln("Firmware update failed to connect to WiFi.");
 
                     if (previouslyConnected == false)
-                        wifiStop();
+                        WIFI_STOP();
 
-                    bluetoothStart(); // Restart BT according to settings
+                    if(bluetoothOriginallyConnected == true)
+                        bluetoothStart(); // Restart BT according to settings
                 }
             } //End wifiNetworkCount() check
         }
@@ -134,7 +141,7 @@ void menuFirmware()
             // We get here if WiFi failed or the server was not available
 
             if (previouslyConnected == false)
-                wifiStop();
+                WIFI_STOP();
         }
 
         else if (incoming == 'e')
@@ -308,7 +315,7 @@ void updateFromSD(const char *firmwareFileName)
 
     // Turn off any tasks so that we are not disrupted
     espnowStop();
-    wifiStop();
+    WIFI_STOP();
     bluetoothStop();
 
     // Delete tasks if running
@@ -544,12 +551,12 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
 
     if (systemState != STATE_WIFI_CONFIG)
     {
-        // wifiStop() turns off the entire radio including the webserver. We need to turn off Station mode only.
+        // WIFI_STOP() turns off the entire radio including the webserver. We need to turn off Station mode only.
         // For now, unit exits AP mode via reset so if we are in AP config mode, leave WiFi Station running.
 
         // If WiFi was originally off, turn it off again
         if (previouslyConnected == false)
-            wifiStop();
+            WIFI_STOP();
     }
 
     if (gotVersion == true)
@@ -581,7 +588,7 @@ void otaUpdate()
         {
             systemPrintln("Installing new firmware");
             ota.SetCallback(otaPullCallback);
-            ota.CheckForOTAUpdate(url, versionString); // Install new firmware, no reset
+            ota.CheckForOTAUpdate(url, &versionString[1]); // Install new firmware, no reset
 
             if (apConfigFirmwareUpdateInProcess)
             {
@@ -612,7 +619,7 @@ void otaUpdate()
 
     // Update failed. If WiFi was originally off, turn it off again
     if (previouslyConnected == false)
-        wifiStop();
+        WIFI_STOP();
 
 #endif // COMPILE_WIFI
 }

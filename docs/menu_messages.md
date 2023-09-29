@@ -23,7 +23,7 @@ Because of the large number of configurations possible, we provide a few common 
 
 This will turn off all messages and enable the following messages:
 
-* NMEA-GGA, NMEA-SGA, NMEA-GST, NMEA-GSV, NMEA-RMC
+* NMEA-GGA, NMEA-GSA, NMEA-GST, NMEA-GSV, NMEA-RMC
 
 These five NMEA sentences are commonly used with SW Maps for general surveying.
 
@@ -31,7 +31,7 @@ These five NMEA sentences are commonly used with SW Maps for general surveying.
 
 This will turn off all messages and enable the following messages:
 
-* NMEA-GGA, NMEA-SGA, NMEA-GST, NMEA-GSV, NMEA-RMC, RXM-RAWX, RXM-SFRBX
+* NMEA-GGA, NMEA-GSA, NMEA-GST, NMEA-GSV, NMEA-RMC, RXM-RAWX, RXM-SFRBX
 
 These seven sentences are commonly used when logging and doing Precise Point Positioning (PPP) or Post Processed Kinematics (PPK). You can read more about PPP [here](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station).
 

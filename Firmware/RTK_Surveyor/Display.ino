@@ -428,9 +428,6 @@ void updateDisplay()
                 iconsRadio = setWiFiIcon(); // Blink WiFi in center
                 paintGettingKeys();
                 break;
-            case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
-                // Do nothing. Quick, fall through state.
-                break;
 
             case (STATE_ESPNOW_PAIRING_NOT_STARTED):
                 paintEspNowPairing();
@@ -2088,7 +2085,7 @@ void displayWiFiConfig()
 
 #ifdef COMPILE_AP
     IPAddress myIpAddress;
-    if (settings.wifiConfigOverAP == true)
+    if (WiFi.getMode() == WIFI_AP)
         myIpAddress = WiFi.softAPIP();
     else
         myIpAddress = WiFi.localIP();

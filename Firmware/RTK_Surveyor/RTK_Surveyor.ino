@@ -205,6 +205,14 @@ char logFileName[sizeof("SFE_Reference_Station_230101_120101.ubx_plusExtraSpace"
 
 #ifdef COMPILE_WIFI
 #include "ESP32OTAPull.h" //http://librarymanager/All#ESP-OTA-Pull Used for getting
+
+#define WIFI_STOP()                                                         \
+{                                                                           \
+    if (settings.debugWifiState)                                            \
+        systemPrintf("wifiStop called by %s %d\r\n", __FILE__, __LINE__);   \
+    wifiStop();                                                             \
+}
+
 #endif  // COMPILE_WIFI
 
 #define OTA_FIRMWARE_JSON_URL                                                                                          \
@@ -316,6 +324,12 @@ class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
 
 SFE_UBLOX_GNSS_SUPER_DERIVED theGNSS;
 
+#ifdef COMPILE_L_BAND
+static SFE_UBLOX_GNSS_SUPER i2cLBand; // NEO-D9S
+
+void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct);
+#endif
+
 volatile struct timeval
     gnssSyncTv; // This holds the time the RTC was sync'd to GNSS time via Time Pulse interrupt - used by NTP
 struct timeval previousGnssSyncTv; // This holds the time of the previous RTC sync
@@ -360,6 +374,8 @@ int64_t ARPECEFZ = 0;
 uint16_t ARPECEFH = 0;
 
 const byte haeNumberOfDecimals = 8; // Used for printing and transmitting lat/lon
+bool lBandCommunicationEnabled = false;
+unsigned long rtcmLastPacketReceived = 0; //Monitors the last time we received RTCM. Proctors PMP vs RTCM prioritization.
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 // Battery fuel gauge and PWM LEDs
@@ -671,7 +687,7 @@ bool externalPowerConnected = false; // Goes true when a high voltage is seen on
 //  This is to allow SparkFun_WebServer_ESP32_W5500 to have _exclusive_ access to WiFi, SPI and Interrupts.
 bool configureViaEthernet = false;
 
-unsigned long lbandStartTimer = 0; // Monitors the ZED during L-Band reception if a fix takes too long
+unsigned long lbandTimeFloatStarted = 0; // Monitors the ZED during L-Band reception if a fix takes too long
 int lbandRestarts = 0;
 unsigned long lbandTimeToFix = 0;
 unsigned long lbandLastReport = 0;
@@ -1002,8 +1018,9 @@ void updateSD()
         }
         else if (sdPresent() == true) // Poll card to see if a card is inserted
         {
-            systemPrintln("SD inserted");
             beginSD(); // Attempt to start SD
+            if(online.microSD == true)
+                systemPrintln("SD inserted");
         }
     }
 

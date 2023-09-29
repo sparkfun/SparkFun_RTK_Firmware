@@ -33,7 +33,6 @@ typedef enum
     STATE_KEYS_LBAND_ENCRYPTED,
     STATE_KEYS_PROVISION_WIFI_STARTED,
     STATE_KEYS_PROVISION_WIFI_CONNECTED,
-    STATE_KEYS_PROVISION_WIFI_TIMEOUT,
     STATE_ESPNOW_PAIRING_NOT_STARTED,
     STATE_ESPNOW_PAIRING,
     STATE_NTPSERVER_NOT_STARTED,
@@ -984,9 +983,8 @@ typedef struct
     uint8_t i2cInterruptsCore = 1; // Core where hardware is started and interrupts are assigned to, 0=core, 1=Arduino
     uint32_t shutdownNoChargeTimeout_s = 0; // If > 0, shut down unit after timeout if not charging
     bool disableSetupButton = false;                  // By default, allow setup through the overlay button(s)
-    bool powerButtonFiltering = true; //Set to false during firmware development to prevent device power down when new firmware is loaded
     bool useI2cForLbandCorrections = true; //Set to false to stop I2C callback. Corrections will require direct ZED to NEO UART2 connections.
-    bool useI2cForLbandCorrectionsConfigured = false; //If a user sets useI2cForLbandCorrections, this goes true. 
+    bool useI2cForLbandCorrectionsConfigured = false; //If a user sets useI2cForLbandCorrections, this goes true.
 
     // Ethernet
     bool enablePrintEthernetDiag = false;
@@ -1072,6 +1070,11 @@ typedef struct
     bool enablePvtUdpServer = false;
     uint16_t pvtUdpServerPort =
         10110; //https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=nmea
+    
+    uint8_t rtcmTimeoutBeforeUsingLBand_s = 10; //If 10s have passed without RTCM, enable PMP corrections over L-Band if available
+
+    //Add new settings above
+    //<------------------------------------------------------------>
 
 } Settings;
 Settings settings;

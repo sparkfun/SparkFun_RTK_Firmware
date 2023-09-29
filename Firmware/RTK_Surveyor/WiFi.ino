@@ -41,7 +41,6 @@ int wifiConnectionAttempts; // Count the number of connection attempts between r
 // Constants
 //----------------------------------------
 
-
 //----------------------------------------
 // Locals
 //----------------------------------------
@@ -60,9 +59,8 @@ static unsigned long wifiDisplayTimer;
 // Last time the WiFi state was displayed
 static uint32_t lastWifiState;
 
-//DNS server for Captive Portal
+// DNS server for Captive Portal
 static DNSServer dnsServer;
-
 
 //----------------------------------------
 // WiFi Routines
@@ -151,7 +149,7 @@ void menuWiFi()
             if (wifiIsConnected())
             {
                 log_d("Menu caused restarting of WiFi");
-                wifiStop();
+                WIFI_STOP();
                 wifiStart();
                 wifiConnectionAttempts = 0; // Reset the timeout
             }
@@ -180,8 +178,7 @@ byte wifiGetStatus()
 // Update the state of the WiFi state machine
 void wifiSetState(byte newState)
 {
-    if ((settings.debugWifiState || PERIODIC_DISPLAY(PD_WIFI_STATE))
-        && (wifiState == newState))
+    if ((settings.debugWifiState || PERIODIC_DISPLAY(PD_WIFI_STATE)) && (wifiState == newState))
         systemPrint("*");
     wifiState = newState;
 
@@ -217,10 +214,15 @@ void wifiSetState(byte newState)
 // We can also start as a WiFi station and attempt to connect to local WiFi for config
 bool wifiStartAP()
 {
-    if (settings.wifiConfigOverAP == true)
+    return(wifiStartAP(false)); //Don't force AP mode
+}
+
+bool wifiStartAP(bool forceAP)
+{
+    if (settings.wifiConfigOverAP == true || forceAP)
     {
         // Stop any current WiFi activity
-        wifiStop();
+        WIFI_STOP();
 
         // Start in AP mode
         WiFi.mode(WIFI_AP);
@@ -246,12 +248,17 @@ bool wifiStartAP()
         }
         systemPrint("WiFi AP Started with IP: ");
         systemPrintln(WiFi.softAPIP());
-        
+
         // Start DNS Server
-        if(dnsServer.start(53, "*", WiFi.softAPIP()) == false){
+        if (dnsServer.start(53, "*", WiFi.softAPIP()) == false)
+        {
             systemPrintln("WiFi DNS Server failed to start");
             return (false);
-        };
+        }
+        else
+        {
+            log_d("DNS Server started");
+        }
     }
     else
     {
@@ -273,11 +280,7 @@ bool wifiStartAP()
         if (x == maxTries)
         {
             displayNoWiFi(2000);
-            if (productVariant == REFERENCE_STATION)
-                requestChangeState(STATE_BASE_NOT_STARTED); // If WiFi failed, return to Base mode.
-            else
-                requestChangeState(STATE_ROVER_NOT_STARTED); // If WiFi failed, return to Rover mode.
-            return (false);
+            return(wifiStartAP(true)); // Because there is no local WiFi available, force AP mode so user can still get access/configure it
         }
     }
 
@@ -344,7 +347,7 @@ void wifiUpdate()
                 {
                     systemPrintln("WiFi connection failed. Giving up.");
                     displayNoWiFi(2000);
-                    wifiStop(); // Move back to WIFI_OFF
+                    WIFI_STOP(); // Move back to WIFI_OFF
                 }
             }
         }
@@ -362,12 +365,16 @@ void wifiUpdate()
 
         // If WiFi is connected, and no services require WiFi, shut it off
         else if (wifiIsNeeded() == false)
-            wifiStop();
+            WIFI_STOP();
+
         break;
     }
-    //Process the next DNS request
-    dnsServer.processNextRequest();
 
+    // Process DNS when we are in AP mode for captive portal
+    if (WiFi.getMode() == WIFI_AP)
+    {
+        dnsServer.processNextRequest();
+    }
 }
 
 // Starts the WiFi connection state machine (moves from WIFI_OFF to WIFI_CONNECTING)
@@ -380,7 +387,7 @@ void wifiStart()
     {
         systemPrintln("Error: Please enter at least one SSID before using WiFi");
         // paintNoWiFi(2000); //TODO
-        wifiStop();
+        WIFI_STOP();
         return;
     }
 
@@ -408,9 +415,10 @@ void wifiStop()
     if (settings.mdnsEnable == true)
         MDNS.end();
 
-    //Stop the DNS server
-    dnsServer.stop();
-    
+    // Stop the DNS server if we were using the captive portal
+    if (WiFi.getMode() == WIFI_AP)
+        dnsServer.stop();
+
     // Stop the other network clients and then WiFi
     networkStop(NETWORK_TYPE_WIFI);
 }
@@ -433,7 +441,7 @@ void wifiShutdown()
         // esp_wifi_set_protocol requires WiFi to be started
         esp_err_t response = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
         if (response != ESP_OK)
-            systemPrintf("wifiStop: Error setting ESP-Now lone protocol: %s\r\n", esp_err_to_name(response));
+            systemPrintf("wifiShutdown: Error setting ESP-Now lone protocol: %s\r\n", esp_err_to_name(response));
         else
             log_d("WiFi disabled, ESP-Now left in place");
     }

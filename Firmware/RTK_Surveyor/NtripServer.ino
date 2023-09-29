@@ -138,6 +138,9 @@ NtripServer.ino
 // 5 minutes. The NTRIP server stops retrying after 25 hours and 18 minutes
 static const int MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS = 28;
 
+// NTRIP client connection delay before resetting the connect accempt counter
+static const int NTRIP_SERVER_CONNECTION_TIME = 5 * 60 * 1000;
+
 // Define the NTRIP server states
 enum NTRIPServerState
 {
@@ -259,10 +262,12 @@ bool ntripServerConnectLimitReached()
     bool limitReached = (ntripServerConnectionAttempts >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS);
 
     // Shutdown the NTRIP server
-    ntripServerStop(limitReached);
+    ntripServerStop(limitReached || (!settings.enableNtripServer));
 
     ntripServerConnectionAttempts++;
     ntripServerConnectionAttemptsTotal++;
+    if (settings.debugNtripServerState)
+        ntripServerPrintStatus();
 
     if (limitReached == false)
     {
@@ -279,7 +284,7 @@ bool ntripServerConnectLimitReached()
                 (ntripServerConnectionAttempts - 4) * 5 * 60 * 1000L; // Wait 5, 10, 15, etc minutes between attempts
 
         // Display the delay before starting the NTRIP server
-        if (ntripServerConnectionAttemptTimeout)
+        if (settings.debugNtripServerState && ntripServerConnectionAttemptTimeout)
         {
             seconds = ntripServerConnectionAttemptTimeout / 1000;
             if (seconds < 120)
@@ -374,6 +379,8 @@ void ntripServerPrintStatus ()
 // This function gets called as each RTCM byte comes in
 void ntripServerProcessRTCM(uint8_t incoming)
 {
+    static uint32_t zedBytesSent;
+
     if (ntripServerState == NTRIP_SERVER_CASTING)
     {
         // Generate and print timestamp if needed
@@ -395,7 +402,8 @@ void ntripServerProcessRTCM(uint8_t incoming)
                 struct tm timeinfo = rtc.getTimeStruct();
                 char timestamp[30];
                 strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
-                systemPrintf("    Tx RTCM: %s.%03ld, %d bytes sent\r\n", timestamp, rtc.getMillis(), ntripServerBytesSent);
+                systemPrintf("    Tx RTCM: %s.%03ld, %d bytes sent\r\n", timestamp, rtc.getMillis(), zedBytesSent);
+                zedBytesSent = 0;
             }
             previousMilliseconds = currentMilliseconds;
         }
@@ -413,6 +421,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
         {
             ntripServer->write(incoming); // Send this byte to socket
             ntripServerBytesSent++;
+            zedBytesSent++;
             ntripServerTimer = millis();
             netOutgoingRTCM = true;
         }
@@ -448,7 +457,7 @@ void ntripServerRestart()
     // Save the previous uptime value
     if (ntripServerState == NTRIP_SERVER_CASTING)
         ntripServerStartTime = ntripServerTimer - ntripServerStartTime;
-    ntripServerStop(!settings.enableNtripServer);
+    ntripServerConnectLimitReached();
 }
 
 // Update the state of the NTRIP server state machine
@@ -676,9 +685,32 @@ void ntripServerUpdate()
             char response[512];
             ntripServerResponse(response, sizeof(response));
 
+            if (settings.debugNtripServerState)
+                systemPrintf("Server Response: %s\r\n", response);
+            else
+                log_d("Server Response: %s", response);
+
             // Look for various responses
             if (strstr(response, "200") != nullptr) //'200' found
             {
+                // We got a response, now check it for possible errors
+                if (strcasestr(response, "banned") != nullptr)
+                {
+                    systemPrintf("NTRIP Server connected to caster but caster responded with banned error: %s\r\n",
+                                 response);
+
+                    // Stop NTRIP Server operations
+                    ntripServerShutdown();
+                }
+                else if (strcasestr(response, "sandbox") != nullptr)
+                {
+                    systemPrintf("NTRIP Server connected to caster but caster responded with sandbox error: %s\r\n",
+                                 response);
+
+                    // Stop NTRIP Server operations
+                    ntripServerShutdown();
+                }
+
                 systemPrintf("NTRIP Server connected to %s:%d %s\r\n", settings.ntripServer_CasterHost,
                              settings.ntripServer_CasterPort, settings.ntripServer_MountPoint);
 
@@ -687,8 +719,7 @@ void ntripServerUpdate()
 
                 // We don't use a task because we use I2C hardware (and don't have a semphore).
                 online.ntripServer = true;
-                ntripServerConnectionAttempts = 0;
-                ntripClientConnectionAttemptTimeout = 0;
+                ntripServerStartTime = millis();
                 ntripServerSetState(NTRIP_SERVER_CASTING);
             }
 
@@ -696,17 +727,8 @@ void ntripServerUpdate()
             else if (strstr(response, "401") != nullptr)
             {
                 systemPrintf(
-                    "NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n",
+                    "NTRIP Caster responded with unauthorized error: %s. Are you sure your caster credentials are correct?\r\n",
                     response);
-
-                // Give up - Shutdown NTRIP server, no further retries
-                ntripServerShutdown();
-            }
-
-            // Look for banned IP information
-            else if (strstr(response, "banned") != nullptr) //'Banned' found
-            {
-                systemPrintf("NTRIP Server connected to caster but caster responded with problem: %s\r\n", response);
 
                 // Give up - Shutdown NTRIP server, no further retries
                 ntripServerShutdown();
@@ -746,6 +768,22 @@ void ntripServerUpdate()
         }
         else
         {
+            // Handle other types of NTRIP connection failures to prevent
+            // hammering the NTRIP caster with rapid connection attempts.
+            // A fast reconnect is reasonable after a long NTRIP caster
+            // connection.  However increasing backoff delays should be
+            // added when the NTRIP caster fails after a short connection
+            // interval.
+            if (((millis() - ntripServerStartTime) > NTRIP_SERVER_CONNECTION_TIME)
+                && (ntripServerConnectionAttempts || ntripServerConnectionAttemptTimeout))
+            {
+                // After a long connection period, reset the attempt counter
+                ntripServerConnectionAttempts = 0;
+                ntripServerConnectionAttemptTimeout = 0;
+                if (settings.debugNtripServerState)
+                    systemPrintln("NTRIP Server resetting connection attempt counter and timeout");
+            }
+
             // All is well
             cyclePositionLEDs();
         }

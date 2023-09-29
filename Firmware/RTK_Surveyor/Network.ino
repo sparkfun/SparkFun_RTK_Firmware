@@ -1068,7 +1068,6 @@ void networkTypeUpdate(uint8_t networkType)
             {
                 if (settings.debugNetworkLayer)
                     systemPrintf("Network shutting down %s, no users\r\n", networkName[network->type]);
-                networkRestartNetwork(network);
                 networkStop(network->type);
             }
 

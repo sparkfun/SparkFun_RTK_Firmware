@@ -208,3 +208,14 @@ Taking the Reference Station apart is really easy:
 
 * Slide out the main PCB
 
+## Surveyor
+
+Disassembly of the RTK Surveyor is achieved by removing two Philips head screws and gently lifting the cover.
+
+![Internal Surveyor Switches](img/Repair/RTK_Surveyor_Internal_-_NMEA_Switches.jpg)
+
+Within the RTK Surveyor, two internal slide switches control the flow of NMEA data over Bluetooth and should be in the position shown above. If these switches get moved, the device will fail to correctly push NMEA data over Bluetooth. Placing a bit of tape over the top of the switches can help keep them in place.
+
+
+
+

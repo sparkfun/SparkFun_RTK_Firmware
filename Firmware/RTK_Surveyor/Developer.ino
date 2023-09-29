@@ -131,5 +131,6 @@ void wifiStart() {}
 void wifiStop() {}
 void wifiUpdate() {}
 void wifiShutdown() {}
+#define WIFI_STOP() {}
 
 #endif // COMPILE_WIFI

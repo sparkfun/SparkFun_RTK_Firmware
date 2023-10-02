@@ -112,6 +112,7 @@ void pvtServerUpdate() {}
 void pvtServerZeroTail() {}
 void pvtServerValidateTables() {}
 void discardPvtServerBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail) {}
+void discardPvtUdpServerBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail) {}
 
 //----------------------------------------
 // PVT UDP server

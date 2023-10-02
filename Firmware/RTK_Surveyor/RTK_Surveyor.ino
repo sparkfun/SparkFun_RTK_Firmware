@@ -205,6 +205,14 @@ char logFileName[sizeof("SFE_Reference_Station_230101_120101.ubx_plusExtraSpace"
 
 #ifdef COMPILE_WIFI
 #include "ESP32OTAPull.h" //http://librarymanager/All#ESP-OTA-Pull Used for getting
+
+#define WIFI_STOP()                                                         \
+{                                                                           \
+    if (settings.debugWifiState)                                            \
+        systemPrintf("wifiStop called by %s %d\r\n", __FILE__, __LINE__);   \
+    wifiStop();                                                             \
+}
+
 #endif  // COMPILE_WIFI
 
 #define OTA_FIRMWARE_JSON_URL                                                                                          \
@@ -568,6 +576,7 @@ unsigned long lastEthernetCheck = 0; // Prevents cable checking from continually
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "NetworkClient.h" //Supports both WiFiClient and EthernetClient
+#include "NetworkUDP.h" //Supports both WiFiUdp and EthernetUdp
 
 // Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -737,6 +746,7 @@ volatile bool deadManWalking;
     settings.debugNtripServerState = true;              \
     settings.debugPvtClient = true;                     \
     settings.debugPvtServer = true;                     \
+    settings.debugPvtUdpServer = true;                     \
 }
 
 #else   // 0

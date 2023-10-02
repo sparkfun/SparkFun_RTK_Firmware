@@ -186,6 +186,7 @@ const char * const networkUser[] =
     "NTRIP Server",
     "PVT Client",
     "PVT Server",
+    "PVT UDP Server",
 };
 const int networkUserEntries = sizeof(networkUser) / sizeof(networkUser[0]);
 
@@ -227,6 +228,11 @@ void menuNetwork()
 
         if (settings.enablePvtServer)
             systemPrintf("5) PVT Server Port: %ld\r\n", settings.pvtServerPort);
+
+        systemPrintf("6) PVT UDP Server: %s\r\n", settings.enablePvtUdpServer ? "Enabled" : "Disabled");
+
+        if (settings.enablePvtUdpServer)
+            systemPrintf("7) PVT UDP Server Port: %ld\r\n", settings.pvtUdpServerPort);
 
         if (HAS_ETHERNET)
         {
@@ -316,6 +322,27 @@ void menuNetwork()
                     systemPrintln("Error: TCP Port out of range");
                 else
                     settings.pvtServerPort = portNumber; // Recorded to NVM and file at main menu exit
+            }
+        }
+
+        //------------------------------
+        // Get the PVT UDP server parameters
+        //------------------------------
+
+        else if (incoming == 6)
+            // Toggle WiFi UDP NEMA server
+            settings.enablePvtUdpServer ^= 1;
+
+        else if (incoming == 7 && settings.enablePvtUdpServer)
+        {
+            systemPrint("Enter the UDP port to use (0 to 65535): ");
+            int portNumber = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((portNumber != INPUT_RESPONSE_GETNUMBER_EXIT) && (portNumber != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (portNumber < 0 || portNumber > 65535)
+                    systemPrintln("Error: UDP Port out of range");
+                else
+                    settings.pvtUdpServerPort = portNumber; // Recorded to NVM and file at main menu exit
             }
         }
 
@@ -845,6 +872,12 @@ void networkStop(uint8_t networkType)
                         systemPrintln("Network layer stopping PVT server");
                     pvtServerStop();
                     break;
+
+                case NETWORK_USER_PVT_UDP_SERVER:
+                    if (settings.debugNetworkLayer)
+                        systemPrintln("Network layer stopping PVT UDP server");
+                    pvtUdpServerStop();
+                    break;
                 }
             }
         }
@@ -1082,6 +1115,7 @@ void networkUpdate()
         ntripServerUpdate(); // Check the NTRIP server connection and move data ZED --> NTRIP
         pvtClientUpdate();   // Turn on the PVT client as needed
         pvtServerUpdate();   // Turn on the PVT server as needed
+        pvtUdpServerUpdate();   // Turn on the PVT UDP server as needed
     }
 
     // Display the IP addresses

@@ -1004,7 +1004,11 @@ void createSettingsString(char *newSettings)
     else
         stringRecord(newSettings, "wifiConfigOverAP", 0); // 1 = AP mode, 0 = WiFi
 
+    stringRecord(newSettings, "enablePvtServer", settings.enablePvtServer);
+    stringRecord(newSettings, "enablePvtClient", settings.enablePvtClient);
     stringRecord(newSettings, "pvtServerPort", settings.pvtServerPort);
+    stringRecord(newSettings, "enablePvtUdpServer", settings.enablePvtUdpServer);
+    stringRecord(newSettings, "pvtUdpServerPort", settings.pvtUdpServerPort);
     stringRecord(newSettings, "enableRCFirmware", enableRCFirmware);
 
     // New settings not yet integrated
@@ -1250,6 +1254,8 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
     }
     else if (strcmp(settingName, "pvtServerPort") == 0)
         settings.pvtServerPort = settingValue;
+    else if (strcmp(settingName, "pvtUdpServerPort") == 0)
+        settings.pvtUdpServerPort = settingValue;
     else if (strcmp(settingName, "wifiConfigOverAP") == 0)
     {
         if (settingValue == 1) // Drop downs come back as a value
@@ -1262,6 +1268,8 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         settings.enablePvtClient = settingValueBool;
     else if (strcmp(settingName, "enablePvtServer") == 0)
         settings.enablePvtServer = settingValueBool;
+    else if (strcmp(settingName, "enablePvtUdpServer") == 0)
+        settings.enablePvtUdpServer = settingValueBool;
     else if (strcmp(settingName, "enableRCFirmware") == 0)
         enableRCFirmware = settingValueBool;
     else if (strcmp(settingName, "minElev") == 0)

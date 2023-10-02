@@ -9,12 +9,15 @@
 #define MQTT_CERT_SIZE 2000
 
 // The PointPerfect token is provided at compile time via build flags
-#ifndef POINTPERFECT_TOKEN
-#define POINTPERFECT_TOKEN                                                                                             \
+#define DEVELOPMENT_TOKEN   \
     0xAA, 0xBB, 0xCC, 0xDD, 0x00, 0x11, 0x22, 0x33, 0x0A, 0x0B, 0x0C, 0x0D, 0x00, 0x01, 0x02, 0x03
+#ifndef POINTPERFECT_TOKEN
+#warning Using the DEVELOPMENT_TOKEN for point perfect!
+#define POINTPERFECT_TOKEN      DEVELOPMENT_TOKEN
 #endif // POINTPERFECT_TOKEN
 
-static uint8_t pointPerfectTokenArray[16] = {POINTPERFECT_TOKEN}; // Token in HEX form
+static const uint8_t developmentTokenArray[16] = {DEVELOPMENT_TOKEN};   // Token in HEX form
+static const uint8_t pointPerfectTokenArray[16] = {POINTPERFECT_TOKEN}; // Token in HEX form
 
 static const char *pointPerfectAPI = "https://api.thingstream.io/ztp/pointperfect/credentials";
 
@@ -233,6 +236,8 @@ bool pointperfectProvisionDevice()
         {
             // Convert uint8_t array into string with dashes in spots
             // We must assume u-blox will not change the position of their dashes or length of their token
+            if (!memcmp(pointPerfectTokenArray, developmentTokenArray, sizeof(developmentTokenArray)))
+                systemPrintln("Warning: Using the development token!");
             for (int x = 0; x < sizeof(pointPerfectTokenArray); x++)
             {
                 char temp[3];
@@ -1110,6 +1115,8 @@ void menuPointPerfect()
 
         systemPrintln("4) Show device ID");
 
+        systemPrintln("c) Clear the Keys");
+
         systemPrintln("k) Manual Key Entry");
 
         systemPrintln("x) Exit");
@@ -1172,7 +1179,7 @@ void menuPointPerfect()
                 }
             }
 
-            wifiStop();
+            WIFI_STOP();
         }
         else if (incoming == 4)
         {
@@ -1180,6 +1187,11 @@ void menuPointPerfect()
             snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1],
                      lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]);
             systemPrintf("Device ID: %s\r\n", hardwareID);
+        }
+        else if (incoming == 'c')
+        {
+            settings.pointPerfectCurrentKey[0] = 0;
+            settings.pointPerfectNextKey[0] = 0;
         }
         else if (incoming == 'k')
         {

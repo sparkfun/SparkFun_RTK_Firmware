@@ -392,7 +392,12 @@ void factoryReset(bool alreadyHasSemaphore)
     LittleFS.format();
 
     if (online.gnss == true)
+    {
+        systemPrintln("Factory resetting the GNSS receiver...");
         theGNSS.factoryDefault(); // Reset everything: baud rate, I2C address, update rate, everything. And save to BBR.
+        theGNSS.saveConfiguration();
+        theGNSS.hardReset(); // Perform a reset leading to a cold start (zero info start-up)
+    }
 
     systemPrintln("Settings erased successfully. Rebooting. Goodbye!");
     delay(2000);

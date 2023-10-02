@@ -27,9 +27,10 @@
 // Locals - compiled out
 //----------------------------------------
 
+static volatile BTState bluetoothState = BT_OFF;
+
 #ifdef COMPILE_BT
 BTSerialInterface *bluetoothSerial;
-static volatile BTState bluetoothState = BT_OFF;
 
 //----------------------------------------
 // Bluetooth Routines - compiled out

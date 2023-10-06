@@ -21,10 +21,14 @@ OtaClient.ino
 // Constants
 //----------------------------------------
 
+#define OTA_USE_SSL             1
+
 enum OtaState
 {
     OTA_STATE_OFF = 0,
     OTA_STATE_START_NETWORK,
+    OTA_STATE_WAIT_FOR_NETWORK,
+    OTA_STATE_JSON_FILE_REQUEST,
     // Insert new states before this line
     OTA_STATE_MAX
 };
@@ -33,6 +37,8 @@ const char * const otaStateNames[] =
 {
     "OTA_STATE_OFF",
     "OTA_STATE_START_NETWORK",
+    "OTA_STATE_WAIT_FOR_NETWORK",
+    "OTA_STATE_JSON_FILE_REQUEST",
 };
 const int otaStateEntries = sizeof(otaStateNames) / sizeof(otaStateNames[0]);
 
@@ -40,11 +46,15 @@ const int otaStateEntries = sizeof(otaStateNames) / sizeof(otaStateNames[0]);
 // Locals
 //----------------------------------------
 
+static byte otaBluetoothState = BT_OFF;
+static int otaBufferData;
+static NetworkClient * otaClient;
+static String otaJsonFileData;
 static uint8_t otaState;
 static uint32_t otaTimer;
 
 //----------------------------------------
-// Over-The-Air (OTA) firmware update routines
+// Over-The-Air (OTA) firmware update support routines
 //----------------------------------------
 
 // Get the OTA state name
@@ -107,6 +117,46 @@ void otaSetState(uint8_t newState)
         reportFatalError("Invalid OTA state");
 }
 
+// Stop the OTA firmware update
+void otaStop()
+{
+    if (settings.debugFirmwareUpdate)
+        systemPrintln("otaStop called");
+
+    if (otaState != OTA_STATE_OFF)
+    {
+        // Stop WiFi
+        systemPrintln("OTA stopping WiFi");
+        online.otaFirmwareUpdate = false;
+
+        // Close the SSL connection
+        if (otaClient)
+        {
+            delete otaClient;
+            otaClient = nullptr;
+        }
+
+        // Close the network connection
+        if (networkGetUserNetwork(NETWORK_USER_OTA_FIRMWARE_UPDATE))
+            networkUserClose(NETWORK_USER_OTA_FIRMWARE_UPDATE);
+
+        // Stop the firmware update
+        otaBufferData = 0;
+        otaJsonFileData = String("");
+        otaSetState(OTA_STATE_OFF);
+        otaTimer = millis();
+
+        // Restart bluetooth if necessary
+        if (otaBluetoothState == BT_CONNECTED)
+        {
+            otaBluetoothState = BT_OFF;
+            if (settings.debugFirmwareUpdate)
+                systemPrintln("Firmware update restarting Bluetooth");
+            bluetoothStart(); // Restart BT according to settings
+        }
+    }
+};
+
 //----------------------------------------
 // Over-The-Air (OTA) firmware update state machine
 //----------------------------------------
@@ -115,6 +165,7 @@ void otaSetState(uint8_t newState)
 void otaClientUpdate()
 {
     uint32_t checkIntervalMillis;
+    NETWORK_DATA * network;
 
     // Perform the firmware update
     if (!inMainMenu)
@@ -125,6 +176,7 @@ void otaClientUpdate()
             // Handle invalid OTA states
             default: {
                 systemPrintf("ERROR: Unknown OTA state (%d)\r\n", otaState);
+                otaStop();
                 break;
             }
 
@@ -138,7 +190,82 @@ void otaClientUpdate()
                     if ((millis() - otaTimer) >= checkIntervalMillis)
                     {
                         otaTimer = millis();
+                        online.otaFirmwareUpdate = true;
                         otaSetState(OTA_STATE_START_NETWORK);
+                    }
+                }
+                break;
+            }
+
+            // Start the network
+            case OTA_STATE_START_NETWORK: {
+                if (settings.debugFirmwareUpdate)
+                    systemPrintln("OTA starting network");
+                if (!networkUserOpen(NETWORK_USER_OTA_FIRMWARE_UPDATE, NETWORK_TYPE_ACTIVE))
+                {
+                    systemPrintln("Firmware update failed, unable to start network");
+                    otaStop();
+                }
+                else
+                    otaSetState(OTA_STATE_WAIT_FOR_NETWORK);
+                break;
+            }
+
+            // Wait for connection to the network
+            case OTA_STATE_WAIT_FOR_NETWORK: {
+                // Determine if the network has failed
+                if (networkIsShuttingDown(NETWORK_USER_OTA_FIRMWARE_UPDATE))
+                {
+                    systemPrintln("OTA: Network is shutting down!");
+                    otaStop();
+                }
+
+                // Determine if the network is connected to the media
+                else if (networkUserConnected(NETWORK_USER_OTA_FIRMWARE_UPDATE))
+                {
+                    if (settings.debugFirmwareUpdate)
+                        systemPrintln("OTA connected to network");
+
+                    // Allocate the OTA firmware update client
+                    network = networkGetUserNetwork(NETWORK_USER_OTA_FIRMWARE_UPDATE);
+                    switch(network->type)
+                    {
+                    default:
+                        otaClient = nullptr;
+                        break;
+
+                    case NETWORK_TYPE_ETHERNET:
+                        if (OTA_USE_SSL)
+                            otaClient = new NetworkEthernetSslClient();
+                        else
+                            otaClient = new NetworkEthernetClient();
+                        break;
+
+                    case NETWORK_TYPE_WIFI:
+                        if (OTA_USE_SSL)
+                            otaClient = new NetworkWiFiSslClient();
+                        else
+                            otaClient = new NetworkWiFiClient();
+                        break;
+                    }
+                    if (!otaClient)
+                    {
+                        systemPrintln("ERROR: Failed to allocate OTA client!");
+                        otaStop();
+                    }
+                    else
+                    {
+                        // Stop Bluetooth
+                        otaBluetoothState = bluetoothGetState();
+                        if (otaBluetoothState != BT_OFF)
+                        {
+                            if (settings.debugFirmwareUpdate)
+                                systemPrintln("OTA stopping Bluetooth");
+                            bluetoothStop();
+                        }
+
+                        // Connect to GitHub
+                        otaSetState(OTA_STATE_JSON_FILE_REQUEST);
                     }
                 }
                 break;

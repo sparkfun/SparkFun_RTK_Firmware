@@ -21,6 +21,10 @@ OtaClient.ino
 // Constants
 //----------------------------------------
 
+#define OTA_JSON_FILE_URL       \
+    "/sparkfun/SparkFun_RTK_Firmware_Binaries/main/RTK-Firmware.json"
+#define OTA_SERVER              "raw.githubusercontent.com"
+#define OTA_SERVER_PORT         443
 #define OTA_USE_SSL             1
 
 enum OtaState
@@ -29,6 +33,7 @@ enum OtaState
     OTA_STATE_START_NETWORK,
     OTA_STATE_WAIT_FOR_NETWORK,
     OTA_STATE_JSON_FILE_REQUEST,
+    OTA_STATE_JSON_FILE_PARSE_HTTP_STATUS,
     // Insert new states before this line
     OTA_STATE_MAX
 };
@@ -39,6 +44,7 @@ const char * const otaStateNames[] =
     "OTA_STATE_START_NETWORK",
     "OTA_STATE_WAIT_FOR_NETWORK",
     "OTA_STATE_JSON_FILE_REQUEST",
+    "OTA_STATE_JSON_FILE_PARSE_HTTP_STATUS",
 };
 const int otaStateEntries = sizeof(otaStateNames) / sizeof(otaStateNames[0]);
 
@@ -169,6 +175,7 @@ void otaClientUpdate()
 {
     int32_t checkIntervalMillis;
     NETWORK_DATA * network;
+    int status;
 
     // Perform the firmware update
     if (!inMainMenu)

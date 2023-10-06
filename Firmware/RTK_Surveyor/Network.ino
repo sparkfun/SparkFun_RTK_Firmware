@@ -184,6 +184,7 @@ const char * const networkUser[] =
     "NTP Server",
     "NTRIP Client",
     "NTRIP Server",
+    "OTA Firmware Update",
     "PVT Client",
     "PVT Server",
     "PVT UDP Server",
@@ -891,6 +892,12 @@ void networkStop(uint8_t networkType)
                     if (settings.debugNetworkLayer)
                         systemPrintln("Network layer stopping NTRIP server");
                     ntripServerRestart();
+                    break;
+
+                case NETWORK_USER_OTA_FIRMWARE_UPDATE:
+                    if (settings.debugNetworkLayer)
+                        systemPrintln("Network layer stopping OTA firmware update");
+                    otaStop();
                     break;
 
                 case NETWORK_USER_PVT_CLIENT:

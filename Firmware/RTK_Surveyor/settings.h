@@ -178,12 +178,13 @@ enum NetworkStates
 // Define the network users
 enum NetworkUsers
 {
-    NETWORK_USER_NTP_SERVER = 0,   // NTP server
-    NETWORK_USER_NTRIP_CLIENT,     // NTRIP client
-    NETWORK_USER_NTRIP_SERVER,     // NTRIP server
-    NETWORK_USER_PVT_CLIENT,       // PVT client
-    NETWORK_USER_PVT_SERVER,       // PVT server
-    NETWORK_USER_PVT_UDP_SERVER,   // PVT UDP server
+    NETWORK_USER_NTP_SERVER = 0,        // NTP server
+    NETWORK_USER_NTRIP_CLIENT,          // NTRIP client
+    NETWORK_USER_NTRIP_SERVER,          // NTRIP server
+    NETWORK_USER_OTA_FIRMWARE_UPDATE,   // Over-The-Air firmware updates
+    NETWORK_USER_PVT_CLIENT,            // PVT client
+    NETWORK_USER_PVT_SERVER,            // PVT server
+    NETWORK_USER_PVT_UDP_SERVER,        // PVT UDP server
     // Last network user
     NETWORK_USER_MAX
 };
@@ -1109,6 +1110,7 @@ struct struct_online
     bool pvtUdpServer = false;
     ethernetStatus_e ethernetStatus = ETH_NOT_STARTED;
     bool NTPServer = false; // EthernetUDP
+    bool otaFirmwareUpdate = false;
 } online;
 
 #ifdef COMPILE_WIFI

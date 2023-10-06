@@ -254,7 +254,8 @@ bool ethernetIsNeeded()
         return true;
 
     // Does PVT client or server need Ethernet?
-    if (settings.enablePvtClient || settings.enablePvtServer || settings.enablePvtUdpServer)
+    if (settings.enablePvtClient || settings.enablePvtServer
+        || settings.enablePvtUdpServer || settings.enableAutoFirmwareUpdate)
         return true;
 
     return false;

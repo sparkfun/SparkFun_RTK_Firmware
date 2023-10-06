@@ -237,7 +237,9 @@ class NetworkClient : public Client
     //------------------------------
 
     friend class NetworkEthernetClient;
+    friend class NetworkEthernetSslClient;
     friend class NetworkWiFiClient;
+    friend class NetworkWiFiSslClient;
 };
 
 #ifdef  COMPILE_ETHERNET
@@ -245,17 +247,45 @@ class NetworkEthernetClient : public NetworkClient
 {
   private:
 
-    EthernetClient _client;
+    EthernetClient _ethernetClient;
 
   public:
 
+    NetworkEthernetClient() :
+        NetworkClient(&_ethernetClient, NETWORK_TYPE_ETHERNET)
+    {
+    }
+
     NetworkEthernetClient(EthernetClient& client) :
-        _client{client},
-        NetworkClient(&_client, NETWORK_TYPE_ETHERNET)
+        _ethernetClient{client},
+        NetworkClient(&_ethernetClient, NETWORK_TYPE_ETHERNET)
     {
     }
 
     ~NetworkEthernetClient()
+    {
+        this->~NetworkClient();
+    }
+};
+
+class NetworkEthernetSslClient : public NetworkClient
+{
+  protected:
+
+    EthernetClient _ethernetClient;
+    SSLClientESP32 _sslClient;
+
+  public:
+
+    NetworkEthernetSslClient() :
+        _sslClient(),
+        NetworkClient(&_sslClient, NETWORK_TYPE_ETHERNET)
+    {
+        _sslClient.setClient(&_ethernetClient);
+        _sslClient.setCACertBundle(x509CertificateBundle);
+    }
+
+    ~NetworkEthernetSslClient()
     {
         this->~NetworkClient();
     }
@@ -265,11 +295,16 @@ class NetworkEthernetClient : public NetworkClient
 #ifdef  COMPILE_WIFI
 class NetworkWiFiClient : public NetworkClient
 {
-  private:
+  protected:
 
     WiFiClient _client;
 
   public:
+
+    NetworkWiFiClient() :
+        NetworkClient(&_client, NETWORK_TYPE_WIFI)
+    {
+    }
 
     NetworkWiFiClient(WiFiClient& client) :
         _client{client},
@@ -278,6 +313,29 @@ class NetworkWiFiClient : public NetworkClient
     }
 
     ~NetworkWiFiClient()
+    {
+        this->~NetworkClient();
+    }
+};
+
+class NetworkWiFiSslClient : public NetworkClient
+{
+  protected:
+
+    WiFiClient _wifiClient;
+    SSLClientESP32 _sslClient;
+
+  public:
+
+    NetworkWiFiSslClient() :
+        _sslClient(),
+        NetworkClient(&_sslClient, NETWORK_TYPE_WIFI)
+    {
+        _sslClient.setClient(&_wifiClient);
+        _sslClient.setCACertBundle(x509CertificateBundle);
+    }
+
+    ~NetworkWiFiSslClient()
     {
         this->~NetworkClient();
     }

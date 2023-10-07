@@ -15,7 +15,7 @@ This is a replication and confirmation of the procedure done by [RTKLibExplorer 
 The process goes like this: 
 
 * Find a local monument
-* Covert the coordinates
+* Convert the coordinates
 * Take measurements
 * Calculate differences
 

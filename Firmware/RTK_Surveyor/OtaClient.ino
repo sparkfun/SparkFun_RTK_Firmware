@@ -41,6 +41,10 @@ enum OtaState
     OTA_STATE_JSON_FILE_READ_DATA,
     OTA_STATE_PARSE_JSON_DATA,
     OTA_STATE_BIN_FILE_REQUEST,
+    OTA_STATE_BIN_FILE_PARSE_HTTP_STATUS,
+    OTA_STATE_BIN_FILE_PARSE_LENGTH,
+    OTA_STATE_BIN_FILE_SKIP_HEADERS,
+    OTA_STATE_BIN_FILE_READ_DATA,
     // Insert new states before this line
     OTA_STATE_MAX
 };
@@ -57,6 +61,10 @@ const char * const otaStateNames[] =
     "OTA_STATE_JSON_FILE_READ_DATA",
     "OTA_STATE_PARSE_JSON_DATA",
     "OTA_STATE_BIN_FILE_REQUEST",
+    "OTA_STATE_BIN_FILE_PARSE_HTTP_STATUS",
+    "OTA_STATE_BIN_FILE_PARSE_LENGTH",
+    "OTA_STATE_BIN_FILE_SKIP_HEADERS",
+    "OTA_STATE_BIN_FILE_READ_DATA"
 };
 const int otaStateEntries = sizeof(otaStateNames) / sizeof(otaStateNames[0]);
 
@@ -313,6 +321,7 @@ void otaStop()
 // Perform the over-the-air (OTA) firmware updates
 void otaClientUpdate()
 {
+    int bytesWritten;
     uint32_t checkIntervalMillis;
     NETWORK_DATA * network;
     String otaReleasedFirmwareVersion;
@@ -614,6 +623,157 @@ void otaClientUpdate()
                         break;
                     }
                 }
+                break;
+            }
+
+            // Issue the HTTP request to get the released firmware file
+            case OTA_STATE_BIN_FILE_REQUEST: {
+                // Determine if the network is shutting down
+                if (networkIsShuttingDown(NETWORK_USER_OTA_FIRMWARE_UPDATE))
+                {
+                    systemPrintln("OTA: Network is shutting down!");
+                    otaStop();
+                }
+
+                // Determine if the network is connected to the media
+                else if (!networkUserConnected(NETWORK_USER_OTA_FIRMWARE_UPDATE))
+                {
+                    systemPrintln("OTA: Network has failed!");
+                    otaStop();
+                }
+
+                // Attempt to connect to the server using HTTPS
+                else if (!otaClient->connect(OTA_SERVER, OTA_SERVER_PORT))
+                {
+                    // if you didn't get a connection to the server:
+                    Serial.println("Connection failed");
+                    otaStop();
+                }
+                else
+                {
+                    Serial.println("Requesting BIN file");
+
+                    // Make the HTTP request:
+                    otaClient->print("GET ");
+                    otaClient->print(otaReleasedFirmwareURL.c_str());
+                    otaClient->println(" HTTP/1.1");
+                    otaClient->println("User-Agent: RTK OTA Client");
+                    otaClient->print("Host: ");
+                    otaClient->println(OTA_SERVER);
+                    otaClient->println("Connection: close");
+                    otaClient->println();
+                    otaBufferData = 0;
+                    otaSetState(OTA_STATE_BIN_FILE_PARSE_HTTP_STATUS);
+                }
+                break;
+            }
+
+            // Locate the HTTP status header
+            case OTA_STATE_BIN_FILE_PARSE_HTTP_STATUS: {
+                status = otaReadHeaderLine();
+                if (status)
+                    break;
+
+                // Verify that the server found the file
+                status = otaParseJsonStatus();
+                if (settings.debugFirmwareUpdate)
+                    systemPrintf("OTA: Server file status: %d\r\n", status);
+                if (status != 200)
+                {
+                    if (settings.debugFirmwareUpdate)
+                        systemPrintln("OTA: Server failed to locate the JSON file");
+                     otaStop();
+                }
+                else
+                {
+                    otaBufferData = 0;
+                    otaSetState(OTA_STATE_BIN_FILE_PARSE_LENGTH);
+                }
+                break;
+            }
+
+            // Locate the file length header
+            case OTA_STATE_BIN_FILE_PARSE_LENGTH: {
+                status = otaReadHeaderLine();
+                if (status)
+                    break;
+
+                // Verify the header line length
+                if (!otaBufferData)
+                {
+                    if (settings.debugFirmwareUpdate)
+                        systemPrintln("OTA: BIN file length not found");
+                    otaStop();
+                    break;
+                }
+
+                // Get the file length
+                otaFileSize = otaParseFileLength();
+                if (otaFileSize >= 0)
+                {
+                    if (settings.debugFirmwareUpdate)
+                        systemPrintf("OTA: BIN file length %d bytes\r\n", otaFileSize);
+                    otaBufferData = 0;
+                    otaFileBytes = 0;
+                    otaSetState(OTA_STATE_BIN_FILE_SKIP_HEADERS);
+                }
+                break;
+            }
+
+            // Skip over the rest of the HTTP headers
+            case OTA_STATE_BIN_FILE_SKIP_HEADERS: {
+                status = otaReadHeaderLine();
+                if (status)
+                    break;
+
+                // Determine if this is the separater between the HTTP headers
+                // and the file data
+                if (!otaBufferData)
+                {
+                    // Start the firmware update process
+                    if (!Update.begin(UPDATE_SIZE_UNKNOWN))
+                        otaStop();
+                    else
+                        otaSetState(OTA_STATE_BIN_FILE_READ_DATA);
+                }
+                otaBufferData = 0;
+                break;
+            }
+
+            // Receive the bin file from the HTTP server
+            case OTA_STATE_BIN_FILE_READ_DATA: {
+                // Read data from the JSON file
+                status = otaReadFileData(sizeof(otaBuffer));
+                if (otaBufferData)
+                {
+                    // Write the data to flash
+                    bytesWritten = Update.write((uint8_t *)otaBuffer, otaBufferData);
+                    if (bytesWritten != otaBufferData)
+                    {
+                        // Only a portion of the data was written
+                        systemPrintf("OTA: Wrote only %d of %d bytes to flash\r\n", bytesWritten, otaBufferData);
+                        otaStop();
+                        status = 1;
+                    }
+                    else
+                    {
+                        // Display the percentage written
+                        otaPullCallback(otaFileBytes, otaFileSize);
+                        otaBufferData = 0;
+                    }
+                }
+                if (status)
+                    break;
+
+                // The end of the file was reached
+                if (settings.debugFirmwareUpdate)
+                    systemPrintf("OTA: Downloaded %d bytes\r\n", otaFileBytes);
+                Update.end(true);
+
+                // Reset the system
+                systemPrintln("OTA: Starting the new firmware");
+                delay(1000);
+                ESP.restart();
                 break;
             }
         }

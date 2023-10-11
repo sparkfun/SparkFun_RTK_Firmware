@@ -21,6 +21,8 @@ OtaClient.ino
 // Constants
 //----------------------------------------
 
+#define HTTPS_TRANSPORT         (OTA_USE_SSL ? "https://" : "http://")
+
 #define OTA_JSON_FILE_URL       \
     "/sparkfun/SparkFun_RTK_Firmware_Binaries/main/RTK-Firmware.json"
 #define OTA_SERVER              "raw.githubusercontent.com"
@@ -34,6 +36,11 @@ enum OtaState
     OTA_STATE_WAIT_FOR_NETWORK,
     OTA_STATE_JSON_FILE_REQUEST,
     OTA_STATE_JSON_FILE_PARSE_HTTP_STATUS,
+    OTA_STATE_JSON_FILE_PARSE_LENGTH,
+    OTA_STATE_JSON_FILE_SKIP_HEADERS,
+    OTA_STATE_JSON_FILE_READ_DATA,
+    OTA_STATE_PARSE_JSON_DATA,
+    OTA_STATE_BIN_FILE_REQUEST,
     // Insert new states before this line
     OTA_STATE_MAX
 };
@@ -45,6 +52,11 @@ const char * const otaStateNames[] =
     "OTA_STATE_WAIT_FOR_NETWORK",
     "OTA_STATE_JSON_FILE_REQUEST",
     "OTA_STATE_JSON_FILE_PARSE_HTTP_STATUS",
+    "OTA_STATE_JSON_FILE_PARSE_LENGTH",
+    "OTA_STATE_JSON_FILE_SKIP_HEADERS",
+    "OTA_STATE_JSON_FILE_READ_DATA",
+    "OTA_STATE_PARSE_JSON_DATA",
+    "OTA_STATE_BIN_FILE_REQUEST",
 };
 const int otaStateEntries = sizeof(otaStateNames) / sizeof(otaStateNames[0]);
 
@@ -53,9 +65,13 @@ const int otaStateEntries = sizeof(otaStateNames) / sizeof(otaStateNames[0]);
 //----------------------------------------
 
 static byte otaBluetoothState = BT_OFF;
+static char otaBuffer[1379];
 static int otaBufferData;
 static NetworkClient * otaClient;
+static int otaFileBytes;
+static int otaFileSize;
 static String otaJsonFileData;
+static String otaReleasedFirmwareURL;
 static uint8_t otaState;
 static uint32_t otaTimer;
 
@@ -70,6 +86,101 @@ const char * otaGetStateName(uint8_t state, char * string)
         return otaStateNames[state];
     sprintf(string, "Unknown state (%d)", state);
     return string;
+}
+
+// Get the file length from the HTTP header
+int otaParseFileLength()
+{
+    int fileLength;
+
+    // Parse the file length from the HTTP header
+    otaBufferData = 0;
+    if (sscanf(otaBuffer, "Content-Length: %d", &fileLength) == 1)
+        return fileLength;
+    return -1;
+}
+
+// Get the server file status from the HTTP header
+int otaParseJsonStatus()
+{
+    int status;
+
+    // Parse the status from the HTTP header
+    if (sscanf(otaBuffer, "HTTP/1.1 %d", &status) == 1)
+        return status;
+    return -1;
+}
+
+// Read data from the JSON or firmware file
+void otaReadFileData(int bufferLength)
+{
+    int bytesToRead;
+
+    // Determine how much data is available
+    otaBufferData = 0;
+    bytesToRead = otaClient->available();
+    if (bytesToRead)
+    {
+        // Determine the number of bytes to read
+        if (bytesToRead > bufferLength)
+            bytesToRead = bufferLength;
+
+        // Read in the file data
+        otaBufferData = otaClient->read((uint8_t *)otaBuffer, bytesToRead);
+    }
+}
+
+// Read a line from the HTTP header
+int otaReadHeaderLine()
+{
+    int bytesToRead;
+    String otaReleasedFirmwareVersion;
+    int status;
+
+    // Determine if the network is shutting down
+    if (networkIsShuttingDown(NETWORK_USER_OTA_FIRMWARE_UPDATE))
+    {
+        systemPrintln("OTA: Network is shutting down!");
+        otaStop();
+        return -1;
+    }
+
+    // Determine if the network is connected to the media
+    if (!networkUserConnected(NETWORK_USER_OTA_FIRMWARE_UPDATE))
+    {
+        systemPrintln("OTA: Network has failed!");
+        otaStop();
+        return -1;
+    }
+
+    // Verify the connection to the HTTP server
+    if (!otaClient->connected())
+    {
+        systemPrintln("OTA: HTTP connection broken!");
+        otaStop();
+        return -1;
+    }
+
+    // Read in the released firmware data
+    while (otaClient->available())
+    {
+        otaBuffer[otaBufferData] = otaClient->read();
+
+        // Drop the carriage return
+        if (otaBuffer[otaBufferData] != '\r')
+        {
+            // Build the header line
+            if (otaBuffer[otaBufferData] != '\n')
+                otaBufferData += 1;
+            else
+            {
+                // Zero-terminate the header line
+                otaBuffer[otaBufferData] = 0;
+                return 0;
+            }
+        }
+    }
+    return 1;
 }
 
 // Set the next OTA state
@@ -175,6 +286,7 @@ void otaClientUpdate()
 {
     int32_t checkIntervalMillis;
     NETWORK_DATA * network;
+    String otaReleasedFirmwareVersion;
     int status;
 
     // Perform the firmware update
@@ -256,6 +368,226 @@ void otaClientUpdate()
 
                         // Connect to GitHub
                         otaSetState(OTA_STATE_JSON_FILE_REQUEST);
+                    }
+                }
+                break;
+            }
+
+            // Issue the HTTP request to get the JSON file
+            case OTA_STATE_JSON_FILE_REQUEST: {
+                // Determine if the network is shutting down
+                if (networkIsShuttingDown(NETWORK_USER_OTA_FIRMWARE_UPDATE))
+                {
+                    systemPrintln("OTA: Network is shutting down!");
+                    otaStop();
+                }
+
+                // Determine if the network is connected to the media
+                else if (!networkUserConnected(NETWORK_USER_OTA_FIRMWARE_UPDATE))
+                {
+                    systemPrintln("OTA: Network has failed!");
+                    otaStop();
+                }
+
+                // Attempt to connect to the server using HTTPS
+                else if (!otaClient->connect(OTA_SERVER, OTA_SERVER_PORT))
+                {
+                    // if you didn't get a connection to the server:
+                    Serial.println("OTA: Connection failed");
+                    otaStop();
+                }
+                else
+                {
+                    Serial.println("OTA: Requesting JSON file");
+
+                    // Make the HTTP request:
+                    otaClient->print("GET ");
+                    otaClient->print(OTA_FIRMWARE_JSON_URL);
+                    otaClient->println(" HTTP/1.1");
+                    otaClient->println("User-Agent: RTK OTA Client");
+                    otaClient->print("Host: ");
+                    otaClient->println(OTA_SERVER);
+                    otaClient->println("Connection: close");
+                    otaClient->println();
+                    otaBufferData = 0;
+                    otaSetState(OTA_STATE_JSON_FILE_PARSE_HTTP_STATUS);
+                }
+                break;
+            }
+
+            // Locate the HTTP status header
+            case OTA_STATE_JSON_FILE_PARSE_HTTP_STATUS: {
+                status = otaReadHeaderLine();
+                if (status)
+                    break;
+
+                // Verify that the server found the file
+                status = otaParseJsonStatus();
+                if (settings.debugFirmwareUpdate)
+                    systemPrintf("OTA: Server file status: %d\r\n", status);
+                if (status != 200)
+                {
+                    if (settings.debugFirmwareUpdate)
+                        systemPrintln("OTA: Server failed to locate the JSON file");
+                     otaStop();
+                }
+                else
+                {
+                    otaBufferData = 0;
+                    otaSetState(OTA_STATE_JSON_FILE_PARSE_LENGTH);
+                }
+                break;
+            }
+
+            // Locate the file length header
+            case OTA_STATE_JSON_FILE_PARSE_LENGTH: {
+                status = otaReadHeaderLine();
+                if (status)
+                    break;
+
+                // Verify the header line length
+                if (!otaBufferData)
+                {
+                    if (settings.debugFirmwareUpdate)
+                        systemPrintln("OTA: JSON file length not found");
+                    otaStop();
+                    break;
+                }
+
+                // Get the file length
+                otaFileSize = otaParseFileLength();
+                if (otaFileSize >= 0)
+                {
+                    if (settings.debugFirmwareUpdate)
+                        systemPrintf("OTA: JSON file length %d bytes\r\n", otaFileSize);
+                    otaBufferData = 0;
+                    otaFileBytes = 0;
+                    otaSetState(OTA_STATE_JSON_FILE_SKIP_HEADERS);
+                }
+                break;
+            }
+
+            // Skip over the rest of the HTTP headers
+            case OTA_STATE_JSON_FILE_SKIP_HEADERS: {
+                status = otaReadHeaderLine();
+                if (status)
+                    break;
+
+                // Determine if this is the separater between the HTTP headers
+                // and the file data
+                if (!otaBufferData)
+                    otaSetState(OTA_STATE_JSON_FILE_READ_DATA);
+                otaBufferData = 0;
+                break;
+            }
+
+            // Receive the JSON data from the HTTP server
+            case OTA_STATE_JSON_FILE_READ_DATA: {
+                // Determine if the network is shutting down
+                if (networkIsShuttingDown(NETWORK_USER_OTA_FIRMWARE_UPDATE))
+                {
+                    systemPrintf("OTA: Network is shutting down after %d bytes!\r\n", otaFileBytes);
+                    otaStop();
+                }
+
+                // Determine if the network is connected to the media
+                else if (!networkUserConnected(NETWORK_USER_OTA_FIRMWARE_UPDATE))
+                {
+                    systemPrintf("OTA: Network has failed after %d bytes!\r\n", otaFileBytes);
+                    otaStop();
+                }
+
+                // Verify the connection to the HTTP server
+                else if (!otaClient->connected())
+                {
+                    systemPrintf("OTA: HTTP connection broken after %d bytes!\r\n", otaFileBytes);
+                    otaStop();
+                }
+                else
+                {
+                    // Read data from the JSON file
+                    otaReadFileData(sizeof(otaBuffer) - 1);
+                    if (otaBufferData)
+                    {
+                        // Zero terminate the file data in the buffer
+                        otaBuffer[otaBufferData] = 0;
+
+                        // Append the JSON file data to the string
+                        otaJsonFileData += String(&otaBuffer[0]);
+                        otaBufferData = 0;
+                    }
+
+                    // Done if not at the end-of-file
+                    if (otaJsonFileData.length() != otaFileSize)
+                        break;
+
+                    // Reached end-of-file
+                    // Parse the JSON file
+                    if (settings.debugFirmwareUpdate)
+                        systemPrintf("OTA: JSON data: %s\r\n", otaJsonFileData.c_str());
+                    otaSetState(OTA_STATE_PARSE_JSON_DATA);
+                }
+                break;
+            }
+
+            // Parse the JSON data and determine if new firmware is available
+            case OTA_STATE_PARSE_JSON_DATA: {
+                // Locate the fields in the JSON file
+                DynamicJsonDocument doc(1000);
+                if (deserializeJson(doc, otaJsonFileData.c_str()) != DeserializationError::Ok)
+                {
+                    systemPrintln("OTA: Failed to parse the JSON file data");
+                    otaStop();
+                }
+                else
+                {
+                    char versionString[9];
+
+                    // Get the current version
+                    getFirmwareVersion(versionString, sizeof(versionString), false);
+
+                    // Step through the configurations looking for a match
+                    for (auto config : doc["Configurations"].as<JsonArray>())
+                    {
+                        // Get the latest released version
+                        otaReleasedFirmwareVersion = config["Version"].isNull() ? "" : (const char *)config["Version"];
+                        otaReleasedFirmwareURL = config["URL"].isNull() ? "" : (const char *)config["URL"];
+                        if ((tolower(versionString[0]) != 'd')
+                            && (FIRMWARE_VERSION_MAJOR != 99)
+                            && (String(&versionString[1]) >= otaReleasedFirmwareVersion))
+                        {
+                            if (settings.debugFirmwareUpdate)
+                                systemPrintf("OTA: Current firmware %s is beyond released %s, no change necessary.\r\n",
+                                             versionString, otaReleasedFirmwareVersion.c_str());
+                            otaStop();
+                        }
+                        else
+                        {
+                            if (settings.debugFirmwareUpdate)
+                                systemPrintf("OTA: Firmware URL %s\r\n", otaReleasedFirmwareURL.c_str());
+                            if ((strncasecmp(HTTPS_TRANSPORT,
+                                             otaReleasedFirmwareURL.c_str(),
+                                             strlen(HTTPS_TRANSPORT)) != 0)
+                                || (strncasecmp(OTA_SERVER,
+                                                &otaReleasedFirmwareURL.c_str()[strlen(HTTPS_TRANSPORT)],
+                                                strlen(OTA_SERVER)) != 0))
+                            {
+                                if (settings.debugFirmwareUpdate)
+                                    systemPrintln("OTA: Invalid firmware URL");
+                                otaStop();
+                            }
+                            else
+                            {
+                                // Break the connection with the HTTP server
+                                otaClient->stop();
+                                if (settings.debugFirmwareUpdate)
+                                    systemPrintf("OTA: Upgrading firmware from %s to %s\r\n",
+                                                 versionString, otaReleasedFirmwareVersion.c_str());
+                                otaReleasedFirmwareURL.remove(0, strlen(HTTPS_TRANSPORT) + strlen(OTA_SERVER));
+                                otaSetState(OTA_STATE_BIN_FILE_REQUEST);
+                            }
+                        }
+                        break;
                     }
                 }
                 break;

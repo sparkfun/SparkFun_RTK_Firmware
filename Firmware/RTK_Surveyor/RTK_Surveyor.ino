@@ -201,8 +201,11 @@ char logFileName[sizeof("SFE_Reference_Station_230101_120101.ubx_plusExtraSpace"
 // Over-the-Air (OTA) update support
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+#if COMPILE_NETWORK
 #include <SSLClientESP32.h> // http://librarymanager/All#SSLClientESP32
 #include "X509_Certificate_Bundle.h" // Root certificates
+#endif // COMPILE_NETWORK
+#include <ArduinoJson.h>  //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
 
 #include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
 
@@ -229,7 +232,6 @@ unsigned int binBytesSent = 0;         // Tracks firmware bytes sent over WiFi O
 // Connection settings to NTRIP Caster
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_WIFI
-#include <ArduinoJson.h>  //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
 #include <ESPmDNS.h>      //Built-in.
 #include <HTTPClient.h>   //Built-in. Needed for ThingStream API for ZTP
 #include <PubSubClient.h> //http://librarymanager/All#PubSubClient_MQTT_Lightweight by Nick O'Leary v2.8.0 Used for MQTT obtaining of keys

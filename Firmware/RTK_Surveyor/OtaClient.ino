@@ -387,27 +387,7 @@ void otaClientUpdate()
                         systemPrintln("OTA connected to network");
 
                     // Allocate the OTA firmware update client
-                    network = networkGetUserNetwork(NETWORK_USER_OTA_FIRMWARE_UPDATE);
-                    switch(network->type)
-                    {
-                    default:
-                        otaClient = nullptr;
-                        break;
-
-                    case NETWORK_TYPE_ETHERNET:
-                        if (OTA_USE_SSL)
-                            otaClient = new NetworkEthernetSslClient();
-                        else
-                            otaClient = new NetworkEthernetClient();
-                        break;
-
-                    case NETWORK_TYPE_WIFI:
-                        if (OTA_USE_SSL)
-                            otaClient = new NetworkWiFiSslClient();
-                        else
-                            otaClient = new NetworkWiFiClient();
-                        break;
-                    }
+                    otaClient = networkClient(NETWORK_USER_OTA_FIRMWARE_UPDATE, OTA_USE_SSL);
                     if (!otaClient)
                     {
                         systemPrintln("ERROR: Failed to allocate OTA client!");

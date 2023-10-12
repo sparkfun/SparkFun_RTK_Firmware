@@ -88,7 +88,7 @@ static uint32_t otaTimer;
 //----------------------------------------
 
 // Get the OTA state name
-const char * getOtaStateName(uint8_t state, char * string)
+const char * otaGetStateName(uint8_t state, char * string)
 {
     if (state < OTA_STATE_MAX)
         return otaStateNames[state];
@@ -243,7 +243,7 @@ void otaSetState(uint8_t newState)
             asterisk = "*";
         else
         {
-            initialState = getOtaStateName(otaState, string1);
+            initialState = otaGetStateName(otaState, string1);
             arrow = " --> ";
         }
     }
@@ -253,7 +253,7 @@ void otaSetState(uint8_t newState)
     if (settings.debugFirmwareUpdate)
     {
         // Display the new firmware update state
-        endingState = getOtaStateName(newState, string2);
+        endingState = otaGetStateName(newState, string2);
         if (!online.rtc)
             systemPrintf("%s%s%s%s\r\n", asterisk, initialState, arrow, endingState);
         else

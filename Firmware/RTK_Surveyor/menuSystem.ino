@@ -1220,6 +1220,9 @@ void menuPeriodicPrint()
         systemPrint("51) PVT server state: ");
         systemPrintf("%s\r\n", PERIODIC_SETTING(PD_PVT_SERVER_STATE) ? "Enabled" : "Disabled");
 
+        systemPrint("52) OTA client state: ");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_OTA_CLIENT_STATE) ? "Enabled" : "Disabled");
+
         systemPrintln("-------  Tasks  ------");
         systemPrint("70) btReadTask state: ");
         systemPrintf("%s\r\n", PERIODIC_SETTING(PD_TASK_BLUETOOTH_READ) ? "Enabled" : "Disabled");
@@ -1306,6 +1309,8 @@ void menuPeriodicPrint()
             PERIODIC_TOGGLE(PD_PVT_SERVER_DATA);
         else if (incoming == 51)
             PERIODIC_TOGGLE(PD_PVT_SERVER_STATE);
+        else if (incoming == 52)
+            PERIODIC_TOGGLE(PD_OTA_CLIENT_STATE);
 
         else if (incoming == 70)
             PERIODIC_TOGGLE(PD_TASK_BLUETOOTH_READ);

@@ -492,6 +492,9 @@ enum PeriodDisplayValues
 
     PD_ZED_DATA_RX,             // 29
     PD_ZED_DATA_TX,             // 30
+
+    PD_OTA_CLIENT_STATE,        // 31
+    // Add new values before this line
 };
 
 #define PERIODIC_MASK(x) (1 << x)
@@ -1071,7 +1074,7 @@ typedef struct
     bool enablePvtUdpServer = false;
     uint16_t pvtUdpServerPort =
         10110; //https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=nmea
-    
+
     uint8_t rtcmTimeoutBeforeUsingLBand_s = 10; //If 10s have passed without RTCM, enable PMP corrections over L-Band if available
 
     // Automatic Firmware Update

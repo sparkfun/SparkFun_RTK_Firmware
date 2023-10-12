@@ -234,7 +234,7 @@ void otaSetState(uint8_t newState)
     const char * endingState;
 
     // Display the state transition
-    if (settings.debugFirmwareUpdate)
+    if ((settings.debugFirmwareUpdate) || PERIODIC_DISPLAY(PD_OTA_CLIENT_STATE))
     {
         arrow = "";
         asterisk = "";
@@ -250,9 +250,10 @@ void otaSetState(uint8_t newState)
 
     // Set the new state
     otaState = newState;
-    if (settings.debugFirmwareUpdate)
+    if ((settings.debugFirmwareUpdate) || PERIODIC_DISPLAY(PD_OTA_CLIENT_STATE))
     {
         // Display the new firmware update state
+        PERIODIC_CLEAR(PD_OTA_CLIENT_STATE);
         endingState = otaGetStateName(newState, string2);
         if (!online.rtc)
             systemPrintf("%s%s%s%s\r\n", asterisk, initialState, arrow, endingState);
@@ -268,6 +269,10 @@ void otaSetState(uint8_t newState)
             systemPrintf("%s%s%s%s, %s.%03ld\r\n", asterisk, initialState, arrow, endingState, s, rtc.getMillis());
         }
     }
+
+    // Display the starting percentage
+    if (otaState == OTA_STATE_BIN_FILE_READ_DATA)
+        otaPullCallback(otaFileBytes, otaFileSize);
 
     // Validate the firmware update state
     if (newState >= OTA_STATE_MAX)
@@ -757,6 +762,10 @@ void otaClientUpdate()
                 break;
             }
         }
+
+        // Periodically display the PVT client state
+        if (PERIODIC_DISPLAY(PD_OTA_CLIENT_STATE))
+            otaSetState(otaState);
     }
 }
 

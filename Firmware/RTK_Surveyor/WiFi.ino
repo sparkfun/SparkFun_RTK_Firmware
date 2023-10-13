@@ -545,41 +545,39 @@ bool wifiConnect(unsigned long timeout)
 // This function is used to turn WiFi off if nothing needs it.
 bool wifiIsNeeded()
 {
-    bool needed = false;
-
     if (settings.enablePvtClient == true)
-        needed = true;
+        return true;
     if (settings.enablePvtServer == true)
-        needed = true;
+        return true;
     if (settings.enablePvtUdpServer == true)
-        needed = true;
+        return true;
 
     // Handle WiFi within systemStates
     if (systemState <= STATE_ROVER_RTK_FIX && settings.enableNtripClient == true)
-        needed = true;
+        return true;
 
     if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING &&
         settings.enableNtripServer == true)
-        needed = true;
+        return true;
 
     // If the user has enabled NTRIP Client for an Assisted Survey-In, and Survey-In is running, keep WiFi on.
     if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_TEMP_SURVEY_STARTED &&
         settings.enableNtripClient == true && settings.fixedBase == false)
-        needed = true;
+        return true;
 
     // If WiFi is on while we are in the following states, allow WiFi to continue to operate
     if (systemState >= STATE_BUBBLE_LEVEL && systemState <= STATE_PROFILE)
     {
         // Keep WiFi on if user presses setup button, enters bubble level, is in AP config mode, etc
-        needed = true;
+        return true;
     }
 
     if (systemState == STATE_KEYS_WIFI_STARTED || systemState == STATE_KEYS_WIFI_CONNECTED)
-        needed = true;
+        return true;
     if (systemState == STATE_KEYS_PROVISION_WIFI_STARTED || systemState == STATE_KEYS_PROVISION_WIFI_CONNECTED)
-        needed = true;
+        return true;
 
-    return needed;
+    return false;
 }
 
 // Counts the number of entered SSIDs

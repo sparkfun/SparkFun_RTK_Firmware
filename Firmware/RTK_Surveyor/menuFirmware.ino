@@ -40,8 +40,9 @@ void menuFirmware()
 
         systemPrintf("e) Allow Beta Firmware: %s\r\n", enableRCFirmware ? "Enabled" : "Disabled");
 
-        systemPrintf("i) Automatic firmware check minutes: %d\r\n",
-                     settings.autoFirmwareCheckMinutes);
+        if (settings.enableAutoFirmwareUpdate)
+            systemPrintf("i) Automatic firmware check minutes: %d\r\n",
+                         settings.autoFirmwareCheckMinutes);
 
         if (newOTAFirmwareAvailable)
             systemPrintf("u) Update to new firmware: v%s\r\n", reportedVersion);
@@ -160,7 +161,7 @@ void menuFirmware()
             strncpy(reportedVersion, "", sizeof(reportedVersion) - 1); // Reset to force c) menu
         }
 
-        else if (incoming == 'i')
+        else if ((incoming == 'i') && settings.enableAutoFirmwareUpdate)
         {
             systemPrint("Enter minutes (1 - 999999) before next firmware check: ");
             int minutes = getNumber(); // Returns EXIT, TIMEOUT, or long

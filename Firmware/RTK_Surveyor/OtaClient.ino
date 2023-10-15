@@ -232,9 +232,11 @@ void otaSetState(uint8_t newState)
     const char * asterisk;
     const char * initialState;
     const char * endingState;
+    bool pd;
 
     // Display the state transition
-    if ((settings.debugFirmwareUpdate) || PERIODIC_DISPLAY(PD_OTA_CLIENT_STATE))
+    pd = PERIODIC_DISPLAY(PD_OTA_CLIENT_STATE);
+    if ((settings.debugFirmwareUpdate) || pd)
     {
         arrow = "";
         asterisk = "";
@@ -250,7 +252,7 @@ void otaSetState(uint8_t newState)
 
     // Set the new state
     otaState = newState;
-    if ((settings.debugFirmwareUpdate) || PERIODIC_DISPLAY(PD_OTA_CLIENT_STATE))
+    if ((settings.debugFirmwareUpdate) || pd)
     {
         // Display the new firmware update state
         PERIODIC_CLEAR(PD_OTA_CLIENT_STATE);
@@ -272,7 +274,7 @@ void otaSetState(uint8_t newState)
 
     // Display the starting percentage
     if (otaState == OTA_STATE_BIN_FILE_READ_DATA)
-        otaPullCallback(otaFileBytes, otaFileSize);
+        otaDisplayPercentage(otaFileBytes, otaFileSize, pd);
 
     // Validate the firmware update state
     if (newState >= OTA_STATE_MAX)

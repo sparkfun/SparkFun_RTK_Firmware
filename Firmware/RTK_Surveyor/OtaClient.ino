@@ -699,66 +699,70 @@ void otaClientUpdate()
 
             // Receive the bin file from the HTTP server
             case OTA_STATE_BIN_FILE_READ_DATA: {
-                // Determine if the network is shutting down
-                if (networkIsShuttingDown(NETWORK_USER_OTA_FIRMWARE_UPDATE))
+                do
                 {
-                    systemPrintln("OTA: Network is shutting down!");
-                    otaStop();
-                }
+                    bytesWritten = 0;
 
-                // Determine if the network is connected to the media
-                else if (!networkUserConnected(NETWORK_USER_OTA_FIRMWARE_UPDATE))
-                {
-                    systemPrintln("OTA: Network has failed!");
-                    otaStop();
-                }
-
-                // Verify the connection to the HTTP server
-                else if (!otaClient->connected())
-                {
-                    systemPrintf("OTA: HTTP connection broken after %d bytes!\r\n", otaFileBytes);
-                    otaStop();
-                }
-
-                // Read data and write it to the flash
-                else
-                {
-                    // Read data from the binary file
-                    otaReadFileData(sizeof(otaBuffer));
-                    if (otaBufferData)
+                    // Determine if the network is shutting down
+                    if (networkIsShuttingDown(NETWORK_USER_OTA_FIRMWARE_UPDATE))
                     {
-                        // Write the data to flash
-                        bytesWritten = Update.write((uint8_t *)otaBuffer, otaBufferData);
-                        if (bytesWritten != otaBufferData)
-                        {
-                            // Only a portion of the data was written
-                            systemPrintf("OTA: Wrote only %d of %d bytes to flash\r\n", bytesWritten, otaBufferData);
-                            otaStop();
-                            status = 1;
-                        }
-                        else
-                        {
-                            // Display the percentage written
-                            otaPullCallback(otaFileBytes, otaFileSize);
-                            otaBufferData = 0;
-                        }
+                        systemPrintln("OTA: Network is shutting down!");
+                        otaStop();
                     }
 
-                    // Check for end-of-file
-                    if (otaFileBytes == otaFileSize)
+                    // Determine if the network is connected to the media
+                    else if (!networkUserConnected(NETWORK_USER_OTA_FIRMWARE_UPDATE))
                     {
-                        // The end of the file was reached
-                        if (settings.debugFirmwareUpdate)
-                            systemPrintf("OTA: Downloaded %d bytes\r\n", otaFileBytes);
-                        Update.end(true);
-
-                        // Reset the system
-                        systemPrintln("OTA: Starting the new firmware");
-                        delay(1000);
-                        ESP.restart();
-                        break;
+                        systemPrintln("OTA: Network has failed!");
+                        otaStop();
                     }
-                }
+
+                    // Verify the connection to the HTTP server
+                    else if (!otaClient->connected())
+                    {
+                        systemPrintf("OTA: HTTP connection broken after %d bytes!\r\n", otaFileBytes);
+                        otaStop();
+                    }
+
+                    // Read data and write it to the flash
+                    else
+                    {
+                        // Read data from the binary file
+                        otaReadFileData(sizeof(otaBuffer));
+                        if (otaBufferData)
+                        {
+                            // Write the data to flash
+                            bytesWritten = Update.write((uint8_t *)otaBuffer, otaBufferData);
+                            if (bytesWritten != otaBufferData)
+                            {
+                                // Only a portion of the data was written
+                                systemPrintf("OTA: Wrote only %d of %d bytes to flash\r\n", bytesWritten, otaBufferData);
+                                otaStop();
+                            }
+                            else
+                            {
+                                // Display the percentage written
+                                otaPullCallback(otaFileBytes, otaFileSize);
+                                otaBufferData = 0;
+                            }
+
+                            // Check for end-of-file
+                            if (otaFileBytes == otaFileSize)
+                            {
+                                // The end-of-file was reached
+                                if (settings.debugFirmwareUpdate)
+                                    systemPrintf("OTA: Downloaded %d bytes\r\n", otaFileBytes);
+                                Update.end(true);
+
+                                // Reset the system
+                                systemPrintln("OTA: Starting the new firmware");
+                                delay(1000);
+                                ESP.restart();
+                                break;
+                            }
+                        }
+                    }
+                } while (bytesWritten);
                 break;
             }
         }

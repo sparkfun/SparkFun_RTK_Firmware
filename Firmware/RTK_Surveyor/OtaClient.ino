@@ -261,6 +261,10 @@ void otaStop()
         systemPrintln("OTA stopping WiFi");
         online.otaFirmwareUpdate = false;
 
+        // Stop writing to flash
+        if (Update.isRunning())
+            Update.abort();
+
         // Close the SSL connection
         if (otaClient)
         {

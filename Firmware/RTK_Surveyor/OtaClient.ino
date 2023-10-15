@@ -370,7 +370,7 @@ void otaClientUpdate()
                     systemPrintln("OTA starting network");
                 if (!networkUserOpen(NETWORK_USER_OTA_FIRMWARE_UPDATE, NETWORK_TYPE_ACTIVE))
                 {
-                    systemPrintln("Firmware update failed, unable to start network");
+                    systemPrintln("OTA: Firmware update failed, unable to start network");
                     otaStop();
                 }
                 else
@@ -633,12 +633,12 @@ void otaClientUpdate()
                 else if (!otaClient->connect(OTA_SERVER, OTA_SERVER_PORT))
                 {
                     // if you didn't get a connection to the server:
-                    Serial.println("Connection failed");
+                    Serial.println("OTA: Connection failed");
                     otaStop();
                 }
                 else
                 {
-                    Serial.println("Requesting BIN file");
+                    Serial.println("OTA: Requesting BIN file");
 
                     // Make the HTTP request:
                     otaClient->print("GET ");

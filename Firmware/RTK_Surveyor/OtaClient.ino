@@ -289,6 +289,36 @@ void otaStop()
     }
 };
 
+int otaWriteDataToFlash(int bytesToWrite)
+{
+    int bytesWritten;
+
+    bytesWritten = 0;
+    if (bytesToWrite)
+    {
+        // Write the data to flash
+        bytesWritten = Update.write((uint8_t *)otaBuffer, bytesToWrite);
+        if (bytesWritten)
+        {
+            otaFileBytes += bytesWritten;
+            if (bytesWritten != bytesToWrite)
+            {
+                // Only a portion of the data was written, move the rest of
+                // the data to the beginning of the buffer
+                memcpy(otaBuffer, &otaBuffer[bytesWritten], bytesToWrite - bytesWritten);
+                if (settings.debugFirmwareUpdate)
+                    systemPrintf("OTA: Wrote only %d of %d bytes to flash\r\n", bytesWritten, otaBufferData);
+            }
+
+            // Display the percentage written
+            otaPullCallback(otaFileBytes, otaFileSize);
+        }
+    }
+
+    // Return the number of bytes to write
+    return bytesToWrite - bytesWritten;
+}
+
 //----------------------------------------
 // Over-The-Air (OTA) firmware update state machine
 //----------------------------------------
@@ -728,23 +758,15 @@ void otaClientUpdate()
                     else
                     {
                         // Read data from the binary file
-                        otaReadFileData(sizeof(otaBuffer));
+                        if (!otaBufferData)
+                            otaReadFileData(sizeof(otaBuffer));
+
+                        // Write the data to the flash
                         if (otaBufferData)
                         {
-                            // Write the data to flash
-                            bytesWritten = Update.write((uint8_t *)otaBuffer, otaBufferData);
-                            if (bytesWritten != otaBufferData)
-                            {
-                                // Only a portion of the data was written
-                                systemPrintf("OTA: Wrote only %d of %d bytes to flash\r\n", bytesWritten, otaBufferData);
-                                otaStop();
-                            }
-                            else
-                            {
-                                // Display the percentage written
-                                otaPullCallback(otaFileBytes, otaFileSize);
-                                otaBufferData = 0;
-                            }
+                            bytesWritten = otaBufferData;
+                            otaBufferData = otaWriteDataToFlash(otaBufferData);
+                            bytesWritten -= otaBufferData;
 
                             // Check for end-of-file
                             if (otaFileBytes == otaFileSize)

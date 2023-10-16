@@ -25,6 +25,7 @@ OtaClient.ino
 
 #define OTA_JSON_FILE_URL       \
     "/sparkfun/SparkFun_RTK_Firmware_Binaries/main/RTK-Firmware.json"
+#define OTA_NO_PROGRESS_TIMEOUT (3 * 60 * 1000) // 3 minutes
 #define OTA_SERVER              "raw.githubusercontent.com"
 #define OTA_SERVER_PORT         443
 #define OTA_USE_SSL             1
@@ -331,7 +332,7 @@ int otaWriteDataToFlash(int bytesToWrite)
 void otaClientUpdate()
 {
     int bytesWritten;
-    uint32_t checkIntervalMillis;
+    int32_t checkIntervalMillis;
     NETWORK_DATA * network;
     String otaReleasedFirmwareVersion;
     int status;
@@ -356,7 +357,7 @@ void otaClientUpdate()
                 {
                     // Wait until it is time to check for a firmware update
                     checkIntervalMillis = settings.autoFirmwareCheckMinutes * 60 * 1000;
-                    if ((millis() - otaTimer) >= checkIntervalMillis)
+                    if ((int32_t)(millis() - otaTimer) >= checkIntervalMillis)
                     {
                         otaTimer = millis();
                         online.otaFirmwareUpdate = true;
@@ -725,7 +726,10 @@ void otaClientUpdate()
                     if (!Update.begin(UPDATE_SIZE_UNKNOWN))
                         otaStop();
                     else
+                    {
+                        otaTimer = millis();
                         otaSetState(OTA_STATE_BIN_FILE_READ_DATA);
+                    }
                 }
                 otaBufferData = 0;
                 break;
@@ -758,6 +762,17 @@ void otaClientUpdate()
                         otaStop();
                     }
 
+                    // Determine if progress is being made
+                    else if ((millis() - otaTimer) >= OTA_NO_PROGRESS_TIMEOUT)
+                    {
+                        systemPrintln("OTA: No progress being made, link broken!");
+                        otaStop();
+                        checkIntervalMillis = settings.autoFirmwareCheckMinutes * 60 * 1000;
+
+                        // Delay for OTA_NO_PROGRESS_TIMEOUT
+                        otaTimer = millis() - checkIntervalMillis + OTA_NO_PROGRESS_TIMEOUT;
+                    }
+
                     // Read data and write it to the flash
                     else
                     {
@@ -771,6 +786,7 @@ void otaClientUpdate()
                             bytesWritten = otaBufferData;
                             otaBufferData = otaWriteDataToFlash(otaBufferData);
                             bytesWritten -= otaBufferData;
+                            otaTimer = millis();
 
                             // Check for end-of-file
                             if (otaFileBytes == otaFileSize)

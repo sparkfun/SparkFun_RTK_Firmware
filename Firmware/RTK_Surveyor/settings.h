@@ -178,12 +178,13 @@ enum NetworkStates
 // Define the network users
 enum NetworkUsers
 {
-    NETWORK_USER_NTP_SERVER = 0,   // NTP server
-    NETWORK_USER_NTRIP_CLIENT,     // NTRIP client
-    NETWORK_USER_NTRIP_SERVER,     // NTRIP server
-    NETWORK_USER_PVT_CLIENT,       // PVT client
-    NETWORK_USER_PVT_SERVER,       // PVT server
-    NETWORK_USER_PVT_UDP_SERVER,   // PVT UDP server
+    NETWORK_USER_NTP_SERVER = 0,        // NTP server
+    NETWORK_USER_NTRIP_CLIENT,          // NTRIP client
+    NETWORK_USER_NTRIP_SERVER,          // NTRIP server
+    NETWORK_USER_OTA_FIRMWARE_UPDATE,   // Over-The-Air firmware updates
+    NETWORK_USER_PVT_CLIENT,            // PVT client
+    NETWORK_USER_PVT_SERVER,            // PVT server
+    NETWORK_USER_PVT_UDP_SERVER,        // PVT UDP server
     // Last network user
     NETWORK_USER_MAX
 };
@@ -491,6 +492,9 @@ enum PeriodDisplayValues
 
     PD_ZED_DATA_RX,             // 29
     PD_ZED_DATA_TX,             // 30
+
+    PD_OTA_CLIENT_STATE,        // 31
+    // Add new values before this line
 };
 
 #define PERIODIC_MASK(x) (1 << x)
@@ -1070,8 +1074,13 @@ typedef struct
     bool enablePvtUdpServer = false;
     uint16_t pvtUdpServerPort =
         10110; //https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=nmea
-    
+
     uint8_t rtcmTimeoutBeforeUsingLBand_s = 10; //If 10s have passed without RTCM, enable PMP corrections over L-Band if available
+
+    // Automatic Firmware Update
+    bool debugFirmwareUpdate = false;
+    bool enableAutoFirmwareUpdate = false;
+    uint32_t autoFirmwareCheckMinutes = 24 * 60;
 
     //Add new settings above
     //<------------------------------------------------------------>
@@ -1101,6 +1110,7 @@ struct struct_online
     bool pvtUdpServer = false;
     ethernetStatus_e ethernetStatus = ETH_NOT_STARTED;
     bool NTPServer = false; // EthernetUDP
+    bool otaFirmwareUpdate = false;
 } online;
 
 #ifdef COMPILE_WIFI

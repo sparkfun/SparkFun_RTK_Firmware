@@ -1,3 +1,13 @@
+/*------------------------------------------------------------------------------
+menuFirmware.ino
+
+  This module implements the firmware menu and update code.
+------------------------------------------------------------------------------*/
+
+//----------------------------------------
+// Menu
+//----------------------------------------
+
 // Update firmware if bin files found
 void menuFirmware()
 {
@@ -16,6 +26,10 @@ void menuFirmware()
         getFirmwareVersion(currentVersion, sizeof(currentVersion), enableRCFirmware);
         systemPrintf("Current firmware: %s\r\n", currentVersion);
 
+        // Automatic firmware updates
+        systemPrintf("a) Automatic firmware updates: %s\r\n",
+                     settings.enableAutoFirmwareUpdate ? "Enabled" : "Disabled");
+
         if (strlen(reportedVersion) > 0)
         {
             if (newOTAFirmwareAvailable == false)
@@ -25,6 +39,10 @@ void menuFirmware()
             systemPrintln("c) Check SparkFun for device firmware");
 
         systemPrintf("e) Allow Beta Firmware: %s\r\n", enableRCFirmware ? "Enabled" : "Disabled");
+
+        if (settings.enableAutoFirmwareUpdate)
+            systemPrintf("i) Automatic firmware check minutes: %d\r\n",
+                         settings.autoFirmwareCheckMinutes);
 
         if (newOTAFirmwareAvailable)
             systemPrintf("u) Update to new firmware: v%s\r\n", reportedVersion);
@@ -42,6 +60,10 @@ void menuFirmware()
             incoming--;
             updateFromSD(binFileNames[incoming]);
         }
+
+        else if (incoming == 'a')
+            settings.enableAutoFirmwareUpdate ^= 1;
+
         else if (incoming == 'c' && btPrintEcho == false)
         {
             if (wifiNetworkCount() == 0)
@@ -132,7 +154,28 @@ void menuFirmware()
             systemPrintln("Firmware update not available while configuration over Bluetooth is active");
             delay(2000);
         }
-        else if (newOTAFirmwareAvailable && incoming == 'u')
+
+        else if (incoming == 'e')
+        {
+            enableRCFirmware ^= 1;
+            strncpy(reportedVersion, "", sizeof(reportedVersion) - 1); // Reset to force c) menu
+        }
+
+        else if ((incoming == 'i') && settings.enableAutoFirmwareUpdate)
+        {
+            systemPrint("Enter minutes (1 - 999999) before next firmware check: ");
+            int minutes = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((minutes != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                (minutes != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if ((minutes < 1) || (minutes > 999999))
+                    systemPrintln("Error: Out of range (1 - 999999)");
+                else
+                    settings.autoFirmwareCheckMinutes = minutes;
+            }
+        }
+
+        else if ((incoming == 'u') && newOTAFirmwareAvailable)
         {
             bool previouslyConnected = wifiIsConnected();
 
@@ -144,11 +187,6 @@ void menuFirmware()
                 WIFI_STOP();
         }
 
-        else if (incoming == 'e')
-        {
-            enableRCFirmware ^= 1;
-            strncpy(reportedVersion, "", sizeof(reportedVersion) - 1); // Reset to force c) menu
-        }
         else if (incoming == 'x')
             break;
         else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
@@ -161,6 +199,10 @@ void menuFirmware()
 
     clearBuffer(); // Empty buffer of any newline chars
 }
+
+//----------------------------------------
+// Firmware update code
+//----------------------------------------
 
 void mountSDThenUpdate(const char *firmwareFileName)
 {

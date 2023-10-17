@@ -551,6 +551,8 @@ bool wifiIsNeeded()
         return true;
     if (settings.enablePvtUdpServer == true)
         return true;
+    if (settings.enableAutoFirmwareUpdate)
+        return true;
 
     // Handle WiFi within systemStates
     if (systemState <= STATE_ROVER_RTK_FIX && settings.enableNtripClient == true)

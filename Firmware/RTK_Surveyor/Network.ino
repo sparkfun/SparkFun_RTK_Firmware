@@ -1080,7 +1080,6 @@ void networkTypeUpdate(uint8_t networkType)
             {
                 if (settings.debugNetworkLayer)
                     systemPrintf("Network connected to %s\r\n", networkName[network->type]);
-                network->connectionAttempt = 0;
                 network->timerStart = millis();
                 network->timeout = NETWORK_MAX_IDLE_TIME;
                 network->activeUsers = network->userOpens;
@@ -1095,14 +1094,6 @@ void networkTypeUpdate(uint8_t networkType)
             if (network->shutdown)
                 networkStop(network->type);
 
-            // Without users there is no need for the network.
-            else if ((!network->activeUsers) && ((millis() - network->timerStart) >= network->timeout))
-            {
-                if (settings.debugNetworkLayer)
-                    systemPrintf("Network shutting down %s, no users\r\n", networkName[network->type]);
-                networkStop(network->type);
-            }
-
             // Verify that the RTK device is still connected to the network
             else if (!networkIsMediaConnected(network))
             {
@@ -1111,6 +1102,29 @@ void networkTypeUpdate(uint8_t networkType)
                     systemPrintf("Network: %s connection failed!\r\n", networkName[network->type]);
                 networkRestartNetwork(network);
                 networkStop(network->type);
+            }
+
+            // Check for the idle timeout
+            else if ((millis() - network->timerStart) >= network->timeout)
+            {
+                // Determine if the network is in use
+                network->timerStart = millis();
+                if (network->activeUsers)
+                {
+                    // Network in use, reduce future connection delays
+                    network->connectionAttempt = 0;
+
+                    // Set the next time that network idle should be checked
+                    network->timeout = NETWORK_MAX_IDLE_TIME;
+                }
+
+                // Without users there is no need for the network.
+                else
+                {
+                    if (settings.debugNetworkLayer)
+                        systemPrintf("Network shutting down %s, no users\r\n", networkName[network->type]);
+                    networkStop(network->type);
+                }
             }
             break;
 

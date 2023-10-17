@@ -627,9 +627,14 @@ void otaUpdate()
 // Called while the OTA Pull update is happening
 void otaPullCallback(int bytesWritten, int totalLength)
 {
+    otaDisplayPercentage(bytesWritten, totalLength, false);
+}
+
+void otaDisplayPercentage(int bytesWritten, int totalLength, bool alwaysDisplay)
+{
     static int previousPercent = -1;
     int percent = 100 * bytesWritten / totalLength;
-    if (percent != previousPercent)
+    if (alwaysDisplay || (percent != previousPercent))
     {
         // Indicate progress
         int barWidthInCharacters = 20; // Width of progress bar, ie [###### % complete

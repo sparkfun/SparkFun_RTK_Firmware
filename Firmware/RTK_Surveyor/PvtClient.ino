@@ -116,7 +116,7 @@ PvtClient.ino
     * private SNIP NTRIP caster
 */
 
-#ifdef COMPILE_WIFI
+#if COMPILE_NETWORK
 
 //----------------------------------------
 // Constants
@@ -520,4 +520,4 @@ void pvtClientZeroTail()
     pvtClientTail = 0;
 }
 
-#endif  // COMPILE_WIFI
+#endif  // COMPILE_NETWORK

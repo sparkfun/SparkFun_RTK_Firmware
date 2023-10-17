@@ -889,7 +889,7 @@ void pointperfectApplyKeys()
     {
         if (online.gnss == false)
         {
-            log_d("ZED-F9P not avaialable");
+            log_d("ZED-F9P not available");
             return;
         }
 

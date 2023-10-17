@@ -201,6 +201,9 @@ char logFileName[sizeof("SFE_Reference_Station_230101_120101.ubx_plusExtraSpace"
 // Over-the-Air (OTA) update support
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+#include <SSLClientESP32.h> // http://librarymanager/All#SSLClientESP32
+#include "X509_Certificate_Bundle.h" // Root certificates
+
 #include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
 
 #ifdef COMPILE_WIFI

@@ -13,6 +13,7 @@ EXECUTABLES += NMEA_Client
 EXECUTABLES += Read_Map_File
 EXECUTABLES += RTK_Reset
 EXECUTABLES += Split_Messages
+EXECUTABLES += X.509_crt_bundle_bin_to_c
 
 INCLUDES  = crc24q.h
 

@@ -379,6 +379,38 @@ void menuNetwork()
 }
 
 //----------------------------------------
+// Allocate a network client
+//----------------------------------------
+NetworkClient * networkClient(uint8_t user, bool useSSL)
+{
+    NetworkClient * client;
+    int type;
+
+    type = networkGetType(user);
+#if defined(COMPILE_ETHERNET)
+    if (type == NETWORK_TYPE_ETHERNET)
+    {
+        if (useSSL)
+            client = new NetworkEthernetSslClient();
+        else
+            client = new NetworkEthernetClient;
+    }
+    else
+#endif // COMPILE_ETHERNET
+    {
+#if defined(COMPILE_WIFI)
+        if (useSSL)
+            client = new NetworkWiFiSslClient();
+        else
+            client = new NetworkWiFiClient();
+#else   // COMPILE_WIFI
+        client = nullptr;
+#endif  // COMPILE_WIFI
+    }
+    return client;
+}
+
+//----------------------------------------
 // Display the IP address
 //----------------------------------------
 void networkDisplayIpAddress(uint8_t networkType)

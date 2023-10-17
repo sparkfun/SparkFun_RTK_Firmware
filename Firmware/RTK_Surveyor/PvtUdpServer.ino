@@ -33,9 +33,9 @@ pvtUdpServer.ino
 
      RTK Express(+) with WiFi enabled, PvtUdpServer enabled, PvtUdpPort setup,
      Smartphone with QField:
-        
+
         Network Setup:
-            Connect the Smartphone and the RTK Express to the same Network (e.g. the Smartphones HotSpot). 
+            Connect the Smartphone and the RTK Express to the same Network (e.g. the Smartphones HotSpot).
 
         QField Setup:
             * Open a project
@@ -53,13 +53,13 @@ pvtUdpServer.ino
             * Exit the menus
 
         1. Long press on the location icon in the lower right corner
-        
+
         2. Enable Show Position Information
 
-        3. Verify that the displayed coordinates, fix tpe etc. are valid   
+        3. Verify that the displayed coordinates, fix tpe etc. are valid
 */
 
-#ifdef COMPILE_WIFI
+#if COMPILE_NETWORK
 
 //----------------------------------------
 // Constants
@@ -121,7 +121,7 @@ int32_t pvtUdpServerSendDataBroadcast(uint8_t *data, uint16_t length)
             PERIODIC_CLEAR(PD_PVT_UDP_SERVER_BROADCAST_DATA);
             systemPrintf("PVT UDP Server failed to write %d bytes as broadcast\r\n", length);
             length = 0;
-        }       
+        }
     }
     return length;
 }
@@ -148,7 +148,7 @@ int32_t pvtUdpServerSendData(uint16_t dataHead)
         if ((tail + bytesToSend) > settings.gnssHandlerBufferSize)
             bytesToSend = settings.gnssHandlerBufferSize - tail;
 
-        // Send the data 
+        // Send the data
         bytesToSend = pvtUdpServerSendDataBroadcast(&ringBuffer[tail], bytesToSend);
 
         // Assume all data was sent, wrap the buffer pointer
@@ -369,4 +369,4 @@ void pvtUdpServerZeroTail()
     pvtUdpServerTail = 0;
 }
 
-#endif // COMPILE_WIFI
+#endif // COMPILE_NETWORK

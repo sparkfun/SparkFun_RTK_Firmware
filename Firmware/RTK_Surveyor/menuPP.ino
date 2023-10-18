@@ -1244,7 +1244,7 @@ void updateLBand()
             lbandCorrectionsReceived = false;
 
         // If we don't get an L-Band fix within Timeout, hot-start ZED-F9x
-        if (carrSoln == 1) // RTK Float
+        if (systemState == STATE_ROVER_RTK_FLOAT)
         {
             if (millis() - lbandLastReport > 1000)
             {

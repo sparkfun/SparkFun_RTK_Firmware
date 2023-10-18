@@ -9,11 +9,10 @@
 #define MQTT_CERT_SIZE 2000
 
 // The PointPerfect token is provided at compile time via build flags
-#define DEVELOPMENT_TOKEN   \
-    0xAA, 0xBB, 0xCC, 0xDD, 0x00, 0x11, 0x22, 0x33, 0x0A, 0x0B, 0x0C, 0x0D, 0x00, 0x01, 0x02, 0x03
+#define DEVELOPMENT_TOKEN 0xAA, 0xBB, 0xCC, 0xDD, 0x00, 0x11, 0x22, 0x33, 0x0A, 0x0B, 0x0C, 0x0D, 0x00, 0x01, 0x02, 0x03
 #ifndef POINTPERFECT_TOKEN
 #warning Using the DEVELOPMENT_TOKEN for point perfect!
-#define POINTPERFECT_TOKEN      DEVELOPMENT_TOKEN
+#define POINTPERFECT_TOKEN DEVELOPMENT_TOKEN
 #endif // POINTPERFECT_TOKEN
 
 static const uint8_t developmentTokenArray[16] = {DEVELOPMENT_TOKEN};   // Token in HEX form
@@ -181,7 +180,7 @@ bool pointperfectProvisionDevice()
 {
 #ifdef COMPILE_WIFI
     bool bluetoothOriginallyConnected = false;
-    if(bluetoothState == BT_CONNECTED)
+    if (bluetoothState == BT_CONNECTED)
         bluetoothOriginallyConnected = true;
 
     bluetoothStop(); // Free heap before starting secure client (requires ~70KB)
@@ -342,7 +341,7 @@ bool pointperfectProvisionDevice()
     if (jsonZtp)
         delete jsonZtp;
 
-    if(bluetoothOriginallyConnected == true)
+    if (bluetoothOriginallyConnected == true)
         bluetoothStart();
 
     return (retVal);
@@ -445,7 +444,7 @@ bool pointperfectUpdateKeys()
 {
 #ifdef COMPILE_WIFI
     bool bluetoothOriginallyConnected = false;
-    if(bluetoothState == BT_CONNECTED)
+    if (bluetoothState == BT_CONNECTED)
         bluetoothOriginallyConnected = true;
 
     bluetoothStop(); // Release available heap to allow room for TLS
@@ -565,7 +564,7 @@ bool pointperfectUpdateKeys()
     if (certificateContents)
         free(certificateContents);
 
-    if(bluetoothOriginallyConnected == true)
+    if (bluetoothOriginallyConnected == true)
         bluetoothStart();
 
     // Return the key status
@@ -1261,7 +1260,8 @@ void updateLBand()
                 {
                     lbandRestarts++;
 
-                    lbandTimeFloatStarted = millis(); //Restart timer for L-Band. Don't immediately reset ZED to achieve fix.
+                    lbandTimeFloatStarted =
+                        millis(); // Restart timer for L-Band. Don't immediately reset ZED to achieve fix.
 
                     // Hotstart ZED to try to get RTK lock
                     theGNSS.softwareResetGNSSOnly();
@@ -1293,7 +1293,8 @@ void updateLBand()
             if (lBandCommunicationEnabled == true)
             {
                 log_d("Disabling L-Band communication due to RTCM reception");
-                lBandCommunicationEnabled = !zedDisableLBandCommunication(); //zedDisableLBandCommunication() returns true if we successfully disabled
+                lBandCommunicationEnabled = !zedDisableLBandCommunication(); // zedDisableLBandCommunication() returns
+                                                                             // true if we successfully disabled
             }
         }
     }

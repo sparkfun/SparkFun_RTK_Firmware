@@ -1082,8 +1082,9 @@ typedef struct
     bool enableAutoFirmwareUpdate = false;
     uint32_t autoFirmwareCheckMinutes = 24 * 60;
 
-    //Add new settings above
-    //<------------------------------------------------------------>
+    bool debugLBand = false;
+
+    //Add new settings above <------------------------------------------------------------>
 
 } Settings;
 Settings settings;

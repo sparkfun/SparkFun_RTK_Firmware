@@ -440,8 +440,9 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "debugFirmwareUpdate", settings.debugFirmwareUpdate);
     settingsFile->printf("%s=%d\r\n", "enableAutoFirmwareUpdate", settings.enableAutoFirmwareUpdate);
 
-    //Add new settings above
-    //<------------------------------------------------------------>
+    settingsFile->printf("%s=%d\r\n", "debugLBand", settings.debugLBand);
+
+    //Add new settings above <------------------------------------------------------------>
 }
 
 // Given a fileName, parse the file and load the given settings struct

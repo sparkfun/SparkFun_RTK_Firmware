@@ -366,6 +366,8 @@ bool checkCertificates()
     {
         if (certificateContents)
             free(certificateContents);
+        if (keyContents)
+            free(keyContents);
         systemPrintln("Failed to allocate content buffers!");
         return (false);
     }

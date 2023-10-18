@@ -878,7 +878,9 @@ long gpsToMjd(long GpsCycle, long GpsWeek, long GpsSeconds)
 void pushRXMPMP(UBX_RXM_PMP_message_data_t *pmpData)
 {
     uint16_t payloadLen = ((uint16_t)pmpData->lengthMSB << 8) | (uint16_t)pmpData->lengthLSB;
-    log_d("Pushing %d bytes of RXM-PMP data to GNSS", payloadLen);
+
+    if (settings.debugLBand == true && !inMainMenu)
+        systemPrintf("Pushing %d bytes of RXM-PMP data to GNSS\r\n", payloadLen);
 
     theGNSS.pushRawData(&pmpData->sync1, (size_t)payloadLen + 6); // Push the sync chars, class, ID, length and payload
     theGNSS.pushRawData(&pmpData->checksumA, (size_t)2);          // Push the checksum bytes
@@ -954,7 +956,9 @@ void pointperfectApplyKeys()
 // Check if the PMP data is being decrypted successfully
 void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
 {
-    log_d("L-Band Eb/N0[dB] (>9 is good): %0.2f", ubxDataStruct->ebno * pow(2, -3));
+    if (settings.debugLBand == true && !inMainMenu)
+        systemPrintf("L-Band Eb/N0[dB] (>9 is good): %0.2f\r\n", ubxDataStruct->ebno * pow(2, -3));
+
     lBandEBNO = ubxDataStruct->ebno * pow(2, -3);
 
     if (ubxDataStruct->statusInfo.bits.msgDecrypted == 2) // Successfully decrypted
@@ -964,7 +968,8 @@ void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
     }
     else
     {
-        log_d("PMP decryption failed");
+        if (settings.debugLBand == true && !inMainMenu)
+            systemPrintln("PMP decryption failed");
     }
 }
 
@@ -1244,8 +1249,10 @@ void updateLBand()
             if (millis() - lbandLastReport > 1000)
             {
                 lbandLastReport = millis();
-                log_d("ZED restarts: %d Time remaining before L-Band forced restart: %ds", lbandRestarts,
-                      settings.lbandFixTimeout_seconds - ((millis() - lbandTimeFloatStarted) / 1000));
+
+                if (settings.debugLBand == true)
+                    systmePrintf("ZED restarts: %d Time remaining before L-Band forced restart: %ds\r\n", lbandRestarts,
+                                 settings.lbandFixTimeout_seconds - ((millis() - lbandTimeFloatStarted) / 1000));
             }
 
             if (settings.lbandFixTimeout_seconds > 0)

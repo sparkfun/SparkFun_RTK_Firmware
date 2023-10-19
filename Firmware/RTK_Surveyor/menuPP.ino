@@ -117,14 +117,16 @@ void menuPointPerfectKeys()
 
             dateToKeyStart(expDay, expMonth, expYear, &settings.pointPerfectCurrentKeyStart);
 
+            // The u-blox API reports key durations of 5 weeks, but the web interface reports expiration dates
+            // that are 4 weeks.
+            // If the user has manually entered a date, force duration down to four weeks
+            settings.pointPerfectCurrentKeyDuration = (1000LL * 60 * 60 * 24 * 28);
 
             // Calculate the next key expiration date
-            if (settings.pointPerfectNextKeyStart == 0)
-            {
-                settings.pointPerfectNextKeyStart = settings.pointPerfectCurrentKeyStart +
-                                                    settings.pointPerfectCurrentKeyDuration +
-                                                    1; // Next key starts after current key
-                settings.pointPerfectNextKeyDuration = settings.pointPerfectCurrentKeyDuration;
+            settings.pointPerfectNextKeyStart = settings.pointPerfectCurrentKeyStart +
+                                                settings.pointPerfectCurrentKeyDuration +
+                                                1; // Next key starts after current key
+            settings.pointPerfectNextKeyDuration = settings.pointPerfectCurrentKeyDuration;
 
             if (settings.debugLBand == true)
             {

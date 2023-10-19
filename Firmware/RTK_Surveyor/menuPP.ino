@@ -334,19 +334,18 @@ bool pointperfectProvisionDevice()
             }
             else
             {
-                const int tempHolderSize = 2000;
-                tempHolderPtr = (char *)malloc(tempHolderSize);
+                tempHolderPtr = (char *)malloc(MQTT_CERT_SIZE);
                 if (!tempHolderPtr)
                 {
                     systemPrintln("ERROR - Failed to allocate tempHolderPtr buffer!\r\n");
                     break;
                 }
-                strncpy(tempHolderPtr, (const char *)((*jsonZtp)["certificate"]), tempHolderSize - 1);
+                strncpy(tempHolderPtr, (const char *)((*jsonZtp)["certificate"]), MQTT_CERT_SIZE - 1);
                 // log_d("len of PrivateCert: %d", strlen(tempHolderPtr));
                 // log_d("privateCert: %s", tempHolderPtr);
                 recordFile("certificate", tempHolderPtr, strlen(tempHolderPtr));
 
-                strncpy(tempHolderPtr, (const char *)((*jsonZtp)["privateKey"]), tempHolderSize - 1);
+                strncpy(tempHolderPtr, (const char *)((*jsonZtp)["privateKey"]), MQTT_CERT_SIZE - 1);
                 // log_d("len of privateKey: %d", strlen(tempHolderPtr));
                 // log_d("privateKey: %s", tempHolderPtr);
                 recordFile("privateKey", tempHolderPtr, strlen(tempHolderPtr));
@@ -432,7 +431,7 @@ bool checkCertificates()
     memset(keyContents, 0, MQTT_CERT_SIZE);
     loadFile("privateKey", keyContents);
 
-    if (checkCertificateValidity(keyContents, strlen(keyContents)) == false)
+    if (checkPrivateKeyValidity(keyContents, strlen(keyContents)) == false)
     {
         if (settings.debugPpCertificate)
             systemPrintln("PrivateKey is corrupt.");
@@ -468,10 +467,35 @@ bool checkCertificateValidity(char *certificateContent, int certificateContentSi
     if (result_code < 0)
     {
         if (settings.debugPpCertificate)
-            systemPrintln("Cert formatting invalid");
+            systemPrintln("ERROR - Invalid certificate format!");
         return (false);
     }
 
+    return (true);
+}
+
+// Check if a given private key is in a valid format
+// This was created to detect corrupt or invalid private keys caused by bugs in v3.0 to and including v3.3.
+// See https://github.com/Mbed-TLS/mbedtls/blob/development/library/pkparse.c
+bool checkPrivateKeyValidity(char *privateKey, int privateKeySize)
+{
+    // Check for valid format of private key
+    // From ssl_client.cpp
+    // https://stackoverflow.com/questions/70670070/mbedtls-cannot-parse-valid-x509-certificate
+    mbedtls_pk_context pk;
+    mbedtls_pk_init(&pk);
+
+    int result_code =
+        mbedtls_pk_parse_key(&pk,
+                             (unsigned char *)privateKey, privateKeySize + 1,
+                             nullptr, 0);
+    mbedtls_pk_free(&pk);
+    if (result_code < 0)
+    {
+        if (settings.debugPpCertificate)
+            systemPrintln("ERROR - Invalid private key format!");
+        return (false);
+    }
     return (true);
 }
 

@@ -865,10 +865,7 @@ void dateToKeyStart(uint8_t expDay, uint8_t expMonth, uint16_t expYear, uint64_t
 
     // PointPerfect uses/reports unix epochs in milliseconds
     *settingsKeyStart = startUnixEpoch * 1000L; // Convert to ms
-    *settingsKeyDuration =
-        (28 * 24 * 60 * 60 * 1000LL) - 1; // We assume keys last for 28 days (minus one ms to be before midnight)
 
-    // Print ToW and Week for debugging
     uint16_t keyGPSWeek;
     uint32_t keyGPSToW;
     long long gpsEpoch = thingstreamEpochToGPSEpoch(*settingsKeyStart);

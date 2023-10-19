@@ -53,8 +53,7 @@ void menuPointPerfectKeys()
         if (strlen(settings.pointPerfectCurrentKey) > 0 && settings.pointPerfectCurrentKeyStart > 0 &&
             settings.pointPerfectCurrentKeyDuration > 0)
         {
-            long long unixEpoch = thingstreamEpochToGPSEpoch(settings.pointPerfectCurrentKeyStart,
-                                                             settings.pointPerfectCurrentKeyDuration);
+            long long gpsEpoch = thingstreamEpochToGPSEpoch(settings.pointPerfectCurrentKeyStart);
 
             uint16_t keyGPSWeek;
             uint32_t keyGPSToW;
@@ -80,8 +79,7 @@ void menuPointPerfectKeys()
         if (strlen(settings.pointPerfectNextKey) > 0 && settings.pointPerfectNextKeyStart > 0 &&
             settings.pointPerfectNextKeyDuration > 0)
         {
-            long long unixEpoch =
-                thingstreamEpochToGPSEpoch(settings.pointPerfectNextKeyStart, settings.pointPerfectNextKeyDuration);
+            long long gpsEpoch = thingstreamEpochToGPSEpoch(settings.pointPerfectNextKeyStart);
 
             uint16_t keyGPSWeek;
             uint32_t keyGPSToW;
@@ -709,8 +707,7 @@ int daysFromEpoch(long long endEpoch)
 // Add leap seconds (the API reports start times with GPS leap seconds removed)
 // Convert from unix epoch (the API reports unix epoch time) to GPS epoch (the NED-D9S expects)
 // Note: I believe the Thingstream API is reporting startEpoch 18 seconds less than actual
-// Even though we are adding 18 leap seconds, the ToW is still coming out as 518400 instead of 518418 (midnight)
-long long thingstreamEpochToGPSEpoch(long long startEpoch, long long duration)
+long long thingstreamEpochToGPSEpoch(long long startEpoch)
 {
     long long epoch = startEpoch;
     epoch /= 1000; // Convert PointPerfect ms Epoch to s
@@ -732,7 +729,7 @@ uint8_t getLeapSeconds()
             return (leapSeconds);
         }
     }
-    return (18); // Default to 18 if GNSS if offline
+    return (18); // Default to 18 if GNSS is offline
 }
 
 // Covert a given the key's expiration date to a GPS Epoch, so that we can calculate GPS Week and ToW
@@ -813,8 +810,7 @@ void dateToKeyStartDuration(uint8_t expDay, uint8_t expMonth, uint16_t expYear, 
     // Print ToW and Week for debugging
     uint16_t keyGPSWeek;
     uint32_t keyGPSToW;
-    long long unixEpoch = thingstreamEpochToGPSEpoch(*settingsKeyStart, *settingsKeyDuration);
-    unixEpochToWeekToW(unixEpoch, &keyGPSWeek, &keyGPSToW);
+    long long gpsEpoch = thingstreamEpochToGPSEpoch(*settingsKeyStart);
 
     if (ENABLE_DEVELOPER)
     {
@@ -917,14 +913,11 @@ void pointperfectApplyKeys()
 
             uint16_t currentKeyGPSWeek;
             uint32_t currentKeyGPSToW;
-            long long epoch = thingstreamEpochToGPSEpoch(settings.pointPerfectCurrentKeyStart,
-                                                         settings.pointPerfectCurrentKeyDuration);
-            unixEpochToWeekToW(epoch, &currentKeyGPSWeek, &currentKeyGPSToW);
+            long long epoch = thingstreamEpochToGPSEpoch(settings.pointPerfectCurrentKeyStart);
 
             uint16_t nextKeyGPSWeek;
             uint32_t nextKeyGPSToW;
-            epoch = thingstreamEpochToGPSEpoch(settings.pointPerfectNextKeyStart, settings.pointPerfectNextKeyDuration);
-            unixEpochToWeekToW(epoch, &nextKeyGPSWeek, &nextKeyGPSToW);
+            epoch = thingstreamEpochToGPSEpoch(settings.pointPerfectNextKeyStart);
 
             theGNSS.setVal8(UBLOX_CFG_SPARTN_USE_SOURCE, 1); // use LBAND PMP message
 

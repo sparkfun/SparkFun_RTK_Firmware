@@ -712,7 +712,7 @@ int daysFromEpoch(long long endEpoch)
 // Even though we are adding 18 leap seconds, the ToW is still coming out as 518400 instead of 518418 (midnight)
 long long thingstreamEpochToGPSEpoch(long long startEpoch, long long duration)
 {
-    long long epoch = startEpoch + duration;
+    long long epoch = startEpoch;
     epoch /= 1000; // Convert PointPerfect ms Epoch to s
 
     // Convert Unix Epoch time from PointPerfect to GPS Time Of Week needed for UBX message

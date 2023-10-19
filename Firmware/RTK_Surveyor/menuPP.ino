@@ -133,12 +133,12 @@ void menuPointPerfectKeys()
                                                     1; // Next key starts after current key
                 settings.pointPerfectNextKeyDuration = settings.pointPerfectCurrentKeyDuration;
 
-                if (ENABLE_DEVELOPER)
-                {
-                    systemPrintf("  settings.pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
-                    systemPrintf("  settings.pointPerfectNextKeyDuration: %lld\r\n",
-                                 settings.pointPerfectNextKeyDuration);
-                }
+            if (settings.debugLBand == true)
+            {
+                systemPrintf("  settings.pointPerfectCurrentKeyStart: %lld - %s\r\n", settings.pointPerfectCurrentKeyStart, printDateFromUnixEpoch(settings.pointPerfectCurrentKeyStart));
+                systemPrintf("  settings.pointPerfectCurrentKeyDuration: %lld - %s\r\n", settings.pointPerfectCurrentKeyDuration, printDaysFromDuration(settings.pointPerfectCurrentKeyDuration));
+                systemPrintf("  settings.pointPerfectNextKeyStart: %lld - %s\r\n", settings.pointPerfectNextKeyStart, printDateFromUnixEpoch(settings.pointPerfectNextKeyStart));
+                systemPrintf("  settings.pointPerfectNextKeyDuration: %lld - %s\r\n", settings.pointPerfectNextKeyDuration, printDaysFromDuration(settings.pointPerfectNextKeyDuration));
             }
         }
         else if (incoming == 4)
@@ -172,6 +172,50 @@ void menuPointPerfectKeys()
 
     clearBuffer(); // Empty buffer of any newline chars
 }
+
+// Given a GPS Epoch, return a DD/MM/YYYY string
+char *printDateFromGPSEpoch(long long gpsEpoch)
+{
+    uint16_t keyGPSWeek;
+    uint32_t keyGPSToW;
+    epochToWeekToW(gpsEpoch, &keyGPSWeek, &keyGPSToW);
+
+    long expDay;
+    long expMonth;
+    long expYear;
+    gpsWeekToWToDate(keyGPSWeek, keyGPSToW, &expDay, &expMonth, &expYear);
+
+    char *response = (char *)malloc(strlen("01/01/1010"));
+
+    sprintf(response, "%02ld/%02ld/%ld", expDay, expMonth, expYear);
+    return (response);
+}
+
+// Given a Unix Epoch, return a DD/MM/YYYY string
+// https://www.epochconverter.com/programming/c
+char *printDateFromUnixEpoch(long long unixEpoch)
+{
+    char *buf = (char *)malloc(strlen("01/01/1010"));
+    time_t rawtime = unixEpoch;
+
+    struct tm ts;
+    ts = *localtime(&rawtime);
+
+    // Format time, "dd/mm/yyyy"
+    strftime(buf, strlen("01/01/1010"), "%d/%m/%Y", &ts);
+    return (buf);
+}
+
+// Given a duration in ms, print days
+char *printDaysFromDuration(long long duration)
+{
+    duration /= (1000L * 60L * 60 * 24); //Convert ms to days
+
+    char *response = (char *)malloc(strlen("34.9"));
+    sprintf(response, "%0.2f", duration);
+    return (response);
+}
+
 
 // Connect to 'home' WiFi and then ThingStream API. This will attach this unique device to the ThingStream network.
 bool pointperfectProvisionDevice()
@@ -324,6 +368,16 @@ bool pointperfectProvisionDevice()
                 strcpy(settings.pointPerfectCurrentKey, (const char *)((*jsonZtp)["dynamickeys"]["current"]["value"]));
                 settings.pointPerfectCurrentKeyDuration = (*jsonZtp)["dynamickeys"]["current"]["duration"];
                 settings.pointPerfectCurrentKeyStart = (*jsonZtp)["dynamickeys"]["current"]["start"];
+
+                if (settings.debugLBand == true)
+                {
+                    systemPrintf("  pointPerfectCurrentKey: %s\r\n", settings.pointPerfectCurrentKey);
+                    systemPrintf("  pointPerfectCurrentKeyStart: %lld - %s\r\n", settings.pointPerfectCurrentKeyStart, printDateFromUnixEpoch(settings.pointPerfectCurrentKeyStart));
+                    systemPrintf("  pointPerfectCurrentKeyDuration: %lld - %s\r\n", settings.pointPerfectCurrentKeyDuration, printDaysFromDuration(settings.pointPerfectCurrentKeyDuration));
+                    systemPrintf("  pointPerfectNextKey: %s\r\n", settings.pointPerfectNextKey);
+                    systemPrintf("  pointPerfectNextKeyStart: %lld - %s\r\n", settings.pointPerfectNextKeyStart, printDateFromUnixEpoch(settings.pointPerfectNextKeyStart));
+                    systemPrintf("  pointPerfectNextKeyDuration: %lld - %s\r\n", settings.pointPerfectNextKeyDuration, printDaysFromDuration(settings.pointPerfectNextKeyDuration));
+                }
             }
         } // HTTP Response was 200
 
@@ -631,6 +685,16 @@ void mqttCallback(char *topic, byte *message, unsigned int length)
         settings.pointPerfectNextKeyDuration =
             settings.pointPerfectCurrentKeyDuration; // We assume next key duration is the same as current key duration
                                                      // because we have to
+        if (settings.debugLBand == true)
+        {
+            systemPrintln();
+            systemPrintf("  pointPerfectCurrentKey: %s\r\n", settings.pointPerfectCurrentKey);
+            systemPrintf("  pointPerfectCurrentKeyStart: %lld - %s\r\n", settings.pointPerfectCurrentKeyStart, printDateFromUnixEpoch(settings.pointPerfectCurrentKeyStart));
+            systemPrintf("  pointPerfectCurrentKeyDuration: %lld - %s\r\n", settings.pointPerfectCurrentKeyDuration, printDaysFromDuration(settings.pointPerfectCurrentKeyDuration));
+            systemPrintf("  pointPerfectNextKey: %s\r\n", settings.pointPerfectNextKey);
+            systemPrintf("  pointPerfectNextKeyStart: %lld - %s\r\n", settings.pointPerfectNextKeyStart, printDateFromUnixEpoch(settings.pointPerfectNextKeyStart));
+            systemPrintf("  pointPerfectNextKeyDuration: %lld - %s\r\n", settings.pointPerfectNextKeyDuration, printDaysFromDuration(settings.pointPerfectNextKeyDuration));
+        }
     }
 
     mqttMessageReceived = true;
@@ -732,7 +796,7 @@ uint8_t getLeapSeconds()
     return (18); // Default to 18 if GNSS is offline
 }
 
-// Covert a given the key's expiration date to a GPS Epoch, so that we can calculate GPS Week and ToW
+// Covert a given key's expiration date to a GPS Epoch, so that we can calculate GPS Week and ToW
 // Add a millisecond to roll over from 11:59UTC to midnight of the following day
 // Convert from unix epoch (time lib outputs unix) to GPS epoch (the NED-D9S expects)
 long long dateToGPSEpoch(uint8_t day, uint8_t month, uint16_t year)
@@ -812,12 +876,15 @@ void dateToKeyStartDuration(uint8_t expDay, uint8_t expMonth, uint16_t expYear, 
     uint32_t keyGPSToW;
     long long gpsEpoch = thingstreamEpochToGPSEpoch(*settingsKeyStart);
 
-    if (ENABLE_DEVELOPER)
     epochToWeekToW(gpsEpoch, &keyGPSWeek, &keyGPSToW);
 
+    // Print ToW and Week for debugging
+    if (settings.debugLBand == true)
     {
-        systemPrintf("  KeyStart: %lld\r\n", *settingsKeyStart);
-        systemPrintf("  KeyDuration: %lld\r\n", *settingsKeyDuration);
+        systemPrintf("  expireUnixEpoch: %lld - %s\r\n", expireUnixEpoch, printDateFromUnixEpoch(expireUnixEpoch));
+        systemPrintf("  startUnixEpoch: %lld - %s\r\n", startUnixEpoch, printDateFromUnixEpoch(startUnixEpoch));
+        systemPrintf("  gpsEpoch: %lld - %s\r\n", gpsEpoch, printDateFromGPSEpoch(gpsEpoch));
+        systemPrintf("  KeyStart: %lld - %s\r\n", *settingsKeyStart, printDateFromUnixEpoch(*settingsKeyStart));
         systemPrintf("  keyGPSWeek: %d\r\n", keyGPSWeek);
         systemPrintf("  keyGPSToW: %d\r\n", keyGPSToW);
     }
@@ -1086,7 +1153,6 @@ void menuPointPerfect()
             }
             else
             {
-
                 int daysRemaining =
                     daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
 
@@ -1247,7 +1313,7 @@ void updateLBand()
                 lbandLastReport = millis();
 
                 if (settings.debugLBand == true)
-                    systmePrintf("ZED restarts: %d Time remaining before L-Band forced restart: %ds\r\n", lbandRestarts,
+                    systemPrintf("ZED restarts: %d Time remaining before L-Band forced restart: %ds\r\n", lbandRestarts,
                                  settings.lbandFixTimeout_seconds - ((millis() - lbandTimeFloatStarted) / 1000));
             }
 
@@ -1277,7 +1343,7 @@ void updateLBand()
         {
             // If we have not received RTCM in a certain amount of time,
             // and if communication was disabled because RTCM was being received at some point,
-            // re-enableL-Band communcation
+            // re-enable L-Band communcation
             if (lBandCommunicationEnabled == false)
             {
                 log_d("Enabling L-Band communication due to RTCM timeout");

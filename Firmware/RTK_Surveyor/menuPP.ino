@@ -55,16 +55,15 @@ void menuPointPerfectKeys()
         {
             long long gpsEpoch = thingstreamEpochToGPSEpoch(settings.pointPerfectCurrentKeyStart);
 
-            uint16_t keyGPSWeek;
-            uint32_t keyGPSToW;
-            unixEpochToWeekToW(unixEpoch, &keyGPSWeek, &keyGPSToW);
+            gpsEpoch += (settings.pointPerfectCurrentKeyDuration / 1000) -
+                        1; // Add key duration back to the key start date to get key expiration
 
-            long expDay;
-            long expMonth;
-            long expYear;
-            gpsWeekToWToDate(keyGPSWeek, keyGPSToW, &expDay, &expMonth, &expYear);
+            systemPrintf("%s\r\n", printDateFromGPSEpoch(gpsEpoch));
 
-            systemPrintf("%02ld/%02ld/%ld\r\n", expDay, expMonth, expYear);
+            if (settings.debugLBand == true)
+                systemPrintf("settings.pointPerfectCurrentKeyDuration: %lld (%d)\r\n",
+                             settings.pointPerfectCurrentKeyDuration,
+                             settings.pointPerfectCurrentKeyDuration / (1000L * 60 * 60 * 24));
         }
         else
             systemPrintln("N/A");
@@ -81,16 +80,10 @@ void menuPointPerfectKeys()
         {
             long long gpsEpoch = thingstreamEpochToGPSEpoch(settings.pointPerfectNextKeyStart);
 
-            uint16_t keyGPSWeek;
-            uint32_t keyGPSToW;
-            unixEpochToWeekToW(unixEpoch, &keyGPSWeek, &keyGPSToW);
+            gpsEpoch += (settings.pointPerfectNextKeyDuration /
+                         1000); // Add key duration back to the key start date to get key expiration
 
-            long expDay;
-            long expMonth;
-            long expYear;
-            gpsWeekToWToDate(keyGPSWeek, keyGPSToW, &expDay, &expMonth, &expYear);
-
-            systemPrintf("%02ld/%02ld/%ld\r\n", expDay, expMonth, expYear);
+            systemPrintf("%s\r\n", printDateFromGPSEpoch(gpsEpoch));
         }
         else
             systemPrintln("N/A");
@@ -122,8 +115,8 @@ void menuPointPerfectKeys()
                 systemPrintln("Date invalid. Please try again.");
             }
 
-            dateToKeyStartDuration(expDay, expMonth, expYear, &settings.pointPerfectCurrentKeyStart,
-                                   &settings.pointPerfectCurrentKeyDuration);
+            dateToKeyStart(expDay, expMonth, expYear, &settings.pointPerfectCurrentKeyStart);
+
 
             // Calculate the next key expiration date
             if (settings.pointPerfectNextKeyStart == 0)
@@ -159,8 +152,7 @@ void menuPointPerfectKeys()
                 systemPrintln("Date invalid. Please try again.");
             }
 
-            dateToKeyStartDuration(expDay, expMonth, expYear, &settings.pointPerfectNextKeyStart,
-                                   &settings.pointPerfectNextKeyDuration);
+            dateToKeyStart(expDay, expMonth, expYear, &settings.pointPerfectNextKeyStart);
         }
         else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
             break;
@@ -852,9 +844,8 @@ long dateToUnixEpoch(uint8_t day, uint8_t month, uint16_t year)
     return (t_of_day);
 }
 
-// Given a date, calculate and store the key start and duration
-void dateToKeyStartDuration(uint8_t expDay, uint8_t expMonth, uint16_t expYear, uint64_t *settingsKeyStart,
-                            uint64_t *settingsKeyDuration)
+// Given a date, calculate and return the key start in unixEpoch
+void dateToKeyStart(uint8_t expDay, uint8_t expMonth, uint16_t expYear, uint64_t *settingsKeyStart)
 {
     long long expireUnixEpoch = dateToUnixEpoch(expDay, expMonth, expYear);
 

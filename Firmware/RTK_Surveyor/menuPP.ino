@@ -676,9 +676,13 @@ void mqttCallback(char *topic, byte *message, unsigned int length)
 
         settings.pointPerfectCurrentKeyDuration =
             settings.pointPerfectNextKeyStart - settings.pointPerfectCurrentKeyStart - 1;
-        settings.pointPerfectNextKeyDuration =
-            settings.pointPerfectCurrentKeyDuration; // We assume next key duration is the same as current key duration
-                                                     // because we have to
+        // settings.pointPerfectNextKeyDuration =
+        //     settings.pointPerfectCurrentKeyDuration; // We assume next key duration is the same as current key
+        //     duration
+        //                                              // because we have to
+
+        settings.pointPerfectNextKeyDuration = (1000LL * 60 * 60 * 24 * 28) - 1; // Assume next key duration is 28 days
+
         if (settings.debugLBand == true)
         {
             systemPrintln();

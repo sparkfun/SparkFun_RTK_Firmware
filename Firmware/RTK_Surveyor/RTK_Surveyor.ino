@@ -1039,10 +1039,7 @@ void updateSD()
     }
 
     if (online.microSD && sdCardSize == 0)
-        beginSDSizeCheckTask(); // Start task to determine SD card size
-
-    if (sdSizeCheckTaskComplete == true)
-        deleteSDSizeCheckTask();
+        sdSizeCheck();
 
     // Check if SD card is still present
     if (productVariant == REFERENCE_STATION)

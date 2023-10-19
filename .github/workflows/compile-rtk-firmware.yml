@@ -77,6 +77,7 @@ jobs:
           "SparkFun MAX1704x Fuel Gauge Arduino Library"@1.0.4
           "SparkFun u-blox GNSS v3"@3.0.14
           SparkFun_WebServer_ESP32_W5500@1.5.5
+          SSLClientESP32@2.0.0
 
       - name: Enable external libs
         run: arduino-cli config set library.enable_unsafe_install true

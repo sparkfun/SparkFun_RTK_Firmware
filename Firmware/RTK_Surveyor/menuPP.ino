@@ -350,26 +350,33 @@ bool pointperfectProvisionDevice()
                 // log_d("privateKey: %s", tempHolderPtr);
                 recordFile("privateKey", tempHolderPtr, strlen(tempHolderPtr));
 
-                strcpy(settings.pointPerfectClientID, (const char *)((*jsonZtp)["clientId"]));
-                strcpy(settings.pointPerfectBrokerHost, (const char *)((*jsonZtp)["brokerHost"]));
-                strcpy(settings.pointPerfectLBandTopic, (const char *)((*jsonZtp)["subscriptions"][0]["path"]));
-
-                strcpy(settings.pointPerfectNextKey, (const char *)((*jsonZtp)["dynamickeys"]["next"]["value"]));
-                settings.pointPerfectNextKeyDuration = (*jsonZtp)["dynamickeys"]["next"]["duration"];
-                settings.pointPerfectNextKeyStart = (*jsonZtp)["dynamickeys"]["next"]["start"];
-
-                strcpy(settings.pointPerfectCurrentKey, (const char *)((*jsonZtp)["dynamickeys"]["current"]["value"]));
-                settings.pointPerfectCurrentKeyDuration = (*jsonZtp)["dynamickeys"]["current"]["duration"];
-                settings.pointPerfectCurrentKeyStart = (*jsonZtp)["dynamickeys"]["current"]["start"];
-
-                if (settings.debugLBand == true)
+                // Validate the keys
+                if (!checkCertificates())
                 {
-                    systemPrintf("  pointPerfectCurrentKey: %s\r\n", settings.pointPerfectCurrentKey);
-                    systemPrintf("  pointPerfectCurrentKeyStart: %lld - %s\r\n", settings.pointPerfectCurrentKeyStart, printDateFromUnixEpoch(settings.pointPerfectCurrentKeyStart));
-                    systemPrintf("  pointPerfectCurrentKeyDuration: %lld - %s\r\n", settings.pointPerfectCurrentKeyDuration, printDaysFromDuration(settings.pointPerfectCurrentKeyDuration));
-                    systemPrintf("  pointPerfectNextKey: %s\r\n", settings.pointPerfectNextKey);
-                    systemPrintf("  pointPerfectNextKeyStart: %lld - %s\r\n", settings.pointPerfectNextKeyStart, printDateFromUnixEpoch(settings.pointPerfectNextKeyStart));
-                    systemPrintf("  pointPerfectNextKeyDuration: %lld - %s\r\n", settings.pointPerfectNextKeyDuration, printDaysFromDuration(settings.pointPerfectNextKeyDuration));
+                    systemPrintln("ERROR - Failed to validate the Point Perfect certificates!");
+                }
+                else
+                {
+                    if (settings.debugPpCertificate)
+                        systemPrintln("Certificates written to the SD card.");
+
+                    strcpy(settings.pointPerfectClientID, (const char *)((*jsonZtp)["clientId"]));
+                    strcpy(settings.pointPerfectBrokerHost, (const char *)((*jsonZtp)["brokerHost"]));
+                    strcpy(settings.pointPerfectLBandTopic, (const char *)((*jsonZtp)["subscriptions"][0]["path"]));
+
+                    strcpy(settings.pointPerfectCurrentKey, (const char *)((*jsonZtp)["dynamickeys"]["current"]["value"]));
+                    settings.pointPerfectCurrentKeyDuration = (*jsonZtp)["dynamickeys"]["current"]["duration"];
+                    settings.pointPerfectCurrentKeyStart = (*jsonZtp)["dynamickeys"]["current"]["start"];
+
+                    if (settings.debugLBand == true)
+                    {
+                        systemPrintf("  pointPerfectCurrentKey: %s\r\n", settings.pointPerfectCurrentKey);
+                        systemPrintf("  pointPerfectCurrentKeyStart: %lld - %s\r\n", settings.pointPerfectCurrentKeyStart, printDateFromUnixEpoch(settings.pointPerfectCurrentKeyStart));
+                        systemPrintf("  pointPerfectCurrentKeyDuration: %lld - %s\r\n", settings.pointPerfectCurrentKeyDuration, printDaysFromDuration(settings.pointPerfectCurrentKeyDuration));
+                        systemPrintf("  pointPerfectNextKey: %s\r\n", settings.pointPerfectNextKey);
+                        systemPrintf("  pointPerfectNextKeyStart: %lld - %s\r\n", settings.pointPerfectNextKeyStart, printDateFromUnixEpoch(settings.pointPerfectNextKeyStart));
+                        systemPrintf("  pointPerfectNextKeyDuration: %lld - %s\r\n", settings.pointPerfectNextKeyDuration, printDaysFromDuration(settings.pointPerfectNextKeyDuration));
+                    }
                 }
             }
         } // HTTP Response was 200
@@ -444,8 +451,7 @@ bool checkCertificates()
     if (keyContents)
         free(keyContents);
 
-    if (settings.debugPpCertificate && validCertificates)
-        systemPrintln("Certificates are valid!");
+    systemPrintln("Stored certificates are valid!");
     return (validCertificates);
 }
 

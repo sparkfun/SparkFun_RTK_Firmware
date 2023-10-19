@@ -768,7 +768,7 @@ void updateSystemState()
                     daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
                 log_d("Days until keys expire: %d", daysRemaining);
 
-                if (daysRemaining > 28 && daysRemaining <= 56)
+                if (checkCertificates() && (daysRemaining > 28 && daysRemaining <= 56))
                     changeState(STATE_KEYS_DAYS_REMAINING);
                 else
                     changeState(STATE_KEYS_NEEDED);

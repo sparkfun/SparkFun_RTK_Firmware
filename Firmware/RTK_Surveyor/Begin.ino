@@ -1275,34 +1275,6 @@ void radioStart()
         espnowStart();
 }
 
-// Start task to determine SD card size
-void beginSDSizeCheckTask()
-{
-    if (sdSizeCheckTaskHandle == nullptr)
-    {
-        xTaskCreate(sdSizeCheckTask,         // Function to call
-                    "SDSizeCheck",           // Just for humans
-                    sdSizeCheckStackSize,    // Stack Size
-                    nullptr,                 // Task input parameter
-                    sdSizeCheckTaskPriority, // Priority
-                    &sdSizeCheckTaskHandle); // Task handle
-
-        log_d("sdSizeCheck Task started");
-    }
-}
-
-void deleteSDSizeCheckTask()
-{
-    // Delete task once it's complete
-    if (sdSizeCheckTaskHandle != nullptr)
-    {
-        vTaskDelete(sdSizeCheckTaskHandle);
-        sdSizeCheckTaskHandle = nullptr;
-        sdSizeCheckTaskComplete = false;
-        log_d("sdSizeCheck Task deleted");
-    }
-}
-
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 // Time Pulse ISR
 // Triggered by the rising edge of the time pulse signal, indicates the top-of-second.

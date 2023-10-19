@@ -167,3 +167,53 @@ byte xchg(byte val)
     byte receivedVal = SPI.transfer(val);
     return receivedVal;
 }
+
+void sdSizeCheck()
+{
+    // Attempt to gain access to the SD card
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+        markSemaphore(FUNCTION_SDSIZECHECK);
+
+        if (USE_SPI_MICROSD)
+        {
+            csd_t csd;
+            sd->card()->readCSD(&csd); // Card Specific Data
+            sdCardSize = (uint64_t)512 * sd->card()->sectorCount();
+
+            sd->volumeBegin();
+
+            // Find available cluster/space
+            sdFreeSpace = sd->vol()->freeClusterCount(); // This takes a few seconds to complete
+            sdFreeSpace *= sd->vol()->sectorsPerCluster();
+            sdFreeSpace *= 512L; // Bytes per sector
+        }
+#ifdef COMPILE_SD_MMC
+        else
+        {
+            sdCardSize = SD_MMC.cardSize();
+            sdFreeSpace = SD_MMC.totalBytes() - SD_MMC.usedBytes();
+        }
+#endif // COMPILE_SD_MMC
+
+        xSemaphoreGive(sdCardSemaphore);
+
+        // uint64_t sdUsedSpace = sdCardSize - sdFreeSpace; //Don't think of it as used, think of it as unusable
+
+        String cardSize;
+        stringHumanReadableSize(cardSize, sdCardSize);
+        String freeSpace;
+        stringHumanReadableSize(freeSpace, sdFreeSpace);
+        systemPrintf("SD card size: %s / Free space: %s\r\n", cardSize, freeSpace);
+
+        outOfSDSpace = false;
+
+        sdSizeCheckTaskComplete = true;
+    }
+    else
+    {
+        char semaphoreHolder[50];
+        getSemaphoreFunction(semaphoreHolder);
+        log_d("sdCardSemaphore failed to yield, held by %s, Tasks.ino line %d\r\n", semaphoreHolder, __LINE__);
+    }
+}

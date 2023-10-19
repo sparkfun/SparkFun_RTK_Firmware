@@ -746,10 +746,10 @@ long long dateToGPSEpoch(uint8_t day, uint8_t month, uint16_t year)
 }
 
 // Given an epoch, set the GPSWeek and GPSToW
-void unixEpochToWeekToW(long long unixEpoch, uint16_t *GPSWeek, uint32_t *GPSToW)
+void epochToWeekToW(long long epoch, uint16_t *GPSWeek, uint32_t *GPSToW)
 {
-    *GPSWeek = (uint16_t)(unixEpoch / (7 * 24 * 60 * 60));
-    *GPSToW = (uint32_t)(unixEpoch % (7 * 24 * 60 * 60));
+    *GPSWeek = (uint16_t)(epoch / (7 * 24 * 60 * 60));
+    *GPSToW = (uint32_t)(epoch % (7 * 24 * 60 * 60));
 }
 
 // Given an epoch, set the GPSWeek and GPSToW
@@ -813,6 +813,8 @@ void dateToKeyStartDuration(uint8_t expDay, uint8_t expMonth, uint16_t expYear, 
     long long gpsEpoch = thingstreamEpochToGPSEpoch(*settingsKeyStart);
 
     if (ENABLE_DEVELOPER)
+    epochToWeekToW(gpsEpoch, &keyGPSWeek, &keyGPSToW);
+
     {
         systemPrintf("  KeyStart: %lld\r\n", *settingsKeyStart);
         systemPrintf("  KeyDuration: %lld\r\n", *settingsKeyDuration);
@@ -914,10 +916,12 @@ void pointperfectApplyKeys()
             uint16_t currentKeyGPSWeek;
             uint32_t currentKeyGPSToW;
             long long epoch = thingstreamEpochToGPSEpoch(settings.pointPerfectCurrentKeyStart);
+            epochToWeekToW(epoch, &currentKeyGPSWeek, &currentKeyGPSToW);
 
             uint16_t nextKeyGPSWeek;
             uint32_t nextKeyGPSToW;
             epoch = thingstreamEpochToGPSEpoch(settings.pointPerfectNextKeyStart);
+            epochToWeekToW(epoch, &nextKeyGPSWeek, &nextKeyGPSToW);
 
             theGNSS.setVal8(UBLOX_CFG_SPARTN_USE_SOURCE, 1); // use LBAND PMP message
 

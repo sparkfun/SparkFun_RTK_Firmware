@@ -896,6 +896,7 @@ typedef struct
     int16_t serialTimeoutGNSS = 1; // In ms - used during SerialGNSS.begin. Number of ms to pass of no data before
                                    // hardware serial reports data available.
 
+    // Point Perfect
     char pointPerfectDeviceProfileToken[40] = "";
     bool enablePointPerfectCorrections = true;
     bool autoKeyRenewal = true; // Attempt to get keys if we get under 28 days from the expiration date
@@ -914,6 +915,8 @@ typedef struct
     uint64_t lastKeyAttempt = 0;     // Epoch time of last attempt at obtaining keys
     bool updateZEDSettings = true;   // When in doubt, update the ZED with current settings
     uint32_t LBandFreq = 1556290000; // Default to US band
+
+    bool debugPpCertificate = false; // Debug Point Perfect certificate management
 
     // Time Zone - Default to UTC
     int8_t timeZoneHours = 0;

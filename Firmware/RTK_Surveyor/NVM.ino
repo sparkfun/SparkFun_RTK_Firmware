@@ -259,6 +259,8 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%s\r\n", "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
     settingsFile->printf("%s=%d\r\n", "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
     settingsFile->printf("%s=%d\r\n", "serialTimeoutGNSS", settings.serialTimeoutGNSS);
+
+    // Point Perfect
     settingsFile->printf("%s=%s\r\n", "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
     settingsFile->printf("%s=%d\r\n", "enablePointPerfectCorrections", settings.enablePointPerfectCorrections);
     settingsFile->printf("%s=%d\r\n", "autoKeyRenewal", settings.autoKeyRenewal);
@@ -272,6 +274,8 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%llu\r\n", "pointPerfectNextKeyDuration", settings.pointPerfectNextKeyDuration);
     settingsFile->printf("%s=%llu\r\n", "pointPerfectNextKeyStart", settings.pointPerfectNextKeyStart);
     settingsFile->printf("%s=%llu\r\n", "lastKeyAttempt", settings.lastKeyAttempt);
+    settingsFile->printf("%s=%d\r\n", "debugPpCertificate", settings.debugPpCertificate);
+
     settingsFile->printf("%s=%d\r\n", "updateZEDSettings", settings.updateZEDSettings);
     settingsFile->printf("%s=%d\r\n", "LBandFreq", settings.LBandFreq);
     settingsFile->printf("%s=%d\r\n", "enableLogging", settings.enableLogging);
@@ -1045,6 +1049,8 @@ bool parseLine(char *str, Settings *settings)
         settings->ntripClient_TransmitGGA = d;
     else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
         settings->serialTimeoutGNSS = d;
+
+    // Point Perfect
     else if (strcmp(settingName, "pointPerfectDeviceProfileToken") == 0)
         strcpy(settings->pointPerfectDeviceProfileToken, settingValue);
     else if (strcmp(settingName, "enablePointPerfectCorrections") == 0)
@@ -1074,6 +1080,9 @@ bool parseLine(char *str, Settings *settings)
 
     else if (strcmp(settingName, "lastKeyAttempt") == 0)
         settings->lastKeyAttempt = d;
+    else if (strcmp(settingName, "debugPpCertificate") == 0)
+        settings->debugPpCertificate = d;
+
     else if (strcmp(settingName, "updateZEDSettings") == 0)
     {
         if (settings->updateZEDSettings != d)

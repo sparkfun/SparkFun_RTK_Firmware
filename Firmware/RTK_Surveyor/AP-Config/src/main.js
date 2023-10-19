@@ -123,7 +123,7 @@ function parseIncoming(msg) {
 
                 ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
             }
-            else if (platformPrefix == "Facet L-Band") {
+            else if (platformPrefix == "Facet L-Band" || platformPrefix == "Facet L-Band Direct") {
                 show("baseConfig");
                 hide("sensorConfig");
                 show("ppConfig");
@@ -563,7 +563,7 @@ function validateFields() {
     }
 
     //PointPerfect Config
-    if (platformPrefix == "Facet L-Band") {
+    if (platformPrefix == "Facet L-Band" || platformPrefix == "Facet L-Band Direct") {
         if (ge("enablePointPerfectCorrections").checked == true) {
             value = ge("pointPerfectDeviceProfileToken").value;
             if (value.length > 0)
@@ -1066,7 +1066,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             if (platformPrefix == "Facet") {
                 ge("antennaReferencePoint").value = 61.4;
             }
-            else if (platformPrefix == "Facet L-Band") {
+            else if (platformPrefix == "Facet L-Band" || platformPrefix == "Facet L-Band Direct") {
                 ge("antennaReferencePoint").value = 69.0;
             }
             else {

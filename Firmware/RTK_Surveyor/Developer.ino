@@ -50,10 +50,6 @@ void networkVerifyTables() {}
 //----------------------------------------
 
 void ntripClientPrintStatus() {systemPrint("NTRIP Client not compiled");}
-void ntripClientStart()
-{
-    systemPrintln("NTRIP Client not available: Ethernet and WiFi not compiled");
-}
 void ntripClientStop(bool clientAllocated) {online.ntripClient = false;}
 void ntripClientUpdate() {}
 void ntripClientValidateTables() {}
@@ -65,10 +61,6 @@ void ntripClientValidateTables() {}
 bool ntripServerIsCasting() {return false;}
 void ntripServerPrintStatus() {systemPrint("NTRIP Server not compiled");}
 void ntripServerProcessRTCM(uint8_t incoming) {}
-void ntripServerStart()
-{
-    systemPrintln("NTRIP Server not available: Ethernet and WiFi not compiled");
-}
 void ntripServerStop(bool clientAllocated) {online.ntripServer = false;}
 void ntripServerUpdate() {}
 void ntripServerValidateTables() {}

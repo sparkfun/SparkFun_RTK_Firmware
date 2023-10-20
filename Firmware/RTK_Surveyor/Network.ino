@@ -1160,17 +1160,14 @@ void networkUpdate()
     if (PERIODIC_DISPLAY(PD_NETWORK_STATE))
         PERIODIC_CLEAR(PD_NETWORK_STATE);
 
-    // Skip updates if in configure-via-ethernet mode
-    if (!configureViaEthernet)
-    {
-        ntpServerUpdate();   // Process any received NTP requests
-        ntripClientUpdate(); // Check the NTRIP client connection and move data NTRIP --> ZED
-        ntripServerUpdate(); // Check the NTRIP server connection and move data ZED --> NTRIP
-        otaClientUpdate();   // Perform automatic over-the-air firmware updates
-        pvtClientUpdate();   // Turn on the PVT client as needed
-        pvtServerUpdate();   // Turn on the PVT server as needed
-        pvtUdpServerUpdate();   // Turn on the PVT UDP server as needed
-    }
+    // Update the network services
+    ntpServerUpdate();   // Process any received NTP requests
+    ntripClientUpdate(); // Check the NTRIP client connection and move data NTRIP --> ZED
+    ntripServerUpdate(); // Check the NTRIP server connection and move data ZED --> NTRIP
+    otaClientUpdate();   // Perform automatic over-the-air firmware updates
+    pvtClientUpdate();   // Turn on the PVT client as needed
+    pvtServerUpdate();   // Turn on the PVT server as needed
+    pvtUdpServerUpdate();   // Turn on the PVT UDP server as needed
 
     // Display the IP addresses
     networkPeriodicallyDisplayIpAddress();

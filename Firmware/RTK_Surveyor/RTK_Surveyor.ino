@@ -701,6 +701,8 @@ volatile PeriodicDisplay_t periodicDisplay;
 
 unsigned long shutdownNoChargeTimer = 0;
 
+RtkMode_t rtkMode; // Mode of operation
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 #define DEAD_MAN_WALKING_ENABLED    0

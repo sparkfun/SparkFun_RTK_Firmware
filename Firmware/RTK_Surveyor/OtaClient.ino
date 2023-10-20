@@ -69,6 +69,12 @@ const char * const otaStateNames[] =
 };
 const int otaStateEntries = sizeof(otaStateNames) / sizeof(otaStateNames[0]);
 
+const RtkMode_t otaClientMode = RTK_MODE_BASE_FIXED
+                              | RTK_MODE_BASE_SURVEY_IN
+                              | RTK_MODE_BUBBLE_LEVEL
+                              | RTK_MODE_NTP
+                              | RTK_MODE_ROVER;
+
 //----------------------------------------
 // Locals
 //----------------------------------------
@@ -340,6 +346,19 @@ void otaClientUpdate()
     // Perform the firmware update
     if (!inMainMenu)
     {
+        // Shutdown the OTA client when the mode or setting changes
+        DMW_st(otaSetState, otaState);
+        if (NEQ_RTK_MODE(otaClientMode) || (!settings.enableAutoFirmwareUpdate))
+        {
+            if (otaState > OTA_STATE_OFF)
+            {
+                otaStop();
+
+                // Due to the interruption, enable a fast retry
+                otaTimer = millis() - checkIntervalMillis + OTA_NO_PROGRESS_TIMEOUT;
+            }
+        }
+
         // Walk the state machine to do the firmware update
         switch (otaState)
         {
@@ -353,7 +372,7 @@ void otaClientUpdate()
             // Over-the-air firmware updates are not active
             case OTA_STATE_OFF: {
                 // Determine if the user enabled automatic firmware updates
-                if (settings.enableAutoFirmwareUpdate)
+                if (EQ_RTK_MODE(otaClientMode) && settings.enableAutoFirmwareUpdate)
                 {
                     // Wait until it is time to check for a firmware update
                     checkIntervalMillis = settings.autoFirmwareCheckMinutes * 60 * 1000;

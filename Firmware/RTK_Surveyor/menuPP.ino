@@ -423,7 +423,8 @@ bool checkCertificates()
 
     if (checkCertificateValidity(certificateContents, strlen(certificateContents)) == false)
     {
-        log_d("Certificate is corrupt.");
+        if (settings.debugPpCertificate)
+            systemPrintln("Certificate is corrupt.");
         validCertificates = false;
     }
 
@@ -433,7 +434,8 @@ bool checkCertificates()
 
     if (checkCertificateValidity(keyContents, strlen(keyContents)) == false)
     {
-        log_d("PrivateKey is corrupt.");
+        if (settings.debugPpCertificate)
+            systemPrintln("PrivateKey is corrupt.");
         validCertificates = false;
     }
 
@@ -443,6 +445,8 @@ bool checkCertificates()
     if (keyContents)
         free(keyContents);
 
+    if (settings.debugPpCertificate && validCertificates)
+        systemPrintln("Certificates are valid!");
     return (validCertificates);
 }
 
@@ -463,7 +467,8 @@ bool checkCertificateValidity(char *certificateContent, int certificateContentSi
 
     if (result_code < 0)
     {
-        log_d("Cert formatting invalid");
+        if (settings.debugPpCertificate)
+            systemPrintln("Cert formatting invalid");
         return (false);
     }
 

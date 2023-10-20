@@ -655,6 +655,10 @@ void menuDebugSoftware()
         systemPrintf("60) Print firmware update states: %s\r\n",
                      settings.debugFirmwareUpdate ? "Enabled" : "Disabled");
 
+        // Point Perfect
+        systemPrintf("70) Point Perfect certificate management: %s\r\n",
+                     settings.debugPpCertificate ? "Enabled" : "Disabled");
+
         systemPrintln("e) Erase LittleFS");
 
         systemPrintln("r) Force system reset");
@@ -716,6 +720,8 @@ void menuDebugSoftware()
             settings.enableTaskReports ^= 1;
         else if (incoming == 60)
             settings.debugFirmwareUpdate ^= 1;
+        else if (incoming == 70)
+            settings.debugPpCertificate ^= 1;
         else if (incoming == 'e')
         {
             systemPrintln("Erasing LittleFS and resetting");

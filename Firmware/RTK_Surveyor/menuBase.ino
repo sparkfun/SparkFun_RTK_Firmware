@@ -1,3 +1,18 @@
+/*------------------------------------------------------------------------------
+menuBase.ino
+------------------------------------------------------------------------------*/
+
+//----------------------------------------
+// Constants
+//----------------------------------------
+
+static const float maxObservationPositionAccuracy = 10.0;
+static const float maxSurveyInStartingAccuracy = 10.0;
+
+//----------------------------------------
+// Menus
+//----------------------------------------
+
 // Configure the survey in settings (time and 3D dev max)
 // Set the ECEF coordinates for a known location
 void menuBase()
@@ -249,12 +264,8 @@ void menuBase()
         }
         else if (settings.fixedBase == false && incoming == 3)
         {
-            systemPrint("Enter the number of meters for survey-in required position accuracy (1.0 to 5.0m): ");
+            systemPrintf("Enter the number of meters for survey-in required position accuracy (1.0 to %.1fm): ", maxObservationPositionAccuracy);
             float observationPositionAccuracy = getDouble();
-
-            float maxObservationPositionAccuracy = 5.0;
-            if (ENABLE_DEVELOPER)
-                maxObservationPositionAccuracy = 10.0;
 
             if (observationPositionAccuracy < 1.0 ||
                 observationPositionAccuracy > maxObservationPositionAccuracy) // Arbitrary 1m minimum
@@ -265,9 +276,10 @@ void menuBase()
         }
         else if (settings.fixedBase == false && incoming == 4)
         {
-            systemPrint("Enter the positional accuracy required before Survey-In begins (0.1 to 5.0m): ");
+            systemPrintf("Enter the positional accuracy required before Survey-In begins (0.1 to %.1fm): ", maxSurveyInStartingAccuracy);
             float surveyInStartingAccuracy = getDouble();
-            if (surveyInStartingAccuracy < 0.1 || surveyInStartingAccuracy > 5.0) // Arbitrary 0.1m minimum
+            if (surveyInStartingAccuracy < 0.1 ||
+                surveyInStartingAccuracy > maxSurveyInStartingAccuracy) // Arbitrary 0.1m minimum
                 systemPrintln("Error: Starting accuracy out of range");
             else
                 settings.surveyInStartingAccuracy =
@@ -576,6 +588,10 @@ void menuSensorFusion()
 
     clearBuffer(); // Empty buffer of any newline chars
 }
+
+//----------------------------------------
+// Support functions
+//----------------------------------------
 
 // Enable or disable sensor fusion using keys
 void setSensorFusion(bool enable)

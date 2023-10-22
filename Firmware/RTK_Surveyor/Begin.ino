@@ -12,7 +12,7 @@ void identifyBoard()
     // Surveyor: ID resistors do not exist
 
     const float rtkExpressID = 3.3 / (10 + 3.3) * 3300;          // 819mV
-    const float rtkExressPlusID = 10.0 / (10 + 3.3) * 3300;      // 2418mV
+    const float rtkExressPlusID = 10.0 / (10 + 3.3) * 3300;      // 2481mV
     const float rtkFacetID = 10.0 / (10 + 10) * 3300;            // 1650mV
     const float rtkFacetLbandID = 20.0 / (20 + 10) * 3300;       // 2200mV
     const float rtkReferenceStationID = 10.0 / (10 + 20) * 3300; // 1100mV

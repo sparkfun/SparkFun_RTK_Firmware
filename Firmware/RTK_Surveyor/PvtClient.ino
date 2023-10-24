@@ -146,6 +146,10 @@ const char * const pvtClientStateName[] =
 
 const int pvtClientStateNameEntries = sizeof(pvtClientStateName) / sizeof(pvtClientStateName[0]);
 
+const RtkMode_t pvtClientMode = RTK_MODE_BASE_FIXED
+                              | RTK_MODE_BASE_SURVEY_IN
+                              | RTK_MODE_ROVER;
+
 //----------------------------------------
 // Locals
 //----------------------------------------
@@ -374,6 +378,14 @@ void pvtClientUpdate()
     byte seconds;
     static uint32_t timer;
 
+    // Shutdown the PVT client when the mode or setting changes
+    DMW_st(pvtClientSetState, pvtClientState);
+    if (NEQ_RTK_MODE(pvtClientMode) || (!settings.enablePvtClient))
+    {
+        if (pvtClientState > PVT_CLIENT_STATE_OFF)
+            pvtClientStop();
+    }
+
     /*
         PVT Client state machine
 
@@ -395,7 +407,6 @@ void pvtClientUpdate()
                 '--------------PVT_CLIENT_STATE_CONNECTED
     */
 
-    DMW_st(pvtClientSetState, pvtClientState);
     switch (pvtClientState)
     {
     default:
@@ -406,7 +417,7 @@ void pvtClientUpdate()
     // Wait until the PVT client is enabled
     case PVT_CLIENT_STATE_OFF:
         // Determine if the PVT client should be running
-        if (settings.enablePvtClient)
+        if (EQ_RTK_MODE(pvtClientMode) && settings.enablePvtClient)
         {
             if (networkUserOpen(NETWORK_USER_PVT_CLIENT, NETWORK_TYPE_ACTIVE))
             {

@@ -33,7 +33,7 @@ NtripServer.ino
      Using Ethernet on RTK Reference Station:
 
         1. Network failure - Disconnect Ethernet cable at RTK Reference Station,
-           expecting retry NTRIP client connection after network restarts
+           expecting retry NTRIP server connection after network restarts
 
      Using WiFi on RTK Express or RTK Reference Station:
 
@@ -138,7 +138,7 @@ NtripServer.ino
 // 5 minutes. The NTRIP server stops retrying after 25 hours and 18 minutes
 static const int MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS = 28;
 
-// NTRIP client connection delay before resetting the connect accempt counter
+// NTRIP server connection delay before resetting the connect accempt counter
 static const int NTRIP_SERVER_CONNECTION_TIME = 5 * 60 * 1000;
 
 // Define the NTRIP server states
@@ -170,6 +170,8 @@ const char * const ntripServerStateName[] =
 
 const int ntripServerStateNameEntries = sizeof(ntripServerStateName) / sizeof(ntripServerStateName[0]);
 
+const RtkMode_t ntripServerMode = RTK_MODE_BASE_FIXED;
+
 //----------------------------------------
 // Locals
 //----------------------------------------
@@ -186,9 +188,6 @@ uint32_t ntripServerBytesSent;
 static uint32_t ntripServerConnectionAttemptTimeout;
 static uint32_t ntripServerLastConnectionAttempt;
 static int ntripServerConnectionAttempts; // Count the number of connection attempts between restarts
-
-// Last time the NTRIP server state was displayed
-static uint32_t ntripServerStateLastDisplayed;
 
 // NTRIP server timer usage:
 //  * Reconnection delay
@@ -260,6 +259,10 @@ bool ntripServerConnectLimitReached()
 
     // Retry the connection a few times
     bool limitReached = (ntripServerConnectionAttempts >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS);
+
+    // Attempt to restart the network if possible
+    if (settings.enableNtripServer && (!limitReached))
+        networkRestart(NETWORK_USER_NTRIP_SERVER);
 
     // Shutdown the NTRIP server
     ntripServerStop(limitReached || (!settings.enableNtripServer));
@@ -493,20 +496,12 @@ void ntripServerShutdown()
 // Start the NTRIP server
 void ntripServerStart()
 {
-    // Stop the NTRIP server and network
-    ntripServerShutdown();
-
     // Display the heap state
     reportHeapNow(settings.debugNtripServerState);
 
-    // Start the NTRIP server if enabled
-    if ((settings.ntripServer_StartAtSurveyIn == true) || (settings.enableNtripServer == true))
-    {
-        systemPrintln ("NTRIP Server start");
-        ntripServerSetState(NTRIP_SERVER_ON);
-    }
-
-    ntripServerConnectionAttempts = 0;
+    // Start the NTRIP server
+    systemPrintln ("NTRIP Server start");
+    ntripServerStop(false);
 }
 
 // Shutdown or restart the NTRIP server
@@ -518,14 +513,6 @@ void ntripServerStop(bool shutdown)
         if (ntripServer->connected())
             ntripServer->stop();
 
-        // Attempt to restart the network if possible
-        if (!shutdown)
-            networkRestart(NETWORK_USER_NTRIP_SERVER);
-
-        // Done with the network
-        if (networkGetUserNetwork(NETWORK_USER_NTRIP_SERVER))
-            networkUserClose(NETWORK_USER_NTRIP_SERVER);
-
         // Free the NTRIP server resources
         delete ntripServer;
         ntripServer = nullptr;
@@ -534,12 +521,26 @@ void ntripServerStop(bool shutdown)
 
     // Increase timeouts if we started the network
     if (ntripServerState > NTRIP_SERVER_ON)
+    {
         // Mark the Server stop so that we don't immediately attempt re-connect to Caster
         ntripServerTimer = millis();
 
+        // Done with the network
+        if (networkGetUserNetwork(NETWORK_USER_NTRIP_SERVER))
+            networkUserClose(NETWORK_USER_NTRIP_SERVER);
+    }
+
     // Determine the next NTRIP server state
-    ntripServerSetState(shutdown ? NTRIP_SERVER_OFF : NTRIP_SERVER_ON);
     online.ntripServer = false;
+    if (shutdown)
+    {
+        ntripServerSetState(NTRIP_SERVER_OFF);
+        settings.enableNtripServer = false;
+        ntripServerConnectionAttempts = 0;
+        ntripServerConnectionAttemptTimeout = 0;
+    }
+    else
+        ntripServerSetState(NTRIP_SERVER_ON);
 }
 
 // Update the NTRIP server state machine
@@ -549,29 +550,25 @@ void ntripServerUpdate()
     // This causes the state change from NTRIP_SERVER_WAIT_GNSS_DATA to NTRIP_SERVER_CONNECTING
     processRTCMBuffer();
 
-    if (settings.enableNtripServer == false)
+    // Shutdown the NTRIP server when the mode or setting changes
+    DMW_st(ntripServerSetState, ntripServerState);
+    if (NEQ_RTK_MODE(ntripServerMode) || (!settings.enableNtripServer))
     {
-        // If user turns off NTRIP Server via settings, stop server
         if (ntripServerState > NTRIP_SERVER_OFF)
-            ntripServerShutdown();
-        return;
-    }
-
-    if (wifiInConfigMode())
-        return; // Do not service NTRIP during WiFi config
-
-    // Periodically display the NTRIP server state
-    if (settings.debugNtripServerState && ((millis() - ntripServerStateLastDisplayed) > 15000))
-    {
-        ntripServerSetState(ntripServerState);
-        ntripServerStateLastDisplayed = millis();
+        {
+            ntripServerStop(false);
+            ntripServerConnectionAttempts = 0;
+            ntripServerConnectionAttemptTimeout = 0;
+            ntripServerSetState(NTRIP_SERVER_OFF);
+        }
     }
 
     // Enable the network and the NTRIP server if requested
-    DMW_st(ntripServerSetState, ntripServerState);
     switch (ntripServerState)
     {
     case NTRIP_SERVER_OFF:
+        if (EQ_RTK_MODE(ntripServerMode) && settings.enableNtripServer)
+            ntripServerStart();
         break;
 
     // Start the network

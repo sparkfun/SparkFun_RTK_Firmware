@@ -175,6 +175,9 @@ const char * const ntripClientStateName[] =
 
 const int ntripClientStateNameEntries = sizeof(ntripClientStateName) / sizeof(ntripClientStateName[0]);
 
+const RtkMode_t ntripClientMode = RTK_MODE_ROVER
+                                | RTK_MODE_BASE_SURVEY_IN;
+
 //----------------------------------------
 // Locals
 //----------------------------------------
@@ -307,6 +310,10 @@ bool ntripClientConnectLimitReached()
     // Retry the connection a few times
     bool limitReached = (ntripClientConnectionAttempts >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS);
 
+    // Attempt to restart the network if possible
+    if (settings.enableNtripClient && (!limitReached))
+        networkRestart(NETWORK_USER_NTRIP_CLIENT);
+
     // Restart the NTRIP client
     ntripClientStop(limitReached || (!settings.enableNtripClient));
 
@@ -343,28 +350,6 @@ bool ntripClientConnectLimitReached()
         // No more connection attempts, switching to Bluetooth
         systemPrintln("NTRIP Client connection attempts exceeded!");
     return limitReached;
-}
-
-// Determine if NTRIP Client is needed
-bool ntripClientIsNeeded()
-{
-    if (settings.enableNtripClient == false)
-    {
-        // If user turns off NTRIP Client via settings, stop server
-        if (ntripClientState > NTRIP_CLIENT_OFF)
-            ntripClientShutdown();
-        return (false);
-    }
-
-    if (wifiInConfigMode())
-        return (false); // Do not service NTRIP during network config
-
-    // Allow NTRIP Client to run during Survey-In,
-    // but do not allow NTRIP Client to run during Base
-    if (systemState == STATE_BASE_TEMP_TRANSMITTING)
-        return (false);
-
-    return (true);
 }
 
 // Print the NTRIP client state summary
@@ -504,20 +489,12 @@ void ntripClientShutdown()
 // Start the NTRIP client
 void ntripClientStart()
 {
-    // Stop NTRIP client
-    ntripClientShutdown();
-
     // Display the heap state
     reportHeapNow(settings.debugNtripClientState);
 
-    // Start the NTRIP client if enabled
-    if (settings.enableNtripClient == true)
-    {
-        systemPrintln("NTRIP Client start");
-        ntripClientSetState(NTRIP_CLIENT_ON);
-    }
-
-    ntripClientConnectionAttempts = 0;
+    // Start the NTRIP client
+    systemPrintln("NTRIP Client start");
+    ntripClientStop(false);
 }
 
 // Shutdown or restart the NTRIP client
@@ -529,14 +506,6 @@ void ntripClientStop(bool shutdown)
         if (ntripClient->connected())
             ntripClient->stop();
 
-        // Attempt to restart the network if possible
-        if (!shutdown)
-            networkRestart(NETWORK_USER_NTRIP_CLIENT);
-
-        // Done with the network
-        if (networkGetUserNetwork(NETWORK_USER_NTRIP_CLIENT))
-            networkUserClose(NETWORK_USER_NTRIP_CLIENT);
-
         // Free the NTRIP client resources
         delete ntripClient;
         ntripClient = nullptr;
@@ -545,8 +514,14 @@ void ntripClientStop(bool shutdown)
 
     // Increase timeouts if we started the network
     if (ntripClientState > NTRIP_CLIENT_ON)
+    {
         // Mark the Client stop so that we don't immediately attempt re-connect to Caster
         ntripClientTimer = millis();
+
+        // Done with the network
+        if (networkGetUserNetwork(NETWORK_USER_NTRIP_CLIENT))
+            networkUserClose(NETWORK_USER_NTRIP_CLIENT);
+    }
 
     // Return the Main Talker ID to "GN".
     if (online.gnss)
@@ -556,23 +531,42 @@ void ntripClientStop(bool shutdown)
     }
 
     // Determine the next NTRIP client state
-    ntripClientSetState(shutdown ? NTRIP_CLIENT_OFF : NTRIP_CLIENT_ON);
     online.ntripClient = false;
     netIncomingRTCM = false;
+    if (shutdown)
+    {
+        ntripClientSetState(NTRIP_CLIENT_OFF);
+        settings.enableNtripClient = false;
+        ntripClientConnectionAttempts = 0;
+        ntripClientConnectionAttemptTimeout = 0;
+    }
+    else
+        ntripClientSetState(NTRIP_CLIENT_ON);
 }
 
 // Check for the arrival of any correction data. Push it to the GNSS.
 // Stop task if the connection has dropped or if we receive no data for maxTimeBeforeHangup_ms
 void ntripClientUpdate()
 {
-    if (ntripClientIsNeeded() == false)
-        return;
+    // Shutdown the NTRIP client when the mode or setting changes
+    DMW_st(ntripClientSetState, ntripClientState);
+    if (NEQ_RTK_MODE(ntripClientMode) || (!settings.enableNtripClient))
+    {
+        if (ntripClientState > NTRIP_CLIENT_OFF)
+        {
+            ntripClientStop(false);
+            ntripClientConnectionAttempts = 0;
+            ntripClientConnectionAttemptTimeout = 0;
+            ntripClientSetState(NTRIP_CLIENT_OFF);
+        }
+    }
 
     // Enable the network and the NTRIP client if requested
-    DMW_st(ntripClientSetState, ntripClientState);
     switch (ntripClientState)
     {
     case NTRIP_CLIENT_OFF:
+        if (EQ_RTK_MODE(ntripClientMode) && settings.enableNtripClient)
+            ntripClientStart();
         break;
 
     // Start the network

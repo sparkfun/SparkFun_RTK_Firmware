@@ -87,6 +87,7 @@ void updateSystemState()
 
         */
         case (STATE_ROVER_NOT_STARTED): {
+            RTK_MODE(RTK_MODE_ROVER);
             if (online.gnss == false)
             {
                 firstRoverStart = false; // If GNSS is offline, we still need to allow button use
@@ -120,6 +121,7 @@ void updateSystemState()
 
             setMuxport(settings.dataPortChannel); // Return mux to original channel
 
+            networkStop(NETWORK_TYPE_WIFI);
             WIFI_STOP();      // Stop WiFi, ntripClient will start as needed.
             bluetoothStart(); // Turn on Bluetooth with 'Rover' name
             radioStart();     // Start internal radio if enabled, otherwise disable
@@ -134,7 +136,6 @@ void updateSystemState()
 
                 displayRoverSuccess(500);
 
-                ntripClientStart();
                 changeState(STATE_ROVER_NO_FIX);
 
                 firstRoverStart = false; // Do not allow entry into test menu again
@@ -227,6 +228,7 @@ void updateSystemState()
             */
 
         case (STATE_BASE_NOT_STARTED): {
+            RTK_MODE(RTK_MODE_BASE_SURVEY_IN);
             firstRoverStart = false; // If base is starting, no test menu, normal button use.
 
             if (online.gnss == false)
@@ -249,7 +251,10 @@ void updateSystemState()
 
             // Allow WiFi to continue running if NTRIP Client is needed for assisted survey in
             if (wifiIsNeeded() == false)
+            {
+                networkStop(NETWORK_TYPE_WIFI);
                 WIFI_STOP();
+            }
 
             bluetoothStop();
             bluetoothStart(); // Restart Bluetooth with 'Base' identifier
@@ -328,8 +333,7 @@ void updateSystemState()
                     digitalWrite(pin_baseStatusLED, HIGH); // Indicate survey complete
 
                 // Start the NTRIP server if requested
-                if (settings.enableNtripServer == true)
-                    ntripServerStart();
+                RTK_MODE(RTK_MODE_BASE_FIXED);
 
                 radioStart(); // Start internal radio if enabled, otherwise disable
 
@@ -396,15 +400,12 @@ void updateSystemState()
         // User has set switch to base with fixed option enabled. Let's configure and try to get there.
         // If fixed base fails, we'll handle it here
         case (STATE_BASE_FIXED_NOT_STARTED): {
+            RTK_MODE(RTK_MODE_BASE_FIXED);
             bool response = startFixedBase();
             if (response == true)
             {
                 if ((productVariant == RTK_SURVEYOR) || (productVariant == REFERENCE_STATION))
                     digitalWrite(pin_baseStatusLED, HIGH); // Turn on base LED
-
-                // Start the NTRIP server if requested
-                if (settings.enableNtripServer)
-                    ntripServerStart();
 
                 radioStart(); // Start internal radio if enabled, otherwise disable
 
@@ -614,6 +615,8 @@ void updateSystemState()
             {
                 forceSystemStateUpdate = true; // Imediately go to this new state
                 changeState(setupState);       // Change to last setup state
+                if (setupState == STATE_BUBBLE_LEVEL)
+                    RTK_MODE(RTK_MODE_BUBBLE_LEVEL);
             }
         }
         break;
@@ -643,7 +646,10 @@ void updateSystemState()
             if (!startWebServer()) // Start in AP mode and show config html page
                 changeState(STATE_ROVER_NOT_STARTED);
             else
+            {
+                RTK_MODE(RTK_MODE_WIFI_CONFIG);
                 changeState(STATE_WIFI_CONFIG);
+            }
         }
         break;
 
@@ -707,6 +713,7 @@ void updateSystemState()
                 theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART2, 1); // Enable message 1230 every second
                 theGNSS.sendCfgValset();                                          // Send the VALSET
 
+                RTK_MODE(RTK_MODE_TESTING);
                 changeState(STATE_TESTING);
             }
         }
@@ -988,6 +995,7 @@ void updateSystemState()
 
 #ifdef COMPILE_ETHERNET
         case (STATE_NTPSERVER_NOT_STARTED): {
+            RTK_MODE(RTK_MODE_NTP);
             firstRoverStart = false; // If NTP is starting, no test menu, normal button use.
 
             if (online.gnss == false)
@@ -1056,6 +1064,7 @@ void updateSystemState()
         break;
 
         case (STATE_CONFIG_VIA_ETH_STARTED): {
+            RTK_MODE(RTK_MODE_ETHERNET_CONFIG);
             // The code should only be able to enter this state if configureViaEthernet is true.
             // If configureViaEthernet is not true, we need to restart again.
             //(If we continue, startEthernerWebServerESP32W5500 will fail as it won't have exclusive access to SPI and

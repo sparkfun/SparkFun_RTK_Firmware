@@ -59,6 +59,10 @@ const char * const pvtServerStateName[] =
 
 const int pvtServerStateNameEntries = sizeof(pvtServerStateName) / sizeof(pvtServerStateName[0]);
 
+const RtkMode_t pvtServerMode = RTK_MODE_BASE_FIXED
+                              | RTK_MODE_BASE_SURVEY_IN
+                              | RTK_MODE_ROVER;
+
 //----------------------------------------
 // Locals
 //----------------------------------------
@@ -339,6 +343,14 @@ void pvtServerUpdate()
     int index;
     IPAddress ipAddress;
 
+    // Shutdown the PVT server when the mode or setting changes
+    DMW_st(pvtServerSetState, pvtServerState);
+    if (NEQ_RTK_MODE(pvtServerMode) || (!settings.enablePvtServer))
+    {
+        if (pvtServerState > PVT_SERVER_STATE_OFF)
+            pvtServerStop();
+    }
+
     /*
         PVT Server state machine
 
@@ -360,7 +372,6 @@ void pvtServerUpdate()
                 '-----------PVT_SERVER_STATE_WAIT_NO_CLIENTS
     */
 
-    DMW_st(pvtServerSetState, pvtServerState);
     switch (pvtServerState)
     {
     default:
@@ -369,7 +380,7 @@ void pvtServerUpdate()
     // Wait until the PVT server is enabled
     case PVT_SERVER_STATE_OFF:
         // Determine if the PVT server should be running
-        if (settings.enablePvtServer && (!wifiInConfigMode()) && (!wifiIsConnected()))
+        if (EQ_RTK_MODE(pvtServerMode) && settings.enablePvtServer && (!wifiIsConnected()))
         {
             if (networkUserOpen(NETWORK_USER_PVT_SERVER, NETWORK_TYPE_ACTIVE))
             {

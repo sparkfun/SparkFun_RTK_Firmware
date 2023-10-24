@@ -54,6 +54,23 @@ bool newSystemStateRequested = false;
 // When user pauses for X amount of time, system will enter that state
 SystemState setupState = STATE_MARK_EVENT;
 
+// Base modes set with RTK_MODE
+#define RTK_MODE_BASE_FIXED         0x0001
+#define RTK_MODE_BASE_SURVEY_IN     0x0002
+#define RTK_MODE_BUBBLE_LEVEL       0x0004
+#define RTK_MODE_ETHERNET_CONFIG    0x0008
+#define RTK_MODE_NTP                0x0010
+#define RTK_MODE_ROVER              0x0020
+#define RTK_MODE_TESTING            0x0040
+#define RTK_MODE_WIFI_CONFIG        0x0080
+
+typedef uint8_t RtkMode_t;
+
+#define RTK_MODE(mode)          rtkMode = mode;
+
+#define EQ_RTK_MODE(mode)       (rtkMode && (rtkMode == (mode & rtkMode)))
+#define NEQ_RTK_MODE(mode)      (rtkMode && (rtkMode != (mode & rtkMode)))
+
 typedef enum
 {
     RTK_SURVEYOR = 0,

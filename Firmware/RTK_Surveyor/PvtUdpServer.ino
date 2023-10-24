@@ -84,6 +84,10 @@ const char * const pvtUdpServerStateName[] =
 
 const int pvtUdpServerStateNameEntries = sizeof(pvtUdpServerStateName) / sizeof(pvtUdpServerStateName[0]);
 
+const RtkMode_t pvtUdpServerMode = RTK_MODE_BASE_FIXED
+                                 | RTK_MODE_BASE_SURVEY_IN
+                                 | RTK_MODE_ROVER;
+
 //----------------------------------------
 // Locals
 //----------------------------------------
@@ -281,6 +285,14 @@ void pvtUdpServerUpdate()
     int index;
     IPAddress ipAddress;
 
+    // Shutdown the PVT UDP server when the mode or setting changes
+    DMW_st(pvtUdpServerSetState, pvtUdpServerState);
+    if (NEQ_RTK_MODE(pvtUdpServerMode) || (!settings.enablePvtUdpServer))
+    {
+        if (pvtUdpServerState > PVT_UDP_SERVER_STATE_OFF)
+            pvtUdpServerStop();
+    }
+
     /*
         PVT UDP Server state machine
 
@@ -297,7 +309,6 @@ void pvtUdpServerUpdate()
                 '--------------PVT_UDP_SERVER_STATE_RUNNING
     */
 
-    DMW_st(pvtUdpServerSetState, pvtUdpServerState);
     switch (pvtUdpServerState)
     {
     default:
@@ -306,7 +317,7 @@ void pvtUdpServerUpdate()
     // Wait until the PVT server is enabled
     case PVT_UDP_SERVER_STATE_OFF:
         // Determine if the PVT server should be running
-        if (settings.enablePvtUdpServer && (!wifiInConfigMode()) && (!wifiIsConnected()))
+        if (EQ_RTK_MODE(pvtUdpServerMode) && settings.enablePvtUdpServer && (!wifiIsConnected()))
         {
             if (networkUserOpen(NETWORK_USER_PVT_UDP_SERVER, NETWORK_TYPE_ACTIVE))
             {

@@ -721,409 +721,6 @@ void dumpBuffer(uint8_t *buffer, uint16_t length)
     }
 }
 
-// Read the line termination
-uint8_t nmeaLineTermination(PARSE_STATE *parse, uint8_t data)
-{
-    int checksum;
-
-    // Process the line termination
-    if ((data != '\r') && (data != '\n'))
-    {
-        // Don't include this character in the buffer
-        parse->length--;
-
-        // Convert the checksum characters into binary
-        checksum = AsciiToNibble(parse->buffer[parse->nmeaLength - 2]) << 4;
-        checksum |= AsciiToNibble(parse->buffer[parse->nmeaLength - 1]);
-
-        // Validate the checksum
-        if (checksum == parse->crc)
-            parse->crc = 0;
-        if (settings.enablePrintBadMessages && parse->crc && (!inMainMenu))
-        {
-            printTimeStamp();
-            systemPrintf("    %s NMEA %s, %2d bytes, bad checksum, expecting 0x%c%c, computed: 0x%02x\r\n",
-                         parse->parserName, parse->nmeaMessageName, parse->length, parse->buffer[parse->nmeaLength - 2],
-                         parse->buffer[parse->nmeaLength - 1], parse->crc);
-        }
-
-        // Process this message if CRC is valid
-        if (parse->crc == 0)
-            parse->eomCallback(parse, SENTENCE_TYPE_NMEA);
-        else
-            failedParserMessages_NMEA++;
-
-        // Add this character to the beginning of the buffer
-        parse->length = 0;
-        parse->buffer[parse->length++] = data;
-        return waitForPreamble(parse, data);
-    }
-    return SENTENCE_TYPE_NMEA;
-}
-
-// Read the second checksum byte
-uint8_t nmeaChecksumByte2(PARSE_STATE *parse, uint8_t data)
-{
-    parse->nmeaLength = parse->length;
-    parse->state = nmeaLineTermination;
-    return SENTENCE_TYPE_NMEA;
-}
-
-// Read the first checksum byte
-uint8_t nmeaChecksumByte1(PARSE_STATE *parse, uint8_t data)
-{
-    parse->state = nmeaChecksumByte2;
-    return SENTENCE_TYPE_NMEA;
-}
-
-// Read the message data
-uint8_t nmeaFindAsterisk(PARSE_STATE *parse, uint8_t data)
-{
-    if (data != '*')
-        parse->crc ^= data;
-    else
-        parse->state = nmeaChecksumByte1;
-    return SENTENCE_TYPE_NMEA;
-}
-
-// Read the message name
-uint8_t nmeaFindFirstComma(PARSE_STATE *parse, uint8_t data)
-{
-    parse->crc ^= data;
-    if ((data != ',') || (parse->nmeaMessageNameLength == 0))
-    {
-        if ((data < 'A') || (data > 'Z'))
-        {
-            parse->length = 0;
-            parse->buffer[parse->length++] = data;
-            return waitForPreamble(parse, data);
-        }
-
-        // Save the message name
-        parse->nmeaMessageName[parse->nmeaMessageNameLength++] = data;
-    }
-    else
-    {
-        // Zero terminate the message name
-        parse->nmeaMessageName[parse->nmeaMessageNameLength++] = 0;
-        parse->state = nmeaFindAsterisk;
-    }
-    return SENTENCE_TYPE_NMEA;
-}
-
-// Read the CRC
-uint8_t rtcmReadCrc(PARSE_STATE *parse, uint8_t data)
-{
-    // Account for this data byte
-    parse->bytesRemaining -= 1;
-
-    // Wait until all the data is received
-    if (parse->bytesRemaining > 0)
-        return SENTENCE_TYPE_RTCM;
-
-    // Update the maximum message length
-    if (parse->length > parse->maxLength)
-    {
-        parse->maxLength = parse->length;
-        systemPrintf("RTCM parser error maxLength: %d bytes\r\n", parse->maxLength);
-    }
-
-    // Display the RTCM messages with bad CRC
-    parse->crc &= 0x00ffffff;
-    if (settings.enablePrintBadMessages && parse->crc && (!inMainMenu))
-    {
-        printTimeStamp();
-        systemPrintf("    %s RTCM %d, %2d bytes, bad CRC, expecting 0x%02x%02x%02x, computed: 0x%06x\r\n",
-                     parse->parserName, parse->message, parse->length, parse->buffer[parse->length - 3],
-                     parse->buffer[parse->length - 2], parse->buffer[parse->length - 1], parse->rtcmCrc);
-    }
-
-    // Process the message if CRC is valid
-    if (parse->crc == 0)
-        parse->eomCallback(parse, SENTENCE_TYPE_RTCM);
-    else
-        failedParserMessages_RTCM++;
-
-    // Search for another preamble byte
-    parse->length = 0;
-    parse->computeCrc = false;
-    parse->state = waitForPreamble;
-    return SENTENCE_TYPE_NONE;
-}
-
-// Read the rest of the message
-uint8_t rtcmReadData(PARSE_STATE *parse, uint8_t data)
-{
-    // Account for this data byte
-    parse->bytesRemaining -= 1;
-
-    // Wait until all the data is received
-    if (parse->bytesRemaining <= 0)
-    {
-        parse->rtcmCrc = parse->crc & 0x00ffffff;
-        parse->bytesRemaining = 3;
-        parse->state = rtcmReadCrc;
-    }
-    return SENTENCE_TYPE_RTCM;
-}
-
-// Read the lower 4 bits of the message number
-uint8_t rtcmReadMessage2(PARSE_STATE *parse, uint8_t data)
-{
-    parse->message |= data >> 4;
-    parse->bytesRemaining -= 1;
-    parse->state = rtcmReadData;
-    return SENTENCE_TYPE_RTCM;
-}
-
-// Read the upper 8 bits of the message number
-uint8_t rtcmReadMessage1(PARSE_STATE *parse, uint8_t data)
-{
-    parse->message = data << 4;
-    parse->bytesRemaining -= 1;
-    parse->state = rtcmReadMessage2;
-    return SENTENCE_TYPE_RTCM;
-}
-
-// Read the lower 8 bits of the length
-uint8_t rtcmReadLength2(PARSE_STATE *parse, uint8_t data)
-{
-    parse->bytesRemaining |= data;
-    parse->state = rtcmReadMessage1;
-    return SENTENCE_TYPE_RTCM;
-}
-
-// Read the upper two bits of the length
-uint8_t rtcmReadLength1(PARSE_STATE *parse, uint8_t data)
-{
-    // Verify the length byte - check the 6 MS bits are all zero
-    if (data & (~3))
-    {
-        // Invalid length, place this byte at the beginning of the buffer
-        parse->length = 0;
-        parse->buffer[parse->length++] = data;
-        parse->computeCrc = false;
-
-        // Start searching for a preamble byte
-        return waitForPreamble(parse, data);
-    }
-
-    // Save the upper 2 bits of the length
-    parse->bytesRemaining = data << 8;
-    parse->state = rtcmReadLength2;
-    return SENTENCE_TYPE_RTCM;
-}
-
-// Read the CK_B byte
-uint8_t ubloxCkB(PARSE_STATE *parse, uint8_t data)
-{
-    bool badChecksum;
-
-    // Validate the checksum
-    badChecksum =
-        ((parse->buffer[parse->length - 2] != parse->ck_a) || (parse->buffer[parse->length - 1] != parse->ck_b));
-    if (settings.enablePrintBadMessages && badChecksum && (!inMainMenu))
-    {
-        printTimeStamp();
-        systemPrintf("    %s u-blox %d.%d, %2d bytes, bad checksum, expecting 0x%02X%02X, computed: 0x%02X%02X\r\n",
-                     parse->parserName, parse->message >> 8, parse->message & 0xff, parse->length,
-                     parse->buffer[parse->nmeaLength - 2], parse->buffer[parse->nmeaLength - 1], parse->ck_a,
-                     parse->ck_b);
-    }
-
-    // Process this message if checksum is valid
-    if (badChecksum == false)
-        parse->eomCallback(parse, SENTENCE_TYPE_UBX);
-    else
-        failedParserMessages_UBX++;
-
-    // Search for the next preamble byte
-    parse->length = 0;
-    parse->state = waitForPreamble;
-    return SENTENCE_TYPE_NONE;
-}
-
-// Read the CK_A byte
-uint8_t ubloxCkA(PARSE_STATE *parse, uint8_t data)
-{
-    parse->state = ubloxCkB;
-    return SENTENCE_TYPE_UBX;
-}
-
-// Read the payload
-uint8_t ubloxPayload(PARSE_STATE *parse, uint8_t data)
-{
-    // Compute the checksum over the payload
-    if (parse->bytesRemaining--)
-    {
-        // Calculate the checksum
-        parse->ck_a += data;
-        parse->ck_b += parse->ck_a;
-        return SENTENCE_TYPE_UBX;
-    }
-    return ubloxCkA(parse, data);
-}
-
-// Read the second length byte
-uint8_t ubloxLength2(PARSE_STATE *parse, uint8_t data)
-{
-    // Calculate the checksum
-    parse->ck_a += data;
-    parse->ck_b += parse->ck_a;
-
-    // Save the second length byte
-    parse->bytesRemaining |= ((uint16_t)data) << 8;
-    parse->state = ubloxPayload;
-    return SENTENCE_TYPE_UBX;
-}
-
-// Read the first length byte
-uint8_t ubloxLength1(PARSE_STATE *parse, uint8_t data)
-{
-    // Calculate the checksum
-    parse->ck_a += data;
-    parse->ck_b += parse->ck_a;
-
-    // Save the first length byte
-    parse->bytesRemaining = data;
-    parse->state = ubloxLength2;
-    return SENTENCE_TYPE_UBX;
-}
-
-// Read the ID byte
-uint8_t ubloxId(PARSE_STATE *parse, uint8_t data)
-{
-    // Calculate the checksum
-    parse->ck_a += data;
-    parse->ck_b += parse->ck_a;
-
-    // Save the ID as the lower 8-bits of the message
-    parse->message |= data;
-    parse->state = ubloxLength1;
-    return SENTENCE_TYPE_UBX;
-}
-
-// Read the class byte
-uint8_t ubloxClass(PARSE_STATE *parse, uint8_t data)
-{
-    // Start the checksum calculation
-    parse->ck_a = data;
-    parse->ck_b = data;
-
-    // Save the class as the upper 8-bits of the message
-    parse->message = ((uint16_t)data) << 8;
-    parse->state = ubloxId;
-    return SENTENCE_TYPE_UBX;
-}
-
-// Read the second sync byte
-uint8_t ubloxSync2(PARSE_STATE *parse, uint8_t data)
-{
-    // Verify the sync 2 byte
-    if (data != 0x62)
-    {
-        // Display the invalid data
-        if (settings.enablePrintBadMessages && (!inMainMenu))
-        {
-            dumpBuffer(parse->buffer, parse->length - 1);
-            systemPrintf("    %s Invalid UBX data, %d bytes\r\n", parse->parserName, parse->length - 1);
-        }
-        // Invalid sync 2 byte, place this byte at the beginning of the buffer
-        parse->length = 0;
-        parse->buffer[parse->length++] = data;
-
-        // Start searching for a preamble byte
-        return waitForPreamble(parse, data);
-    }
-
-    parse->state = ubloxClass;
-    return SENTENCE_TYPE_UBX;
-}
-
-// Wait for the preamble byte (0xd3)
-uint8_t waitForPreamble(PARSE_STATE *parse, uint8_t data)
-{
-    // Verify that this is the preamble byte
-    switch (data)
-    {
-    case '$':
-
-        //
-        //    NMEA Message
-        //
-        //    +----------+---------+--------+---------+----------+----------+
-        //    | Preamble |  Name   | Comma  |  Data   | Asterisk | Checksum |
-        //    |  8 bits  | n bytes | 8 bits | n bytes |  8 bits  | 2 bytes  |
-        //    |     $    |         |    ,   |         |          |          |
-        //    +----------+---------+--------+---------+----------+----------+
-        //               |                            |
-        //               |<-------- Checksum -------->|
-        //
-
-        parse->crc = 0;
-        parse->computeCrc = false;
-        parse->nmeaMessageNameLength = 0;
-        parse->state = nmeaFindFirstComma;
-        return SENTENCE_TYPE_NMEA;
-
-    case 0xb5:
-
-        //
-        //    U-BLOX Message
-        //
-        //    |<-- Preamble --->|
-        //    |                 |
-        //    +--------+--------+---------+--------+---------+---------+--------+--------+
-        //    |  SYNC  |  SYNC  |  Class  |   ID   | Length  | Payload |  CK_A  |  CK_B  |
-        //    | 8 bits | 8 bits |  8 bits | 8 bits | 2 bytes | n bytes | 8 bits | 8 bits |
-        //    |  0xb5  |  0x62  |         |        |         |         |        |        |
-        //    +--------+--------+---------+--------+---------+---------+--------+--------+
-        //                      |                                      |
-        //                      |<------------- Checksum ------------->|
-        //
-        //  8-Bit Fletcher Algorithm, which is used in the TCP standard (RFC 1145)
-        //  http://www.ietf.org/rfc/rfc1145.txt
-        //  Checksum calculation
-        //      Initialization: CK_A = CK_B = 0
-        //      CK_A += data
-        //      CK_B += CK_A
-        //
-
-        parse->state = ubloxSync2;
-        return SENTENCE_TYPE_UBX;
-
-    case 0xd3:
-
-        //
-        //    RTCM Standard 10403.2 - Chapter 4, Transport Layer
-        //
-        //    |<------------- 3 bytes ------------>|<----- length ----->|<- 3 bytes ->|
-        //    |                                    |                    |             |
-        //    +----------+--------+----------------+---------+----------+-------------+
-        //    | Preamble |  Fill  | Message Length | Message |   Fill   |   CRC-24Q   |
-        //    |  8 bits  | 6 bits |    10 bits     |  n-bits | 0-7 bits |   24 bits   |
-        //    |   0xd3   | 000000 |   (in bytes)   |         |   zeros  |             |
-        //    +----------+--------+----------------+---------+----------+-------------+
-        //    |                                                         |
-        //    |<------------------------ CRC -------------------------->|
-        //
-
-        // Start the CRC with this byte
-        parse->crc = 0;
-        parse->crc = COMPUTE_CRC24Q(parse, data);
-        parse->computeCrc = true;
-
-        // Get the message length
-        parse->state = rtcmReadLength1;
-        return SENTENCE_TYPE_RTCM;
-    }
-
-    // preamble byte not found
-    parse->length = 0;
-    parse->state = waitForPreamble;
-    return SENTENCE_TYPE_NONE;
-}
-
 // Make size of files human readable
 void stringHumanReadableSize(String &returnText, uint64_t bytes)
 {
@@ -1159,6 +756,47 @@ void stringHumanReadableSize(String &returnText, uint64_t bytes)
         snprintf(readableSize, sizeof(readableSize), "%.0f %s", cardSize, suffix); // Don't print decimal portion
 
     returnText = String(readableSize);
+}
+
+// Print the NMEA checksum error
+void printNmeaChecksumError(PARSE_STATE *parse)
+{
+    printTimeStamp();
+    systemPrintf("    %s NMEA %s, %2d bytes, bad checksum, expecting 0x%c%c, computed: 0x%02x\r\n",
+                 parse->parserName, parse->nmeaMessageName, parse->length, parse->buffer[parse->nmeaLength - 2],
+                 parse->buffer[parse->nmeaLength - 1], parse->crc);
+}
+
+// Print the RTCM checksum error
+void printRtcmChecksumError(PARSE_STATE *parse)
+{
+    printTimeStamp();
+    systemPrintf("    %s RTCM %d, %2d bytes, bad CRC, expecting 0x%02x%02x%02x, computed: 0x%06x\r\n",
+                 parse->parserName, parse->message, parse->length, parse->buffer[parse->length - 3],
+                 parse->buffer[parse->length - 2], parse->buffer[parse->length - 1], parse->rtcmCrc);
+}
+
+// Print the RTCM maximum length
+void printRtcmMaxLength(PARSE_STATE *parse)
+{
+    systemPrintf("RTCM parser error maxLength: %d bytes\r\n", parse->maxLength);
+}
+
+// Print the u-blox checksum error
+void printUbloxChecksumError(PARSE_STATE *parse)
+{
+    printTimeStamp();
+    systemPrintf("    %s u-blox %d.%d, %2d bytes, bad checksum, expecting 0x%02X%02X, computed: 0x%02X%02X\r\n",
+                 parse->parserName, parse->message >> 8, parse->message & 0xff, parse->length,
+                 parse->buffer[parse->nmeaLength - 2], parse->buffer[parse->nmeaLength - 1], parse->ck_a,
+                 parse->ck_b);
+}
+
+// Print the u-blox invalid data error
+void printUbloxInvalidData(PARSE_STATE *parse)
+{
+    dumpBuffer(parse->buffer, parse->length - 1);
+    systemPrintf("    %s Invalid UBX data, %d bytes\r\n", parse->parserName, parse->length - 1);
 }
 
 // Verify table sizes match enum definitions

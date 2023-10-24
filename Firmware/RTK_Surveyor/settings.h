@@ -285,39 +285,6 @@ typedef struct WiFiNetwork
 
 typedef uint16_t RING_BUFFER_OFFSET;
 
-typedef struct _PARSE_STATE *P_PARSE_STATE;
-
-// Parse routine
-typedef uint8_t (*PARSE_ROUTINE)(P_PARSE_STATE parse, // Parser state
-                                 uint8_t data);       // Incoming data byte
-
-// End of message callback routine
-typedef void (*EOM_CALLBACK)(P_PARSE_STATE parse, // Parser state
-                             uint8_t type);       // Message type
-
-#define PARSE_BUFFER_LENGTH 3000 // Some USB RAWX messages can be > 2k
-
-typedef struct _PARSE_STATE
-{
-    PARSE_ROUTINE state;                 // Parser state routine
-    EOM_CALLBACK eomCallback;            // End of message callback routine
-    const char *parserName;              // Name of parser
-    uint32_t crc;                        // RTCM computed CRC
-    uint32_t rtcmCrc;                    // Computed CRC value for the RTCM message
-    uint32_t invalidRtcmCrcs;            // Number of bad RTCM CRCs detected
-    uint16_t bytesRemaining;             // Bytes remaining in RTCM CRC calculation
-    uint16_t length;                     // Message length including line termination
-    uint16_t maxLength;                  // Maximum message length including line termination
-    uint16_t message;                    // RTCM message number
-    uint16_t nmeaLength;                 // Length of the NMEA message without line termination
-    uint8_t buffer[PARSE_BUFFER_LENGTH]; // Buffer containing the message
-    uint8_t nmeaMessageName[16];         // Message name
-    uint8_t nmeaMessageNameLength;       // Length of the message name
-    uint8_t ck_a;                        // U-blox checksum byte 1
-    uint8_t ck_b;                        // U-blox checksum byte 2
-    bool computeCrc;                     // Compute the CRC when true
-} PARSE_STATE;
-
 typedef enum
 {
     ETH_NOT_STARTED = 0,

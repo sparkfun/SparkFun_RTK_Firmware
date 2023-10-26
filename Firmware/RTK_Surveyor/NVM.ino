@@ -1367,6 +1367,9 @@ bool parseLine(char *str, Settings *settings)
     else if (strcmp(settingName, "enableAutoFirmwareUpdate") == 0)
         settings->enableAutoFirmwareUpdate = d;
 
+    else if (strcmp(settingName, "debugLBand") == 0)
+        settings->debugLBand = d;
+
     //Add new settings above
     //<------------------------------------------------------------>
 

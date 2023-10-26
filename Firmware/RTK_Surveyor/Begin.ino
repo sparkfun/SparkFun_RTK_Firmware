@@ -1239,25 +1239,77 @@ void beginI2C()
 // Assign I2C interrupts to the core that started the task. See: https://github.com/espressif/arduino-esp32/issues/3386
 void pinI2CTask(void *pvParameters)
 {
+    bool i2cBusAvailable;
+    uint32_t timer;
+
     Wire.begin(); // Start I2C on core the core that was chosen when the task was started
     // Wire.setClock(400000);
 
-    // begin/end wire transmission to see if bus is responding correctly
-    // All good: 0ms, response 2
-    // SDA/SCL shorted: 1000ms timeout, response 5
-    // SCL/VCC shorted: 14ms, response 5
-    // SCL/GND shorted: 1000ms, response 5
-    // SDA/VCC shorted: 1000ms, reponse 5
-    // SDA/GND shorted: 14ms, response 5
-    Wire.beginTransmission(0x15); // Dummy address
-    int endValue = Wire.endTransmission();
-    if (endValue == 2)
-        online.i2c = true;
-    else
-        systemPrintln("Error: I2C Bus Not Responding");
+    // Display the device addresses
+    i2cBusAvailable = false;
+    for (uint8_t addr = 0; addr < 127; addr++)
+    {
+        // begin/end wire transmission to see if the bus is responding correctly
+        // All good: 0ms, response 2
+        // SDA/SCL shorted: 1000ms timeout, response 5
+        // SCL/VCC shorted: 14ms, response 5
+        // SCL/GND shorted: 1000ms, response 5
+        // SDA/VCC shorted: 1000ms, response 5
+        // SDA/GND shorted: 14ms, response 5
+        timer = millis();
+        Wire.beginTransmission(addr);
+        if (Wire.endTransmission() == 0)
+        {
+            i2cBusAvailable = true;
+            switch (addr)
+            {
+                default: {
+                    systemPrintf("0x%02x\r\n", addr);
+                    break;
+                }
 
+                case 0x19: {
+                    systemPrintf("0x%02x - LIS2DH12 Accelerometer\r\n", addr);
+                    break;
+                }
+
+                case 0x36: {
+                    systemPrintf("0x%02x - MAX17048 Fuel Guage\r\n", addr);
+                    break;
+                }
+
+                case 0x3d: {
+                    systemPrintf("0x%02x - SSD1306 (64x48) OLED Driver\r\n", addr);
+                    break;
+                }
+
+                case 0x42: {
+                    systemPrintf("0x%02x - u-blox ZED-F9P GNSS Receiver\r\n", addr);
+                    break;
+                }
+
+                case 0x43: {
+                    systemPrintf("0x%02x - u-blox NEO-D9S-00B Correction Data Receiver\r\n", addr);
+                    break;
+                }
+
+                case 0x60: {
+                    systemPrintf("0x%02x - Crypto Coprocessor\r\n", addr);
+                    break;
+                }
+            }
+        }
+        else if ((millis() - timer) > 3)
+        {
+            systemPrintln("Error: I2C Bus Not Responding");
+            i2cBusAvailable = false;
+            break;
+        }
+    }
+
+    // Update the I2C status
+    online.i2c = i2cBusAvailable;
     i2cPinned = true;
-
     vTaskDelete(nullptr); // Delete task once it has run once
 }
 

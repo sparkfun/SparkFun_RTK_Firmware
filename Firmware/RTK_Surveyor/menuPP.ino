@@ -189,27 +189,26 @@ char *printDateFromGPSEpoch(long long gpsEpoch)
 // https://www.epochconverter.com/programming/c
 char *printDateFromUnixEpoch(long long unixEpoch)
 {
-    char *buf = (char *)malloc(strlen("01/01/1010"));
-    time_t rawtime = unixEpoch;
+  char *buf = (char *)malloc(strlen("01/01/2023") + 1); //Make room for terminator
+  time_t rawtime = unixEpoch;
 
-    struct tm ts;
-    ts = *localtime(&rawtime);
+  struct tm ts;
+  ts = *localtime(&rawtime);
 
-    // Format time, "dd/mm/yyyy"
-    strftime(buf, strlen("01/01/1010"), "%d/%m/%Y", &ts);
-    return (buf);
+  // Format time, "dd/mm/yyyy"
+  strftime(buf, strlen("01/01/2023") + 1, "%d/%m/%Y", &ts);
+  return (buf);
 }
 
 // Given a duration in ms, print days
 char *printDaysFromDuration(long long duration)
 {
-    duration /= (1000L * 60L * 60 * 24); //Convert ms to days
+  float days = duration / (1000.0 * 60 * 60 * 24); //Convert ms to days
 
-    char *response = (char *)malloc(strlen("34.9"));
-    sprintf(response, "%0.2f", duration);
-    return (response);
+  char *response = (char *)malloc(strlen("34.9") + 1); //Make room for terminator
+  sprintf(response, "%0.2f", days);
+  return (response);
 }
-
 
 // Connect to 'home' WiFi and then ThingStream API. This will attach this unique device to the ThingStream network.
 bool pointperfectProvisionDevice()
@@ -375,10 +374,10 @@ bool pointperfectProvisionDevice()
                     if (settings.debugLBand == true)
                     {
                         systemPrintf("  pointPerfectCurrentKey: %s\r\n", settings.pointPerfectCurrentKey);
-                        systemPrintf("  pointPerfectCurrentKeyStart: %lld - %s\r\n", settings.pointPerfectCurrentKeyStart, printDateFromUnixEpoch(settings.pointPerfectCurrentKeyStart));
+                        systemPrintf("  pointPerfectCurrentKeyStart: %lld - %s\r\n", settings.pointPerfectCurrentKeyStart, printDateFromUnixEpoch(settings.pointPerfectCurrentKeyStart / 1000)); //printDateFromUnixEpoch expects seconds
                         systemPrintf("  pointPerfectCurrentKeyDuration: %lld - %s\r\n", settings.pointPerfectCurrentKeyDuration, printDaysFromDuration(settings.pointPerfectCurrentKeyDuration));
                         systemPrintf("  pointPerfectNextKey: %s\r\n", settings.pointPerfectNextKey);
-                        systemPrintf("  pointPerfectNextKeyStart: %lld - %s\r\n", settings.pointPerfectNextKeyStart, printDateFromUnixEpoch(settings.pointPerfectNextKeyStart));
+                        systemPrintf("  pointPerfectNextKeyStart: %lld - %s\r\n", settings.pointPerfectNextKeyStart, printDateFromUnixEpoch(settings.pointPerfectNextKeyStart / 1000)); 
                         systemPrintf("  pointPerfectNextKeyDuration: %lld - %s\r\n", settings.pointPerfectNextKeyDuration, printDaysFromDuration(settings.pointPerfectNextKeyDuration));
                     }
                 }
@@ -717,8 +716,7 @@ void mqttCallback(char *topic, byte *message, unsigned int length)
             settings.pointPerfectNextKeyStart - settings.pointPerfectCurrentKeyStart - 1;
         // settings.pointPerfectNextKeyDuration =
         //     settings.pointPerfectCurrentKeyDuration; // We assume next key duration is the same as current key
-        //     duration
-        //                                              // because we have to
+        //     duration because we have to
 
         settings.pointPerfectNextKeyDuration = (1000LL * 60 * 60 * 24 * 28) - 1; // Assume next key duration is 28 days
 

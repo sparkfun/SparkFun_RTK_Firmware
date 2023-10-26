@@ -155,7 +155,7 @@ SdFat *sd;
 
 #include "FileSdFatMMC.h" //Hybrid SdFat and SD_MMC file access
 
-char platformFilePrefix[40] = "SFE_Surveyor"; // Sets the prefix for logs and settings files
+#define platformFilePrefix      platformFilePrefixTable[productVariant] // Sets the prefix for logs and settings files
 
 FileSdFatMMC *ubxFile;                // File that all GNSS ubx messages sentences are written to
 unsigned long lastUBXLogSyncTime = 0; // Used to record to SD every half second
@@ -419,7 +419,7 @@ float battChangeRate = 0.0;
 #include "bluetoothSelect.h"
 #endif  // COMPILE_BT
 
-char platformPrefix[55] = "Surveyor"; // Sets the prefix for broadcast names
+#define platformPrefix      platformPrefixTable[productVariant] // Sets the prefix for broadcast names
 
 #include <driver/uart.h>      //Required for uart_set_rx_full_threshold() on cores <v2.0.5
 HardwareSerial serialGNSS(2); // TX on 17, RX on 16
@@ -869,6 +869,9 @@ void setup()
 
     Serial.begin(115200); // UART0 for programming and debugging
 
+    DMW_c("verifyTables");
+    verifyTables (); // Verify the consistency of the internal tables
+
     DMW_c("identifyBoard");
     identifyBoard(); // Determine what hardware platform we are running on
 
@@ -903,9 +906,6 @@ void setup()
 
     DMW_c("beginLEDs");
     beginLEDs(); // LED and PWM setup
-
-    DMW_c("verifyTables");
-    verifyTables (); // Verify the consistency of the internal tables
 
     DMW_c("beginSD");
     beginSD(); // Test if SD is present

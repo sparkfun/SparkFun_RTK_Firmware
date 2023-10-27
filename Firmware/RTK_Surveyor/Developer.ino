@@ -44,6 +44,7 @@ void ntpServerStop() {}
 void menuNetwork() {systemPrint("Network not compiled");}
 void networkUpdate() {}
 void networkVerifyTables() {}
+void networkStop(uint8_t networkType) {}
 
 //----------------------------------------
 // NTRIP client

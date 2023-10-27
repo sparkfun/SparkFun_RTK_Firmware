@@ -800,8 +800,16 @@ void printUbloxInvalidData(PARSE_STATE *parse)
 }
 
 // Verify table sizes match enum definitions
-void verifyTables ()
+void verifyTables()
 {
+    // Verify the product name table
+    if (productDisplayNamesEntries != (RTK_UNKNOWN + 1))
+        reportFatalError("Fix productDisplayNames to match ProductVariant");
+    if (platformFilePrefixTableEntries != (RTK_UNKNOWN + 1))
+        reportFatalError("Fix platformFilePrefixTable to match ProductVariant");
+    if (platformPrefixTableEntries != (RTK_UNKNOWN + 1))
+        reportFatalError("Fix platformPrefixTable to match ProductVariant");
+
     // Verify the consistency of the internal tables
     ethernetVerifyTables();
     networkVerifyTables();

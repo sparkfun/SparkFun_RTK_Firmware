@@ -1,62 +1,93 @@
-// Initial startup functions for GNSS, SD, display, radio, etc
+/*------------------------------------------------------------------------------
+Begin.ino
 
+  This module implements the initial startup functions for GNSS, SD, display,
+  radio, etc.
+------------------------------------------------------------------------------*/
+
+//----------------------------------------
+// Constants
+//----------------------------------------
+
+#define MAX_ADC_VOLTAGE     3300    // Millivolts
+
+// Testing shows the combined ADC+resistors is under a 1% window
+#define TOLERANCE           4.75    // Percent:  95.25% - 104.75%
+
+//----------------------------------------
+// Macros
+//----------------------------------------
+
+//                                ADC input
+//                       Ra KOhms     |     Rb KOhms
+//  MAX_ADC_VOLTAGE -----/\/\/\/\-----+-----/\/\/\/\----- Ground
+//
+#define ADC_ID_mV(RaK, RbK)   ((uint16_t)(MAX_ADC_VOLTAGE * RbK / (RaK + RbK)))
+
+//----------------------------------------
+// Hardware initialization functions
+//----------------------------------------
+
+// Determine if the measured value matches the product ID value
+bool idWithAdc(uint16_t mvMeasured, uint16_t mvProduct)
+{
+    uint16_t lowerThreshold;
+    uint16_t upperThreshold;
+
+    // Return true if the mvMeasured value is within the tolerance range
+    // of the mvProduct value
+    upperThreshold = (1.0 + (TOLERANCE / 100.)) * mvProduct;
+    lowerThreshold = (1.0 - (TOLERANCE / 100.)) * mvProduct;
+    return (upperThreshold > mvMeasured) && (mvMeasured > lowerThreshold);
+}
+
+// Use a pair of resistors on pin 35 to ID the board type
+// If the ID resistors are not available then use a variety of other methods
+// (I2C, GPIO test, etc) to ID the board.
+// Assume no hardware interfaces have been started so we need to start/stop any hardware
+// used in tests accordingly.
 void identifyBoard()
 {
-    // Use ADC to check resistor divider
-    // Express: 10/3.3
-    // Express+: 3.3/10
-    // Facet: 10/10
-    // Facet L-Band: 10/20
-    // Reference Station: 20/10
-    // Facet L-Band Direct: 10/100
-    // Surveyor: ID resistors do not exist
-
-    const float rtkExpressID = 3.3 / (10 + 3.3) * 3300;          // 819mV
-    const float rtkExressPlusID = 10.0 / (10 + 3.3) * 3300;      // 2481mV
-    const float rtkFacetID = 10.0 / (10 + 10) * 3300;            // 1650mV
-    const float rtkFacetLbandID = 20.0 / (20 + 10) * 3300;       // 2200mV
-    const float rtkReferenceStationID = 10.0 / (10 + 20) * 3300; // 1100mV
-    const float rtkFacetLbandDirectID = 1.0 / (4.7 + 1) * 3300;  // 579mV
-
-    const float tolerance = 0.0475;             // 4.75% Testing shows the combined ADC+resistors is under a 1% window
-    const float upperThreshold = 1 + tolerance; // 104.75%
-    const float lowerThreshold = 1 - tolerance; // 95.25%
-
+    // Use ADC to check the resistor divider
     int pin_deviceID = 35;
     uint16_t idValue = analogReadMilliVolts(pin_deviceID);
     log_d("Board ADC ID (mV): %d", idValue);
 
-    if (idValue > (rtkFacetID * lowerThreshold) && idValue < (rtkFacetID * upperThreshold))
-    {
-        productVariant = RTK_FACET;
-    }
-    else if (idValue > (rtkFacetLbandID * lowerThreshold) && idValue < (rtkFacetLbandID * upperThreshold))
-    {
-        productVariant = RTK_FACET_LBAND;
-    }
-    else if (idValue > (rtkExpressID * lowerThreshold) && idValue < (rtkExpressID * upperThreshold))
-    {
+    // Order checks by millivolt values high to low
+
+    // Facet L-Band Direct: 4.7/1  -->  551mV < 579mV < 607mV
+    if (idWithAdc(idValue, ADC_ID_mV(4.7, 1)))
+        productVariant = RTK_FACET_LBAND_DIRECT;
+
+    // Express: 10/3.3  -->  779mV < 819mV < 858mV
+    else if (idWithAdc(idValue, ADC_ID_mV(10, 3.3)))
         productVariant = RTK_EXPRESS;
-    }
-    else if (idValue > (rtkExressPlusID * lowerThreshold) && idValue < (rtkExressPlusID * upperThreshold))
-    {
-        productVariant = RTK_EXPRESS_PLUS;
-    }
-    else if (idValue > (rtkReferenceStationID * lowerThreshold) && idValue < (rtkReferenceStationID * upperThreshold))
+
+    // Reference Station: 20/10  -->  1047mV < 1100mV < 1153mV
+    else if (idWithAdc(idValue, ADC_ID_mV(20, 10)))
     {
         productVariant = REFERENCE_STATION;
         // We can't auto-detect the ZED version if the firmware is in configViaEthernet mode,
         // so fake it here - otherwise messageSupported always returns false
         zedFirmwareVersionInt = 112;
     }
-    else if (idValue > (rtkFacetLbandDirectID * lowerThreshold) && idValue < (rtkFacetLbandDirectID * upperThreshold))
-    {
-        productVariant = RTK_FACET_LBAND_DIRECT;
-    }
+    // Facet: 10/10  -->  1571mV < 1650mV < 1729mV
+    else if (idWithAdc(idValue, ADC_ID_mV(10, 10)))
+        productVariant = RTK_FACET;
+
+    // Facet L-Band: 10/20  -->  2095mV < 2200mV < 2305mV
+    else if (idWithAdc(idValue, ADC_ID_mV(10, 20)))
+        productVariant = RTK_FACET_LBAND;
+
+    // Express+: 3.3/10  -->  2363mV < 2481mV < 2600mV
+    else if (idWithAdc(idValue, ADC_ID_mV(3.3, 10)))
+        productVariant = RTK_EXPRESS_PLUS;
+
+    // ID resistors do not exist for the following:
+    //      Surveyor
+    //      Unknown
     else
-    {
         productVariant = RTK_UNKNOWN; // Need to wait until the GNSS and Accel have been initialized
-    }
 }
 
 // Setup any essential power pins

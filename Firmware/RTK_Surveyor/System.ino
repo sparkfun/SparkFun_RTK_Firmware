@@ -154,7 +154,10 @@ bool configureUbloxModule()
     response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_NMEA, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_RTCM3X, 1);
     if (commandSupported(UBLOX_CFG_USBINPROT_SPARTN) == true)
-        response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_SPARTN, 0);
+    {
+        //See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/713
+        response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_SPARTN, 1);
+    }
 
     if (commandSupported(UBLOX_CFG_NAVSPG_INFIL_MINCNO) == true)
     {

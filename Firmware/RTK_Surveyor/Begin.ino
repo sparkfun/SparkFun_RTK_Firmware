@@ -1275,7 +1275,7 @@ void pinI2CTask(void *pvParameters)
                 }
 
                 case 0x36: {
-                    systemPrintf("0x%02x - MAX17048 Fuel Guage\r\n", addr);
+                    systemPrintf("0x%02x - MAX17048 Fuel Gauge\r\n", addr);
                     break;
                 }
 

@@ -80,9 +80,52 @@ typedef enum
     RTK_FACET_LBAND,
     REFERENCE_STATION,
     RTK_FACET_LBAND_DIRECT,
+    // Add new values just above this line
     RTK_UNKNOWN,
 } ProductVariant;
 ProductVariant productVariant = RTK_SURVEYOR;
+
+const char * const productDisplayNames[] =
+{
+    "Surveyor",
+    "Express",
+    "Facet",
+    "Express+",
+    "Facet LB",
+    "Ref Stn",
+    "Facet LD",
+    // Add new values just above this line
+    "Unknown",
+};
+const int productDisplayNamesEntries = sizeof (productDisplayNames) / sizeof(productDisplayNames[0]);
+
+const char * const platformFilePrefixTable[] =
+{
+    "SFE_Surveyor",
+    "SFE_Express",
+    "SFE_Facet",
+    "SFE_Express_Plus",
+    "SFE_Facet_LBand",
+    "SFE_Reference_Station",
+    "SFE_Facet_LBand_Direct",
+    // Add new values just above this line
+    "SFE_Unknown",
+};
+const int platformFilePrefixTableEntries = sizeof (platformFilePrefixTable) / sizeof(platformFilePrefixTable[0]);
+
+const char * const platformPrefixTable[] =
+{
+    "Surveyor",
+    "Express",
+    "Facet",
+    "Express Plus",
+    "Facet L-Band",
+    "Reference Station",
+    "Facet L-Band Direct",
+    // Add new values just above this line
+    "Unknown",
+};
+const int platformPrefixTableEntries = sizeof (platformPrefixTable) / sizeof(platformPrefixTable[0]);
 
 // Macros to show if the GNSS is I2C or SPI
 #define USE_SPI_GNSS (productVariant == REFERENCE_STATION)

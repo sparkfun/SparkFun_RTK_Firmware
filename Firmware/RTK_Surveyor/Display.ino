@@ -2581,7 +2581,13 @@ void paintDisplaySetupProfile(const char *firstState)
     {
         // Lookup next available profile, limit to 8 characters
         getProfileNameFromUnit(index, profileName, sizeof(profileName));
-        printTextCenter(profileName, 12 * itemsDisplayed, QW_FONT_8X16, 1, itemsDisplayed == 3);
+
+        profileName[6]= 0; //Shorten profileName to 6 characters
+
+        char miniProfileName[16] = {0};
+        snprintf(miniProfileName, sizeof(miniProfileName), "%d_%s", index, profileName); //Prefix with index #
+
+        printTextCenter(miniProfileName, 12 * itemsDisplayed, QW_FONT_8X16, 1, itemsDisplayed == 3);
         index++;
     }
 }

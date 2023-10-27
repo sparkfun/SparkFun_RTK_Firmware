@@ -86,6 +86,9 @@ void menuWiFi()
         systemPrint("a) Configure device via WiFi Access Point or connect to WiFi: ");
         systemPrintf("%s\r\n", settings.wifiConfigOverAP ? "AP" : "WiFi");
 
+        systemPrint("m) Captive Portal: ");
+        systemPrintf("%s\r\n", settings.enableCaptivePortal ? "Enabled" : "Disabled");
+
         systemPrint("m) MDNS: ");
         systemPrintf("%s\r\n", settings.mdnsEnable ? "Enabled" : "Disabled");
 
@@ -115,7 +118,10 @@ void menuWiFi()
             settings.wifiConfigOverAP ^= 1;
             restartWiFi = true;
         }
-
+        else if (incoming == 'c')
+        {
+            settings.enableCaptivePortal ^= 1;
+        }
         else if (incoming == 'm')
         {
             settings.mdnsEnable ^= 1;
@@ -371,7 +377,7 @@ void wifiUpdate()
     }
 
     // Process DNS when we are in AP mode for captive portal
-    if (WiFi.getMode() == WIFI_AP)
+    if (WiFi.getMode() == WIFI_AP && settings.enableCaptivePortal)
     {
         dnsServer.processNextRequest();
     }
@@ -416,7 +422,7 @@ void wifiStop()
         MDNS.end();
 
     // Stop the DNS server if we were using the captive portal
-    if (WiFi.getMode() == WIFI_AP)
+    if (WiFi.getMode() == WIFI_AP && settings.enableCaptivePortal)
         dnsServer.stop();
 
     // Stop the other network clients and then WiFi

@@ -104,8 +104,10 @@ bool startWebServer(bool startWiFi = true, int httpPort = 80)
             break;
         }
 
+        if(settings.enableCaptivePortal == true)
+            webserver->addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER); // only when requested from AP
+
         websocket->onEvent(onWsEvent);
-        webserver->addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER); // only when requested from AP
         webserver->addHandler(websocket);
 
         // * index.html (not gz'd)

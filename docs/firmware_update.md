@@ -44,8 +44,7 @@ The OTA method is generally recommended. For more information see [here](firmwar
 Remember, all SparkFun RTK devices are open source hardware meaning you have total access to the [firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware) and [hardware](https://github.com/sparkfun/SparkFun_RTK_Facet). Be sure to check out each repo for the latest firmware and hardware information.
 
 ## Updating Firmware Over-The-Air
-
-![Updating Firmware from WiFi config page](img/WiFi Config/SparkFun%20RTK%20OTA%20Firmware%20Update.gif)
+![Updating Firmware from WiFi config page](<img/WiFi Config/RTK-Firmware-Update-OTA.gif>)
 
 *Updating the firmware via WiFi config page*
 

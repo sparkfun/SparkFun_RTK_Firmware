@@ -622,7 +622,9 @@ void createSettingsString(char *newSettings)
     newSettings[0] = '\0'; // Erase current settings string
 
     // System Info
-    stringRecord(newSettings, "platformPrefix", platformPrefix);
+    char apPlatformPrefix[80];
+    strncpy(apPlatformPrefix, platformPrefixTable[productVariant], sizeof(apPlatformPrefix));
+    stringRecord(newSettings, "platformPrefix", apPlatformPrefix);
 
     char apRtkFirmwareVersion[86];
     getFirmwareVersion(apRtkFirmwareVersion, sizeof(apRtkFirmwareVersion), true);

@@ -130,9 +130,9 @@ void menuPointPerfectKeys()
 
             if (settings.debugLBand == true)
             {
-                systemPrintf("  settings.pointPerfectCurrentKeyStart: %lld - %s\r\n", settings.pointPerfectCurrentKeyStart, printDateFromUnixEpoch(settings.pointPerfectCurrentKeyStart));
+                systemPrintf("  settings.pointPerfectCurrentKeyStart: %lld - %s\r\n", settings.pointPerfectCurrentKeyStart, printDateFromUnixEpoch(settings.pointPerfectCurrentKeyStart / 1000));
                 systemPrintf("  settings.pointPerfectCurrentKeyDuration: %lld - %s\r\n", settings.pointPerfectCurrentKeyDuration, printDaysFromDuration(settings.pointPerfectCurrentKeyDuration));
-                systemPrintf("  settings.pointPerfectNextKeyStart: %lld - %s\r\n", settings.pointPerfectNextKeyStart, printDateFromUnixEpoch(settings.pointPerfectNextKeyStart));
+                systemPrintf("  settings.pointPerfectNextKeyStart: %lld - %s\r\n", settings.pointPerfectNextKeyStart, printDateFromUnixEpoch(settings.pointPerfectNextKeyStart / 1000));
                 systemPrintf("  settings.pointPerfectNextKeyDuration: %lld - %s\r\n", settings.pointPerfectNextKeyDuration, printDaysFromDuration(settings.pointPerfectNextKeyDuration));
             }
         }

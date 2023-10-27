@@ -87,3 +87,9 @@ Below is an example system status report sentence:
 * *71 : The completion of the sentence and a [CRC](http://engineeringnotes.blogspot.com/2015/02/generate-crc-for-nmea-strings-arduino.html)
 
 **Note:** This is a custom NMEA sentence, can vary in length, and may exceed the [maximum permitted sentence length](https://www.nmea.org/Assets/20160520%20txt%20amendment.pdf) of 61 characters.
+
+## L-Band Performance During Serial Configuration
+
+Because of the way corrections are provided between the sub modules (NEO-D9S and ZED-F9P), the corrections will be interrupted while the configuration menu is open. RTK Fix may be lost if the menu is open for more than ~30s. RTK Fix will return once the configuration is complete and the menu is closed.
+
+Note: This only affects the RTK Facet L-Band model. 

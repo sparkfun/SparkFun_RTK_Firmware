@@ -60,7 +60,6 @@
 //    the minor firmware version
 #define RTK_IDENTIFIER (FIRMWARE_VERSION_MAJOR * 0x10 + FIRMWARE_VERSION_MINOR)
 
-#include "crc24q.h" //24-bit CRC-24Q cyclic redundancy checksum for RTCM parsing
 #include "settings.h"
 
 #define MAX_CPU_CORES 2
@@ -156,7 +155,7 @@ SdFat *sd;
 
 #include "FileSdFatMMC.h" //Hybrid SdFat and SD_MMC file access
 
-char platformFilePrefix[40] = "SFE_Surveyor"; // Sets the prefix for logs and settings files
+#define platformFilePrefix      platformFilePrefixTable[productVariant] // Sets the prefix for logs and settings files
 
 FileSdFatMMC *ubxFile;                // File that all GNSS ubx messages sentences are written to
 unsigned long lastUBXLogSyncTime = 0; // Used to record to SD every half second
@@ -201,10 +200,24 @@ char logFileName[sizeof("SFE_Reference_Station_230101_120101.ubx_plusExtraSpace"
 // Over-the-Air (OTA) update support
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+#if COMPILE_NETWORK
+#include <SSLClientESP32.h> // http://librarymanager/All#SSLClientESP32
+#include "X509_Certificate_Bundle.h" // Root certificates
+#endif // COMPILE_NETWORK
+#include <ArduinoJson.h>  //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
+
 #include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
 
 #ifdef COMPILE_WIFI
 #include "ESP32OTAPull.h" //http://librarymanager/All#ESP-OTA-Pull Used for getting
+
+#define WIFI_STOP()                                                         \
+{                                                                           \
+    if (settings.debugWifiState)                                            \
+        systemPrintf("wifiStop called by %s %d\r\n", __FILE__, __LINE__);   \
+    wifiStop();                                                             \
+}
+
 #endif  // COMPILE_WIFI
 
 #define OTA_FIRMWARE_JSON_URL                                                                                          \
@@ -218,7 +231,6 @@ unsigned int binBytesSent = 0;         // Tracks firmware bytes sent over WiFi O
 // Connection settings to NTRIP Caster
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_WIFI
-#include <ArduinoJson.h>  //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
 #include <ESPmDNS.h>      //Built-in.
 #include <HTTPClient.h>   //Built-in. Needed for ThingStream API for ZTP
 #include <PubSubClient.h> //http://librarymanager/All#PubSubClient_MQTT_Lightweight by Nick O'Leary v2.8.0 Used for MQTT obtaining of keys
@@ -245,11 +257,6 @@ int wifiOriginalMaxConnectionAttempts = wifiMaxConnectionAttempts; // Modified d
 // GNSS configuration
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3 v3.0.5
-
-#define SENTENCE_TYPE_NMEA DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NMEA
-#define SENTENCE_TYPE_NONE DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NONE
-#define SENTENCE_TYPE_RTCM DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_RTCM
-#define SENTENCE_TYPE_UBX DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_UBX
 
 char zedFirmwareVersion[20];       // The string looks like 'HPG 1.12'. Output to system status menu and settings file.
 char neoFirmwareVersion[20];       // Output to system status menu.
@@ -370,6 +377,21 @@ bool lBandCommunicationEnabled = false;
 unsigned long rtcmLastPacketReceived = 0; //Monitors the last time we received RTCM. Proctors PMP vs RTCM prioritization.
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+// GPS parse table
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// Define the parsers that get included
+#define PARSE_NMEA_MESSAGES
+#define PARSE_RTCM_MESSAGES
+#define PARSE_UBLOX_MESSAGES
+
+// Build the GPS_PARSE_TABLE macro
+#include "GpsMessageParser.h" // Include the parser
+
+// Create the GPS message parse table instance
+GPS_PARSE_TABLE;
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 // Battery fuel gauge and PWM LEDs
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library
@@ -397,7 +419,7 @@ float battChangeRate = 0.0;
 #include "bluetoothSelect.h"
 #endif  // COMPILE_BT
 
-char platformPrefix[55] = "Surveyor"; // Sets the prefix for broadcast names
+#define platformPrefix      platformPrefixTable[productVariant] // Sets the prefix for broadcast names
 
 #include <driver/uart.h>      //Required for uart_set_rx_full_threshold() on cores <v2.0.5
 HardwareSerial serialGNSS(2); // TX on 17, RX on 16
@@ -568,6 +590,7 @@ unsigned long lastEthernetCheck = 0; // Prevents cable checking from continually
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "NetworkClient.h" //Supports both WiFiClient and EthernetClient
+#include "NetworkUDP.h" //Supports both WiFiUdp and EthernetUdp
 
 // Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -687,6 +710,8 @@ volatile PeriodicDisplay_t periodicDisplay;
 
 unsigned long shutdownNoChargeTimer = 0;
 
+RtkMode_t rtkMode; // Mode of operation
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 #define DEAD_MAN_WALKING_ENABLED    0
@@ -737,6 +762,7 @@ volatile bool deadManWalking;
     settings.debugNtripServerState = true;              \
     settings.debugPvtClient = true;                     \
     settings.debugPvtServer = true;                     \
+    settings.debugPvtUdpServer = true;                     \
 }
 
 #else   // 0
@@ -843,6 +869,9 @@ void setup()
 
     Serial.begin(115200); // UART0 for programming and debugging
 
+    DMW_c("verifyTables");
+    verifyTables (); // Verify the consistency of the internal tables
+
     DMW_c("identifyBoard");
     identifyBoard(); // Determine what hardware platform we are running on
 
@@ -877,9 +906,6 @@ void setup()
 
     DMW_c("beginLEDs");
     beginLEDs(); // LED and PWM setup
-
-    DMW_c("verifyTables");
-    verifyTables (); // Verify the consistency of the internal tables
 
     DMW_c("beginSD");
     beginSD(); // Test if SD is present

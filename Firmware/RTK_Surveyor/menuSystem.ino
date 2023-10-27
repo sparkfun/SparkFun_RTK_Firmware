@@ -390,6 +390,9 @@ void menuDebugHardware()
         systemPrint("9) u-blox I2C Debugging Output: ");
         systemPrintf("%s\r\n", settings.enableI2Cdebug ? "Enabled" : "Disabled");
 
+        systemPrint("10) L-Band Debugging Output: ");
+        systemPrintf("%s\r\n", settings.debugLBand ? "Enabled" : "Disabled");
+
         systemPrintln("e) Erase LittleFS");
 
         systemPrintln("t) Test Screen");
@@ -438,6 +441,10 @@ void menuDebugHardware()
             }
             else
                 theGNSS.disableDebugging();
+        }
+        else if (incoming == 10)
+        {
+            settings.debugLBand ^= 1;
         }
 
         else if (incoming == 'e')
@@ -524,6 +531,10 @@ void menuDebugNetwork()
         systemPrint("26) Debug PVT server: ");
         systemPrintf("%s\r\n", settings.debugPvtServer ? "Enabled" : "Disabled");
 
+        // PVT Server
+        systemPrint("27) Debug PVT UDP server: ");
+        systemPrintf("%s\r\n", settings.debugPvtUdpServer ? "Enabled" : "Disabled");
+
         systemPrintln("r) Force system reset");
 
         systemPrintln("x) Exit");
@@ -554,6 +565,8 @@ void menuDebugNetwork()
             settings.debugPvtClient ^= 1;
         else if (incoming == 26)
             settings.debugPvtServer ^= 1;
+        else if (incoming == 27)
+            settings.debugPvtUdpServer ^= 1;
 
         // Menu exit control
         else if (incoming == 'r')
@@ -638,6 +651,14 @@ void menuDebugSoftware()
         else
             systemPrintln("Disabled");
 
+        // Automatic Firmware Update
+        systemPrintf("60) Print firmware update states: %s\r\n",
+                     settings.debugFirmwareUpdate ? "Enabled" : "Disabled");
+
+        // Point Perfect
+        systemPrintf("70) Point Perfect certificate management: %s\r\n",
+                     settings.debugPpCertificate ? "Enabled" : "Disabled");
+
         systemPrintln("e) Erase LittleFS");
 
         systemPrintln("r) Force system reset");
@@ -697,6 +718,10 @@ void menuDebugSoftware()
         }
         else if (incoming == 50)
             settings.enableTaskReports ^= 1;
+        else if (incoming == 60)
+            settings.debugFirmwareUpdate ^= 1;
+        else if (incoming == 70)
+            settings.debugPpCertificate ^= 1;
         else if (incoming == 'e')
         {
             systemPrintln("Erasing LittleFS and resetting");
@@ -1208,6 +1233,9 @@ void menuPeriodicPrint()
         systemPrint("51) PVT server state: ");
         systemPrintf("%s\r\n", PERIODIC_SETTING(PD_PVT_SERVER_STATE) ? "Enabled" : "Disabled");
 
+        systemPrint("52) OTA client state: ");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_OTA_CLIENT_STATE) ? "Enabled" : "Disabled");
+
         systemPrintln("-------  Tasks  ------");
         systemPrint("70) btReadTask state: ");
         systemPrintf("%s\r\n", PERIODIC_SETTING(PD_TASK_BLUETOOTH_READ) ? "Enabled" : "Disabled");
@@ -1294,6 +1322,8 @@ void menuPeriodicPrint()
             PERIODIC_TOGGLE(PD_PVT_SERVER_DATA);
         else if (incoming == 51)
             PERIODIC_TOGGLE(PD_PVT_SERVER_STATE);
+        else if (incoming == 52)
+            PERIODIC_TOGGLE(PD_OTA_CLIENT_STATE);
 
         else if (incoming == 70)
             PERIODIC_TOGGLE(PD_TASK_BLUETOOTH_READ);

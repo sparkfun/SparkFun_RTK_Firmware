@@ -605,35 +605,7 @@ void displaySplash()
         printTextCenter("RTK", yPos, QW_FONT_8X16, 1, false);
 
         yPos = yPos + fontHeight + 5;
-
-        if (productVariant == RTK_SURVEYOR)
-        {
-            printTextCenter("Surveyor", yPos, QW_FONT_8X16, 1, false);
-        }
-        else if (productVariant == RTK_EXPRESS)
-        {
-            printTextCenter("Express", yPos, QW_FONT_8X16, 1, false);
-        }
-        else if (productVariant == RTK_EXPRESS_PLUS)
-        {
-            printTextCenter("Express+", yPos, QW_FONT_8X16, 1, false);
-        }
-        else if (productVariant == RTK_FACET)
-        {
-            printTextCenter("Facet", yPos, QW_FONT_8X16, 1, false);
-        }
-        else if (productVariant == RTK_FACET_LBAND)
-        {
-            printTextCenter("Facet LB", yPos, QW_FONT_8X16, 1, false);
-        }
-        else if (productVariant == RTK_FACET_LBAND_DIRECT)
-        {
-            printTextCenter("Facet LB", yPos, QW_FONT_8X16, 1, false); //Same as L-Band at boot
-        }
-        else if (productVariant == REFERENCE_STATION)
-        {
-            printTextCenter("Ref Stn", yPos, QW_FONT_8X16, 1, false);
-        }
+        printTextCenter(productDisplayNames[productVariant], yPos, QW_FONT_8X16, 1, false);
 
         yPos = yPos + fontHeight + 7;
         char unitFirmware[50];
@@ -2581,7 +2553,13 @@ void paintDisplaySetupProfile(const char *firstState)
     {
         // Lookup next available profile, limit to 8 characters
         getProfileNameFromUnit(index, profileName, sizeof(profileName));
-        printTextCenter(profileName, 12 * itemsDisplayed, QW_FONT_8X16, 1, itemsDisplayed == 3);
+
+        profileName[6]= 0; //Shorten profileName to 6 characters
+
+        char miniProfileName[16] = {0};
+        snprintf(miniProfileName, sizeof(miniProfileName), "%d_%s", index, profileName); //Prefix with index #
+
+        printTextCenter(miniProfileName, 12 * itemsDisplayed, QW_FONT_8X16, 1, itemsDisplayed == 3);
         index++;
     }
 }

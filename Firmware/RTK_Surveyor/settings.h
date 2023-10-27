@@ -54,6 +54,23 @@ bool newSystemStateRequested = false;
 // When user pauses for X amount of time, system will enter that state
 SystemState setupState = STATE_MARK_EVENT;
 
+// Base modes set with RTK_MODE
+#define RTK_MODE_BASE_FIXED         0x0001
+#define RTK_MODE_BASE_SURVEY_IN     0x0002
+#define RTK_MODE_BUBBLE_LEVEL       0x0004
+#define RTK_MODE_ETHERNET_CONFIG    0x0008
+#define RTK_MODE_NTP                0x0010
+#define RTK_MODE_ROVER              0x0020
+#define RTK_MODE_TESTING            0x0040
+#define RTK_MODE_WIFI_CONFIG        0x0080
+
+typedef uint8_t RtkMode_t;
+
+#define RTK_MODE(mode)          rtkMode = mode;
+
+#define EQ_RTK_MODE(mode)       (rtkMode && (rtkMode == (mode & rtkMode)))
+#define NEQ_RTK_MODE(mode)      (rtkMode && (rtkMode != (mode & rtkMode)))
+
 typedef enum
 {
     RTK_SURVEYOR = 0,
@@ -63,9 +80,52 @@ typedef enum
     RTK_FACET_LBAND,
     REFERENCE_STATION,
     RTK_FACET_LBAND_DIRECT,
+    // Add new values just above this line
     RTK_UNKNOWN,
 } ProductVariant;
 ProductVariant productVariant = RTK_SURVEYOR;
+
+const char * const productDisplayNames[] =
+{
+    "Surveyor",
+    "Express",
+    "Facet",
+    "Express+",
+    "Facet LB",
+    "Ref Stn",
+    "Facet LD",
+    // Add new values just above this line
+    "Unknown",
+};
+const int productDisplayNamesEntries = sizeof (productDisplayNames) / sizeof(productDisplayNames[0]);
+
+const char * const platformFilePrefixTable[] =
+{
+    "SFE_Surveyor",
+    "SFE_Express",
+    "SFE_Facet",
+    "SFE_Express_Plus",
+    "SFE_Facet_LBand",
+    "SFE_Reference_Station",
+    "SFE_Facet_LBand_Direct",
+    // Add new values just above this line
+    "SFE_Unknown",
+};
+const int platformFilePrefixTableEntries = sizeof (platformFilePrefixTable) / sizeof(platformFilePrefixTable[0]);
+
+const char * const platformPrefixTable[] =
+{
+    "Surveyor",
+    "Express",
+    "Facet",
+    "Express Plus",
+    "Facet L-Band",
+    "Reference Station",
+    "Facet L-Band Direct",
+    // Add new values just above this line
+    "Unknown",
+};
+const int platformPrefixTableEntries = sizeof (platformPrefixTable) / sizeof(platformPrefixTable[0]);
 
 // Macros to show if the GNSS is I2C or SPI
 #define USE_SPI_GNSS (productVariant == REFERENCE_STATION)
@@ -178,11 +238,13 @@ enum NetworkStates
 // Define the network users
 enum NetworkUsers
 {
-    NETWORK_USER_NTP_SERVER = 0,   // NTP server
-    NETWORK_USER_NTRIP_CLIENT,     // NTRIP client
-    NETWORK_USER_NTRIP_SERVER,     // NTRIP server
-    NETWORK_USER_PVT_CLIENT,       // PVT client
-    NETWORK_USER_PVT_SERVER,       // PVT server
+    NETWORK_USER_NTP_SERVER = 0,        // NTP server
+    NETWORK_USER_NTRIP_CLIENT,          // NTRIP client
+    NETWORK_USER_NTRIP_SERVER,          // NTRIP server
+    NETWORK_USER_OTA_FIRMWARE_UPDATE,   // Over-The-Air firmware updates
+    NETWORK_USER_PVT_CLIENT,            // PVT client
+    NETWORK_USER_PVT_SERVER,            // PVT server
+    NETWORK_USER_PVT_UDP_SERVER,        // PVT UDP server
     // Last network user
     NETWORK_USER_MAX
 };
@@ -282,39 +344,6 @@ typedef struct WiFiNetwork
 #define MAX_WIFI_NETWORKS 4
 
 typedef uint16_t RING_BUFFER_OFFSET;
-
-typedef struct _PARSE_STATE *P_PARSE_STATE;
-
-// Parse routine
-typedef uint8_t (*PARSE_ROUTINE)(P_PARSE_STATE parse, // Parser state
-                                 uint8_t data);       // Incoming data byte
-
-// End of message callback routine
-typedef void (*EOM_CALLBACK)(P_PARSE_STATE parse, // Parser state
-                             uint8_t type);       // Message type
-
-#define PARSE_BUFFER_LENGTH 3000 // Some USB RAWX messages can be > 2k
-
-typedef struct _PARSE_STATE
-{
-    PARSE_ROUTINE state;                 // Parser state routine
-    EOM_CALLBACK eomCallback;            // End of message callback routine
-    const char *parserName;              // Name of parser
-    uint32_t crc;                        // RTCM computed CRC
-    uint32_t rtcmCrc;                    // Computed CRC value for the RTCM message
-    uint32_t invalidRtcmCrcs;            // Number of bad RTCM CRCs detected
-    uint16_t bytesRemaining;             // Bytes remaining in RTCM CRC calculation
-    uint16_t length;                     // Message length including line termination
-    uint16_t maxLength;                  // Maximum message length including line termination
-    uint16_t message;                    // RTCM message number
-    uint16_t nmeaLength;                 // Length of the NMEA message without line termination
-    uint8_t buffer[PARSE_BUFFER_LENGTH]; // Buffer containing the message
-    uint8_t nmeaMessageName[16];         // Message name
-    uint8_t nmeaMessageNameLength;       // Length of the message name
-    uint8_t ck_a;                        // U-blox checksum byte 1
-    uint8_t ck_b;                        // U-blox checksum byte 2
-    bool computeCrc;                     // Compute the CRC when true
-} PARSE_STATE;
 
 typedef enum
 {
@@ -471,21 +500,28 @@ enum PeriodDisplayValues
     PD_PVT_SERVER_STATE,        // 15
     PD_PVT_SERVER_CLIENT_DATA,  // 16
 
-    PD_RING_BUFFER_MILLIS,      // 17
+    PD_PVT_UDP_SERVER_DATA,         // 17
+    PD_PVT_UDP_SERVER_STATE,        // 18
+    PD_PVT_UDP_SERVER_BROADCAST_DATA,  // 19
 
-    PD_SD_LOG_WRITE,            // 18
+    PD_RING_BUFFER_MILLIS,      // 20
 
-    PD_TASK_BLUETOOTH_READ,     // 19
-    PD_TASK_BUTTON_CHECK,       // 20
-    PD_TASK_GNSS_READ,          // 21
-    PD_TASK_HANDLE_GNSS_DATA,   // 22
-    PD_TASK_SD_SIZE_CHECK,      // 23
+    PD_SD_LOG_WRITE,            // 21
 
-    PD_WIFI_IP_ADDRESS,         // 24
-    PD_WIFI_STATE,              // 25
+    PD_TASK_BLUETOOTH_READ,     // 22
+    PD_TASK_BUTTON_CHECK,       // 23
+    PD_TASK_GNSS_READ,          // 24
+    PD_TASK_HANDLE_GNSS_DATA,   // 25
+    PD_TASK_SD_SIZE_CHECK,      // 26
 
-    PD_ZED_DATA_RX,             // 26
-    PD_ZED_DATA_TX,             // 27
+    PD_WIFI_IP_ADDRESS,         // 27
+    PD_WIFI_STATE,              // 28
+
+    PD_ZED_DATA_RX,             // 29
+    PD_ZED_DATA_TX,             // 30
+
+    PD_OTA_CLIENT_STATE,        // 31
+    // Add new values before this line
 };
 
 #define PERIODIC_MASK(x) (1 << x)
@@ -887,6 +923,7 @@ typedef struct
     int16_t serialTimeoutGNSS = 1; // In ms - used during SerialGNSS.begin. Number of ms to pass of no data before
                                    // hardware serial reports data available.
 
+    // Point Perfect
     char pointPerfectDeviceProfileToken[40] = "";
     bool enablePointPerfectCorrections = true;
     bool autoKeyRenewal = true; // Attempt to get keys if we get under 28 days from the expiration date
@@ -905,6 +942,8 @@ typedef struct
     uint64_t lastKeyAttempt = 0;     // Epoch time of last attempt at obtaining keys
     bool updateZEDSettings = true;   // When in doubt, update the ZED with current settings
     uint32_t LBandFreq = 1556290000; // Default to US band
+
+    bool debugPpCertificate = false; // Debug Point Perfect certificate management
 
     // Time Zone - Default to UTC
     int8_t timeZoneHours = 0;
@@ -1060,10 +1099,23 @@ typedef struct
     bool enablePvtServer = false;
     uint16_t pvtServerPort = 2948; // PVT server port, 2948 is GPS Daemon: http://tcp-udp-ports.com/port-2948.htm
 
+    // UDP Server
+    bool debugPvtUdpServer = false;
+    bool enablePvtUdpServer = false;
+    uint16_t pvtUdpServerPort =
+        10110; //https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=nmea
+
     uint8_t rtcmTimeoutBeforeUsingLBand_s = 10; //If 10s have passed without RTCM, enable PMP corrections over L-Band if available
 
-    //Add new settings above
-    //<------------------------------------------------------------>
+    // Automatic Firmware Update
+    bool debugFirmwareUpdate = false;
+    bool enableAutoFirmwareUpdate = false;
+    uint32_t autoFirmwareCheckMinutes = 24 * 60;
+
+    bool debugLBand = false;
+    bool enableCaptivePortal = true;
+
+    //Add new settings above <------------------------------------------------------------>
 
 } Settings;
 Settings settings;
@@ -1087,8 +1139,10 @@ struct struct_online
     bool i2c = false;
     bool pvtClient = false;
     bool pvtServer = false;
+    bool pvtUdpServer = false;
     ethernetStatus_e ethernetStatus = ETH_NOT_STARTED;
     bool NTPServer = false; // EthernetUDP
+    bool otaFirmwareUpdate = false;
 } online;
 
 #ifdef COMPILE_WIFI

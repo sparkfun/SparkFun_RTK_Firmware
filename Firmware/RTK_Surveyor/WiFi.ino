@@ -86,6 +86,9 @@ void menuWiFi()
         systemPrint("a) Configure device via WiFi Access Point or connect to WiFi: ");
         systemPrintf("%s\r\n", settings.wifiConfigOverAP ? "AP" : "WiFi");
 
+        systemPrint("c) Captive Portal: ");
+        systemPrintf("%s\r\n", settings.enableCaptivePortal ? "Enabled" : "Disabled");
+
         systemPrint("m) MDNS: ");
         systemPrintf("%s\r\n", settings.mdnsEnable ? "Enabled" : "Disabled");
 
@@ -115,7 +118,10 @@ void menuWiFi()
             settings.wifiConfigOverAP ^= 1;
             restartWiFi = true;
         }
-
+        else if (incoming == 'c')
+        {
+            settings.enableCaptivePortal ^= 1;
+        }
         else if (incoming == 'm')
         {
             settings.mdnsEnable ^= 1;
@@ -149,7 +155,7 @@ void menuWiFi()
             if (wifiIsConnected())
             {
                 log_d("Menu caused restarting of WiFi");
-                wifiStop();
+                WIFI_STOP();
                 wifiStart();
                 wifiConnectionAttempts = 0; // Reset the timeout
             }
@@ -222,7 +228,7 @@ bool wifiStartAP(bool forceAP)
     if (settings.wifiConfigOverAP == true || forceAP)
     {
         // Stop any current WiFi activity
-        wifiStop();
+        WIFI_STOP();
 
         // Start in AP mode
         WiFi.mode(WIFI_AP);
@@ -347,7 +353,7 @@ void wifiUpdate()
                 {
                     systemPrintln("WiFi connection failed. Giving up.");
                     displayNoWiFi(2000);
-                    wifiStop(); // Move back to WIFI_OFF
+                    WIFI_STOP(); // Move back to WIFI_OFF
                 }
             }
         }
@@ -365,13 +371,13 @@ void wifiUpdate()
 
         // If WiFi is connected, and no services require WiFi, shut it off
         else if (wifiIsNeeded() == false)
-            wifiStop();
+            WIFI_STOP();
 
         break;
     }
 
     // Process DNS when we are in AP mode for captive portal
-    if (WiFi.getMode() == WIFI_AP)
+    if (WiFi.getMode() == WIFI_AP && settings.enableCaptivePortal)
     {
         dnsServer.processNextRequest();
     }
@@ -387,7 +393,7 @@ void wifiStart()
     {
         systemPrintln("Error: Please enter at least one SSID before using WiFi");
         // paintNoWiFi(2000); //TODO
-        wifiStop();
+        WIFI_STOP();
         return;
     }
 
@@ -416,7 +422,7 @@ void wifiStop()
         MDNS.end();
 
     // Stop the DNS server if we were using the captive portal
-    if (WiFi.getMode() == WIFI_AP)
+    if (WiFi.getMode() == WIFI_AP && settings.enableCaptivePortal)
         dnsServer.stop();
 
     // Stop the other network clients and then WiFi
@@ -441,7 +447,7 @@ void wifiShutdown()
         // esp_wifi_set_protocol requires WiFi to be started
         esp_err_t response = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
         if (response != ESP_OK)
-            systemPrintf("wifiStop: Error setting ESP-Now lone protocol: %s\r\n", esp_err_to_name(response));
+            systemPrintf("wifiShutdown: Error setting ESP-Now lone protocol: %s\r\n", esp_err_to_name(response));
         else
             log_d("WiFi disabled, ESP-Now left in place");
     }
@@ -518,7 +524,7 @@ bool wifiConnect(unsigned long timeout)
     int wifiResponse = wifiMulti.run(timeout);
     if (wifiResponse == WL_CONNECTED)
     {
-        if (settings.enablePvtClient == true || settings.enablePvtServer == true)
+        if (settings.enablePvtClient == true || settings.enablePvtServer == true || settings.enablePvtUdpServer == true)
         {
             if (settings.mdnsEnable == true)
             {
@@ -545,39 +551,41 @@ bool wifiConnect(unsigned long timeout)
 // This function is used to turn WiFi off if nothing needs it.
 bool wifiIsNeeded()
 {
-    bool needed = false;
-
     if (settings.enablePvtClient == true)
-        needed = true;
+        return true;
     if (settings.enablePvtServer == true)
-        needed = true;
+        return true;
+    if (settings.enablePvtUdpServer == true)
+        return true;
+    if (settings.enableAutoFirmwareUpdate)
+        return true;
 
     // Handle WiFi within systemStates
     if (systemState <= STATE_ROVER_RTK_FIX && settings.enableNtripClient == true)
-        needed = true;
+        return true;
 
     if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING &&
         settings.enableNtripServer == true)
-        needed = true;
+        return true;
 
     // If the user has enabled NTRIP Client for an Assisted Survey-In, and Survey-In is running, keep WiFi on.
     if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_TEMP_SURVEY_STARTED &&
         settings.enableNtripClient == true && settings.fixedBase == false)
-        needed = true;
+        return true;
 
     // If WiFi is on while we are in the following states, allow WiFi to continue to operate
     if (systemState >= STATE_BUBBLE_LEVEL && systemState <= STATE_PROFILE)
     {
         // Keep WiFi on if user presses setup button, enters bubble level, is in AP config mode, etc
-        needed = true;
+        return true;
     }
 
     if (systemState == STATE_KEYS_WIFI_STARTED || systemState == STATE_KEYS_WIFI_CONNECTED)
-        needed = true;
+        return true;
     if (systemState == STATE_KEYS_PROVISION_WIFI_STARTED || systemState == STATE_KEYS_PROVISION_WIFI_CONNECTED)
-        needed = true;
+        return true;
 
-    return needed;
+    return false;
 }
 
 // Counts the number of entered SSIDs

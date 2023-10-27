@@ -259,6 +259,8 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%s\r\n", "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
     settingsFile->printf("%s=%d\r\n", "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
     settingsFile->printf("%s=%d\r\n", "serialTimeoutGNSS", settings.serialTimeoutGNSS);
+
+    // Point Perfect
     settingsFile->printf("%s=%s\r\n", "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
     settingsFile->printf("%s=%d\r\n", "enablePointPerfectCorrections", settings.enablePointPerfectCorrections);
     settingsFile->printf("%s=%d\r\n", "autoKeyRenewal", settings.autoKeyRenewal);
@@ -272,6 +274,8 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%llu\r\n", "pointPerfectNextKeyDuration", settings.pointPerfectNextKeyDuration);
     settingsFile->printf("%s=%llu\r\n", "pointPerfectNextKeyStart", settings.pointPerfectNextKeyStart);
     settingsFile->printf("%s=%llu\r\n", "lastKeyAttempt", settings.lastKeyAttempt);
+    settingsFile->printf("%s=%d\r\n", "debugPpCertificate", settings.debugPpCertificate);
+
     settingsFile->printf("%s=%d\r\n", "updateZEDSettings", settings.updateZEDSettings);
     settingsFile->printf("%s=%d\r\n", "LBandFreq", settings.LBandFreq);
     settingsFile->printf("%s=%d\r\n", "enableLogging", settings.enableLogging);
@@ -323,8 +327,10 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "bluetoothRadioType", settings.bluetoothRadioType);
     settingsFile->printf("%s=%d\r\n", "enablePvtClient", settings.enablePvtClient);
     settingsFile->printf("%s=%d\r\n", "enablePvtServer", settings.enablePvtServer);
+    settingsFile->printf("%s=%d\r\n", "enablePvtUdpServer", settings.enablePvtUdpServer);
     settingsFile->printf("%s=%d\r\n", "debugPvtClient", settings.debugPvtClient);
     settingsFile->printf("%s=%d\r\n", "debugPvtServer", settings.debugPvtServer);
+    settingsFile->printf("%s=%d\r\n", "debugPvtUdpServer", settings.debugPvtUdpServer);
     settingsFile->printf("%s=%d\r\n", "espnowBroadcast", settings.espnowBroadcast);
     settingsFile->printf("%s=%d\r\n", "antennaHeight", settings.antennaHeight);
     settingsFile->printf("%s=%0.2f\r\n", "antennaReferencePoint", settings.antennaReferencePoint);
@@ -350,6 +356,7 @@ void recordSystemSettingsToFile(File *settingsFile)
 
     settingsFile->printf("%s=%d\r\n", "wifiConfigOverAP", settings.wifiConfigOverAP);
     settingsFile->printf("%s=%d\r\n", "pvtServerPort", settings.pvtServerPort);
+    settingsFile->printf("%s=%d\r\n", "pvtUdpServerPort", settings.pvtUdpServerPort);
     settingsFile->printf("%s=%d\r\n", "minElev", settings.minElev);
 
     settingsFile->printf("%s=%d\r\n", "imuYaw", settings.imuYaw);
@@ -432,8 +439,15 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "i2cInterruptsCore", settings.i2cInterruptsCore);
     settingsFile->printf("%s=%d\r\n", "rtcmTimeoutBeforeUsingLBand_s", settings.rtcmTimeoutBeforeUsingLBand_s);
 
-    //Add new settings above
-    //<------------------------------------------------------------>
+    // Automatic Firmware Update
+    settingsFile->printf("%s=%d\r\n", "autoFirmwareCheckMinutes", settings.autoFirmwareCheckMinutes);
+    settingsFile->printf("%s=%d\r\n", "debugFirmwareUpdate", settings.debugFirmwareUpdate);
+    settingsFile->printf("%s=%d\r\n", "enableAutoFirmwareUpdate", settings.enableAutoFirmwareUpdate);
+
+    settingsFile->printf("%s=%d\r\n", "debugLBand", settings.debugLBand);
+    settingsFile->printf("%s=%d\r\n", "enableCaptivePortal", settings.enableCaptivePortal);
+
+    //Add new settings above <------------------------------------------------------------>
 }
 
 // Given a fileName, parse the file and load the given settings struct
@@ -1036,6 +1050,8 @@ bool parseLine(char *str, Settings *settings)
         settings->ntripClient_TransmitGGA = d;
     else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
         settings->serialTimeoutGNSS = d;
+
+    // Point Perfect
     else if (strcmp(settingName, "pointPerfectDeviceProfileToken") == 0)
         strcpy(settings->pointPerfectDeviceProfileToken, settingValue);
     else if (strcmp(settingName, "enablePointPerfectCorrections") == 0)
@@ -1065,6 +1081,9 @@ bool parseLine(char *str, Settings *settings)
 
     else if (strcmp(settingName, "lastKeyAttempt") == 0)
         settings->lastKeyAttempt = d;
+    else if (strcmp(settingName, "debugPpCertificate") == 0)
+        settings->debugPpCertificate = d;
+
     else if (strcmp(settingName, "updateZEDSettings") == 0)
     {
         if (settings->updateZEDSettings != d)
@@ -1130,10 +1149,14 @@ bool parseLine(char *str, Settings *settings)
         settings->enablePvtClient = d;
     else if (strcmp(settingName, "enablePvtServer") == 0)
         settings->enablePvtServer = d;
+    else if (strcmp(settingName, "enablePvtUdpServer") == 0)
+        settings->enablePvtUdpServer = d;
     else if (strcmp(settingName, "debugPvtClient") == 0)
         settings->debugPvtClient = d;
     else if (strcmp(settingName, "debugPvtServer") == 0)
         settings->debugPvtServer = d;
+    else if (strcmp(settingName, "debugPvtUdpServer") == 0)
+        settings->debugPvtUdpServer = d;
     else if (strcmp(settingName, "espnowBroadcast") == 0)
         settings->espnowBroadcast = d;
     else if (strcmp(settingName, "antennaHeight") == 0)
@@ -1162,6 +1185,8 @@ bool parseLine(char *str, Settings *settings)
         settings->wifiConfigOverAP = d;
     else if (strcmp(settingName, "pvtServerPort") == 0)
         settings->pvtServerPort = d;
+    else if (strcmp(settingName, "pvtUdpServerPort") == 0)
+        settings->pvtUdpServerPort = d;
     else if (strcmp(settingName, "minElev") == 0)
     {
         if (settings->minElev != d)
@@ -1334,6 +1359,21 @@ bool parseLine(char *str, Settings *settings)
         settings->printNetworkStatus = d;
     else if (strcmp(settingName, "rtcmTimeoutBeforeUsingLBand_s") == 0)
         settings->rtcmTimeoutBeforeUsingLBand_s = d;
+
+    // Automatic Firmware Update
+    else if (strcmp(settingName, "autoFirmwareCheckMinutes") == 0)
+        settings->autoFirmwareCheckMinutes = d;
+    else if (strcmp(settingName, "debugFirmwareUpdate") == 0)
+        settings->debugFirmwareUpdate = d;
+    else if (strcmp(settingName, "enableAutoFirmwareUpdate") == 0)
+        settings->enableAutoFirmwareUpdate = d;
+
+    else if (strcmp(settingName, "debugLBand") == 0)
+        settings->debugLBand = d;
+    else if (strcmp(settingName, "enableCaptivePortal") == 0)
+        settings->enableCaptivePortal = d;
+
+
 
     //Add new settings above
     //<------------------------------------------------------------>

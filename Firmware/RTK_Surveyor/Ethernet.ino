@@ -146,7 +146,7 @@ void ethernetBegin()
         Ethernet.init(pin_Ethernet_CS);
 
         // First we start Ethernet without DHCP to detect if a cable is connected
-        // DHCP causes system freeze for ~62 seconds so we avoid it until a cable is conncted
+        // DHCP causes system freeze for ~62 seconds so we avoid it until a cable is connected
         Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS, settings.ethernetGateway,
                        settings.ethernetSubnet);
 
@@ -254,7 +254,8 @@ bool ethernetIsNeeded()
         return true;
 
     // Does PVT client or server need Ethernet?
-    if (settings.enablePvtClient || settings.enablePvtServer)
+    if (settings.enablePvtClient || settings.enablePvtServer
+        || settings.enablePvtUdpServer || settings.enableAutoFirmwareUpdate)
         return true;
 
     return false;

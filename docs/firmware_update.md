@@ -44,8 +44,7 @@ The OTA method is generally recommended. For more information see [here](firmwar
 Remember, all SparkFun RTK devices are open source hardware meaning you have total access to the [firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware) and [hardware](https://github.com/sparkfun/SparkFun_RTK_Facet). Be sure to check out each repo for the latest firmware and hardware information.
 
 ## Updating Firmware Over-The-Air
-
-![Updating Firmware from WiFi config page](img/WiFi Config/SparkFun%20RTK%20OTA%20Firmware%20Update.gif)
+![Updating Firmware from WiFi config page](<img/WiFi Config/RTK-Firmware-Update-OTA.gif>)
 
 *Updating the firmware via WiFi config page*
 
@@ -58,6 +57,12 @@ Introduced with version 3.0, firmware can be updated by pressing a button in the
 Additionally, users may opt into checking for Beta firmware. This is the latest firmware that may have new features and is meant for testing. Beta firmware is not recommended for units deployed into the field as it may not be stable.
 
 If you have a device with firmware lower than v3.0, you will need to use the [GUI](firmware_update.md#updating-firmware-using-the-uploader-gui) or a method listed below to get to v3.x.
+
+With version 3.10 automatic release firmware update is supported over WiFi.  Enabling this feature is done using the serial firmware menu.  The polling period is speified in minutes and defaults to once a day.  The automatic firmware update only checks for and installs the current SparkFun released firmware versions over top of any:
+
+* Older released versions (continual upgrade)
+* Beta firmware versions (newer or older, restore to released version)
+* Locally built versions (newer or older, restore to released version)
 
 ## Updating Firmware Using The Uploader GUI
 

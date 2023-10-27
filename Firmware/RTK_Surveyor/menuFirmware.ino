@@ -1,3 +1,13 @@
+/*------------------------------------------------------------------------------
+menuFirmware.ino
+
+  This module implements the firmware menu and update code.
+------------------------------------------------------------------------------*/
+
+//----------------------------------------
+// Menu
+//----------------------------------------
+
 // Update firmware if bin files found
 void menuFirmware()
 {
@@ -16,6 +26,10 @@ void menuFirmware()
         getFirmwareVersion(currentVersion, sizeof(currentVersion), enableRCFirmware);
         systemPrintf("Current firmware: %s\r\n", currentVersion);
 
+        // Automatic firmware updates
+        systemPrintf("a) Automatic firmware updates: %s\r\n",
+                     settings.enableAutoFirmwareUpdate ? "Enabled" : "Disabled");
+
         if (strlen(reportedVersion) > 0)
         {
             if (newOTAFirmwareAvailable == false)
@@ -25,6 +39,10 @@ void menuFirmware()
             systemPrintln("c) Check SparkFun for device firmware");
 
         systemPrintf("e) Allow Beta Firmware: %s\r\n", enableRCFirmware ? "Enabled" : "Disabled");
+
+        if (settings.enableAutoFirmwareUpdate)
+            systemPrintf("i) Automatic firmware check minutes: %d\r\n",
+                         settings.autoFirmwareCheckMinutes);
 
         if (newOTAFirmwareAvailable)
             systemPrintf("u) Update to new firmware: v%s\r\n", reportedVersion);
@@ -42,6 +60,10 @@ void menuFirmware()
             incoming--;
             updateFromSD(binFileNames[incoming]);
         }
+
+        else if (incoming == 'a')
+            settings.enableAutoFirmwareUpdate ^= 1;
+
         else if (incoming == 'c' && btPrintEcho == false)
         {
             if (wifiNetworkCount() == 0)
@@ -67,12 +89,12 @@ void menuFirmware()
                         //Allow update if locally compiled developer version
                         if (isReportedVersionNewer(reportedVersion, &currentVersion[1]) == true || FIRMWARE_VERSION_MAJOR == 99)
                         {
-                            log_d("New version detected");
+                            systemPrintln("New version detected");
                             newOTAFirmwareAvailable = true;
                         }
                         else
                         {
-                            log_d("No new firmware available");
+                            systemPrintln("No new firmware available");
                         }
                     }
                     else
@@ -102,12 +124,12 @@ void menuFirmware()
                             getFirmwareVersion(currentVersion, sizeof(currentVersion), enableRCFirmware);
                             if (isReportedVersionNewer(reportedVersion, &currentVersion[1]) == true)
                             {
-                                log_d("New version detected");
+                                systemPrintln("New version detected");
                                 newOTAFirmwareAvailable = true;
                             }
                             else
                             {
-                                log_d("No new firmware available");
+                                systemPrintln("No new firmware available");
                             }
                         }
                         else
@@ -120,7 +142,7 @@ void menuFirmware()
                         systemPrintln("Firmware update failed to connect to WiFi.");
 
                     if (previouslyConnected == false)
-                        wifiStop();
+                        WIFI_STOP();
 
                     if(bluetoothOriginallyConnected == true)
                         bluetoothStart(); // Restart BT according to settings
@@ -132,7 +154,28 @@ void menuFirmware()
             systemPrintln("Firmware update not available while configuration over Bluetooth is active");
             delay(2000);
         }
-        else if (newOTAFirmwareAvailable && incoming == 'u')
+
+        else if (incoming == 'e')
+        {
+            enableRCFirmware ^= 1;
+            strncpy(reportedVersion, "", sizeof(reportedVersion) - 1); // Reset to force c) menu
+        }
+
+        else if ((incoming == 'i') && settings.enableAutoFirmwareUpdate)
+        {
+            systemPrint("Enter minutes (1 - 999999) before next firmware check: ");
+            int minutes = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((minutes != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                (minutes != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if ((minutes < 1) || (minutes > 999999))
+                    systemPrintln("Error: Out of range (1 - 999999)");
+                else
+                    settings.autoFirmwareCheckMinutes = minutes;
+            }
+        }
+
+        else if ((incoming == 'u') && newOTAFirmwareAvailable)
         {
             bool previouslyConnected = wifiIsConnected();
 
@@ -141,14 +184,9 @@ void menuFirmware()
             // We get here if WiFi failed or the server was not available
 
             if (previouslyConnected == false)
-                wifiStop();
+                WIFI_STOP();
         }
 
-        else if (incoming == 'e')
-        {
-            enableRCFirmware ^= 1;
-            strncpy(reportedVersion, "", sizeof(reportedVersion) - 1); // Reset to force c) menu
-        }
         else if (incoming == 'x')
             break;
         else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
@@ -161,6 +199,10 @@ void menuFirmware()
 
     clearBuffer(); // Empty buffer of any newline chars
 }
+
+//----------------------------------------
+// Firmware update code
+//----------------------------------------
 
 void mountSDThenUpdate(const char *firmwareFileName)
 {
@@ -315,7 +357,7 @@ void updateFromSD(const char *firmwareFileName)
 
     // Turn off any tasks so that we are not disrupted
     espnowStop();
-    wifiStop();
+    WIFI_STOP();
     bluetoothStop();
 
     // Delete tasks if running
@@ -551,12 +593,12 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
 
     if (systemState != STATE_WIFI_CONFIG)
     {
-        // wifiStop() turns off the entire radio including the webserver. We need to turn off Station mode only.
+        // WIFI_STOP() turns off the entire radio including the webserver. We need to turn off Station mode only.
         // For now, unit exits AP mode via reset so if we are in AP config mode, leave WiFi Station running.
 
         // If WiFi was originally off, turn it off again
         if (previouslyConnected == false)
-            wifiStop();
+            WIFI_STOP();
     }
 
     if (gotVersion == true)
@@ -619,7 +661,7 @@ void otaUpdate()
 
     // Update failed. If WiFi was originally off, turn it off again
     if (previouslyConnected == false)
-        wifiStop();
+        WIFI_STOP();
 
 #endif // COMPILE_WIFI
 }
@@ -627,9 +669,14 @@ void otaUpdate()
 // Called while the OTA Pull update is happening
 void otaPullCallback(int bytesWritten, int totalLength)
 {
+    otaDisplayPercentage(bytesWritten, totalLength, false);
+}
+
+void otaDisplayPercentage(int bytesWritten, int totalLength, bool alwaysDisplay)
+{
     static int previousPercent = -1;
     int percent = 100 * bytesWritten / totalLength;
-    if (percent != previousPercent)
+    if (alwaysDisplay || (percent != previousPercent))
     {
         // Indicate progress
         int barWidthInCharacters = 20; // Width of progress bar, ie [###### % complete

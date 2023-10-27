@@ -44,16 +44,13 @@ void ntpServerStop() {}
 void menuNetwork() {systemPrint("Network not compiled");}
 void networkUpdate() {}
 void networkVerifyTables() {}
+void networkStop(uint8_t networkType) {}
 
 //----------------------------------------
 // NTRIP client
 //----------------------------------------
 
 void ntripClientPrintStatus() {systemPrint("NTRIP Client not compiled");}
-void ntripClientStart()
-{
-    systemPrintln("NTRIP Client not available: Ethernet and WiFi not compiled");
-}
 void ntripClientStop(bool clientAllocated) {online.ntripClient = false;}
 void ntripClientUpdate() {}
 void ntripClientValidateTables() {}
@@ -65,13 +62,35 @@ void ntripClientValidateTables() {}
 bool ntripServerIsCasting() {return false;}
 void ntripServerPrintStatus() {systemPrint("NTRIP Server not compiled");}
 void ntripServerProcessRTCM(uint8_t incoming) {}
-void ntripServerStart()
-{
-    systemPrintln("NTRIP Server not available: Ethernet and WiFi not compiled");
-}
 void ntripServerStop(bool clientAllocated) {online.ntripServer = false;}
 void ntripServerUpdate() {}
 void ntripServerValidateTables() {}
+
+//----------------------------------------
+// OTA client
+//----------------------------------------
+
+void otaVerifyTables() {}
+
+//----------------------------------------
+// PVT client
+//----------------------------------------
+
+int32_t pvtClientSendData(uint16_t dataHead) {return 0;}
+void pvtClientUpdate() {}
+void pvtClientValidateTables() {}
+void pvtClientZeroTail() {}
+void discardPvtClientBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail) {}
+
+//----------------------------------------
+// PVT UDP server
+//----------------------------------------
+
+int32_t pvtUdpServerSendData(uint16_t dataHead) {return 0;}
+void pvtUdpServerStop() {}
+void pvtUdpServerUpdate() {}
+void pvtUdpServerZeroTail() {}
+void discardPvtUdpServerBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail) {}
 
 #endif // COMPILE_NETWORK
 
@@ -93,21 +112,11 @@ bool parseIncomingSettings() {return false;}
 #ifndef COMPILE_WIFI
 
 //----------------------------------------
-// PVT client
-//----------------------------------------
-
-uint16_t pvtClientSendData(uint16_t dataHead) {return 0;};
-void pvtClientUpdate() {}
-void pvtClientValidateTables() {}
-void pvtClientZeroTail() {}
-void discardPvtClientBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail) {}
-
-
-//----------------------------------------
 // PVT server
 //----------------------------------------
 
-int pvtServerSendData(uint16_t dataHead) {return 0;}
+int32_t pvtServerSendData(uint16_t dataHead) {return 0;}
+void pvtServerStop() {}
 void pvtServerUpdate() {}
 void pvtServerZeroTail() {}
 void pvtServerValidateTables() {}
@@ -131,5 +140,6 @@ void wifiStart() {}
 void wifiStop() {}
 void wifiUpdate() {}
 void wifiShutdown() {}
+#define WIFI_STOP() {}
 
 #endif // COMPILE_WIFI

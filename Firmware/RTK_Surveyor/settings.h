@@ -93,7 +93,7 @@ const char * const productDisplayNames[] =
     "Express+",
     "Facet LB",
     "Ref Stn",
-    "Facet LB",
+    "Facet LD",
     // Add new values just above this line
     "Unknown",
 };

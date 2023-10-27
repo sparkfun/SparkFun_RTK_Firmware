@@ -86,7 +86,7 @@ void menuWiFi()
         systemPrint("a) Configure device via WiFi Access Point or connect to WiFi: ");
         systemPrintf("%s\r\n", settings.wifiConfigOverAP ? "AP" : "WiFi");
 
-        systemPrint("m) Captive Portal: ");
+        systemPrint("c) Captive Portal: ");
         systemPrintf("%s\r\n", settings.enableCaptivePortal ? "Enabled" : "Disabled");
 
         systemPrint("m) MDNS: ");

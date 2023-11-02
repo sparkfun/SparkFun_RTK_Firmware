@@ -87,7 +87,10 @@ void identifyBoard()
     //      Surveyor
     //      Unknown
     else
+    {
+        log_d("Out of band or nonexistent resistor IDs");
         productVariant = RTK_UNKNOWN; // Need to wait until the GNSS and Accel have been initialized
+    }
 }
 
 // Setup any essential power pins

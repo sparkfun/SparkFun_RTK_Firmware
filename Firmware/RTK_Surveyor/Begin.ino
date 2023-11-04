@@ -15,29 +15,37 @@ Begin.ino
 #define TOLERANCE           4.75    // Percent:  95.25% - 104.75%
 
 //----------------------------------------
-// Macros
+// Hardware initialization functions
 //----------------------------------------
 
 //                                ADC input
 //                       Ra KOhms     |     Rb KOhms
 //  MAX_ADC_VOLTAGE -----/\/\/\/\-----+-----/\/\/\/\----- Ground
 //
-#define ADC_ID_mV(RaK, RbK)   ((uint16_t)(MAX_ADC_VOLTAGE * RbK / (RaK + RbK)))
-
-//----------------------------------------
-// Hardware initialization functions
-//----------------------------------------
 
 // Determine if the measured value matches the product ID value
-bool idWithAdc(uint16_t mvMeasured, uint16_t mvProduct)
+bool idWithAdc(uint16_t mvMeasured, float resVcc, float resGnd)
 {
     uint16_t lowerThreshold;
+    float raK;
+    float rbK;
     uint16_t upperThreshold;
+    float voltage;
+
+    // Compute the upper threshold
+    raK = resVcc * (1.0 - (TOLERANCE / 100.));
+    rbK = resGnd * (1.0 + (TOLERANCE / 100.));
+    voltage = MAX_ADC_VOLTAGE * rbK / (raK + rbK);
+    upperThreshold = (int)ceil(voltage);
+
+    // Compute the lower threshold
+    raK = (double)resVcc * (1.0 + (TOLERANCE / 100.));
+    rbK = (double)resGnd * (1.0 - (TOLERANCE / 100.));
+    voltage = MAX_ADC_VOLTAGE * rbK / (raK + rbK);
+    lowerThreshold = (int)floor(voltage);
 
     // Return true if the mvMeasured value is within the tolerance range
     // of the mvProduct value
-    upperThreshold = (1.0 + (TOLERANCE / 100.)) * mvProduct;
-    lowerThreshold = (1.0 - (TOLERANCE / 100.)) * mvProduct;
     return (upperThreshold > mvMeasured) && (mvMeasured > lowerThreshold);
 }
 
@@ -55,16 +63,16 @@ void identifyBoard()
 
     // Order checks by millivolt values high to low
 
-    // Facet L-Band Direct: 4.7/1  -->  551mV < 579mV < 607mV
-    if (idWithAdc(idValue, ADC_ID_mV(4.7, 1)))
+    // Facet L-Band Direct: 4.7/1  -->  534mV < 578mV < 626mV
+    if (idWithAdc(idValue, 4.7, 1))
         productVariant = RTK_FACET_LBAND_DIRECT;
 
-    // Express: 10/3.3  -->  779mV < 819mV < 858mV
-    else if (idWithAdc(idValue, ADC_ID_mV(10, 3.3)))
+    // Express: 10/3.3  -->  761mV < 818mV < 879mV
+    else if (idWithAdc(idValue, 10, 3.3))
         productVariant = RTK_EXPRESS;
 
-    // Reference Station: 20/10  -->  1047mV < 1100mV < 1153mV
-    else if (idWithAdc(idValue, ADC_ID_mV(20, 10)))
+    // Reference Station: 20/10  -->  1031mV < 1100mV < 1171mV
+    else if (idWithAdc(idValue, 20, 10))
     {
         productVariant = REFERENCE_STATION;
         // We can't auto-detect the ZED version if the firmware is in configViaEthernet mode,
@@ -72,15 +80,15 @@ void identifyBoard()
         zedFirmwareVersionInt = 112;
     }
     // Facet: 10/10  -->  1571mV < 1650mV < 1729mV
-    else if (idWithAdc(idValue, ADC_ID_mV(10, 10)))
+    else if (idWithAdc(idValue, 10, 10))
         productVariant = RTK_FACET;
 
-    // Facet L-Band: 10/20  -->  2095mV < 2200mV < 2305mV
-    else if (idWithAdc(idValue, ADC_ID_mV(10, 20)))
+    // Facet L-Band: 10/20  -->  2129mV < 2200mV < 2269mV
+    else if (idWithAdc(idValue, 10, 20))
         productVariant = RTK_FACET_LBAND;
 
-    // Express+: 3.3/10  -->  2363mV < 2481mV < 2600mV
-    else if (idWithAdc(idValue, ADC_ID_mV(3.3, 10)))
+    // Express+: 3.3/10  -->  2421mV < 2481mV < 2539mV
+    else if (idWithAdc(idValue, 3.3, 10))
         productVariant = RTK_EXPRESS_PLUS;
 
     // ID resistors do not exist for the following:

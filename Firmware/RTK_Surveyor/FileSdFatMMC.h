@@ -158,7 +158,7 @@ class FileSdFatMMC : public SdFile
     void flush()
     {
         if (USE_SPI_MICROSD)
-            _sdFile->flush();
+            _sdFile->sync();
 #ifdef COMPILE_SD_MMC
         else
             _file->flush();

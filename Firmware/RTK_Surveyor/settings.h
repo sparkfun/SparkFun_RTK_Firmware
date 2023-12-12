@@ -55,21 +55,21 @@ bool newSystemStateRequested = false;
 SystemState setupState = STATE_MARK_EVENT;
 
 // Base modes set with RTK_MODE
-#define RTK_MODE_BASE_FIXED         0x0001
-#define RTK_MODE_BASE_SURVEY_IN     0x0002
-#define RTK_MODE_BUBBLE_LEVEL       0x0004
-#define RTK_MODE_ETHERNET_CONFIG    0x0008
-#define RTK_MODE_NTP                0x0010
-#define RTK_MODE_ROVER              0x0020
-#define RTK_MODE_TESTING            0x0040
-#define RTK_MODE_WIFI_CONFIG        0x0080
+#define RTK_MODE_BASE_FIXED 0x0001
+#define RTK_MODE_BASE_SURVEY_IN 0x0002
+#define RTK_MODE_BUBBLE_LEVEL 0x0004
+#define RTK_MODE_ETHERNET_CONFIG 0x0008
+#define RTK_MODE_NTP 0x0010
+#define RTK_MODE_ROVER 0x0020
+#define RTK_MODE_TESTING 0x0040
+#define RTK_MODE_WIFI_CONFIG 0x0080
 
 typedef uint8_t RtkMode_t;
 
-#define RTK_MODE(mode)          rtkMode = mode;
+#define RTK_MODE(mode) rtkMode = mode;
 
-#define EQ_RTK_MODE(mode)       (rtkMode && (rtkMode == (mode & rtkMode)))
-#define NEQ_RTK_MODE(mode)      (rtkMode && (rtkMode != (mode & rtkMode)))
+#define EQ_RTK_MODE(mode) (rtkMode && (rtkMode == (mode & rtkMode)))
+#define NEQ_RTK_MODE(mode) (rtkMode && (rtkMode != (mode & rtkMode)))
 
 typedef enum
 {
@@ -85,8 +85,7 @@ typedef enum
 } ProductVariant;
 ProductVariant productVariant = RTK_SURVEYOR;
 
-const char * const productDisplayNames[] =
-{
+const char *const productDisplayNames[] = {
     "Surveyor",
     "Express",
     "Facet",
@@ -97,10 +96,9 @@ const char * const productDisplayNames[] =
     // Add new values just above this line
     "Unknown",
 };
-const int productDisplayNamesEntries = sizeof (productDisplayNames) / sizeof(productDisplayNames[0]);
+const int productDisplayNamesEntries = sizeof(productDisplayNames) / sizeof(productDisplayNames[0]);
 
-const char * const platformFilePrefixTable[] =
-{
+const char *const platformFilePrefixTable[] = {
     "SFE_Surveyor",
     "SFE_Express",
     "SFE_Facet",
@@ -111,10 +109,9 @@ const char * const platformFilePrefixTable[] =
     // Add new values just above this line
     "SFE_Unknown",
 };
-const int platformFilePrefixTableEntries = sizeof (platformFilePrefixTable) / sizeof(platformFilePrefixTable[0]);
+const int platformFilePrefixTableEntries = sizeof(platformFilePrefixTable) / sizeof(platformFilePrefixTable[0]);
 
-const char * const platformPrefixTable[] =
-{
+const char *const platformPrefixTable[] = {
     "Surveyor",
     "Express",
     "Facet",
@@ -125,7 +122,7 @@ const char * const platformPrefixTable[] =
     // Add new values just above this line
     "Unknown",
 };
-const int platformPrefixTableEntries = sizeof (platformPrefixTable) / sizeof(platformPrefixTable[0]);
+const int platformPrefixTableEntries = sizeof(platformPrefixTable) / sizeof(platformPrefixTable[0]);
 
 // Macros to show if the GNSS is I2C or SPI
 #define USE_SPI_GNSS (productVariant == REFERENCE_STATION)
@@ -238,13 +235,13 @@ enum NetworkStates
 // Define the network users
 enum NetworkUsers
 {
-    NETWORK_USER_NTP_SERVER = 0,        // NTP server
-    NETWORK_USER_NTRIP_CLIENT,          // NTRIP client
-    NETWORK_USER_NTRIP_SERVER,          // NTRIP server
-    NETWORK_USER_OTA_FIRMWARE_UPDATE,   // Over-The-Air firmware updates
-    NETWORK_USER_PVT_CLIENT,            // PVT client
-    NETWORK_USER_PVT_SERVER,            // PVT server
-    NETWORK_USER_PVT_UDP_SERVER,        // PVT UDP server
+    NETWORK_USER_NTP_SERVER = 0,      // NTP server
+    NETWORK_USER_NTRIP_CLIENT,        // NTRIP client
+    NETWORK_USER_NTRIP_SERVER,        // NTRIP server
+    NETWORK_USER_OTA_FIRMWARE_UPDATE, // Over-The-Air firmware updates
+    NETWORK_USER_PVT_CLIENT,          // PVT client
+    NETWORK_USER_PVT_SERVER,          // PVT server
+    NETWORK_USER_PVT_UDP_SERVER,      // PVT UDP server
     // Last network user
     NETWORK_USER_MAX
 };
@@ -475,52 +472,52 @@ typedef uint32_t PeriodicDisplay_t;
 
 enum PeriodDisplayValues
 {
-    PD_BLUETOOTH_DATA_RX = 0,   //  0
-    PD_BLUETOOTH_DATA_TX,       //  1
+    PD_BLUETOOTH_DATA_RX = 0, //  0
+    PD_BLUETOOTH_DATA_TX,     //  1
 
-    PD_ETHERNET_IP_ADDRESS,     //  2
-    PD_ETHERNET_STATE,          //  3
+    PD_ETHERNET_IP_ADDRESS, //  2
+    PD_ETHERNET_STATE,      //  3
 
-    PD_NETWORK_STATE,           //  4
+    PD_NETWORK_STATE, //  4
 
-    PD_NTP_SERVER_DATA,         //  5
-    PD_NTP_SERVER_STATE,        //  6
+    PD_NTP_SERVER_DATA,  //  5
+    PD_NTP_SERVER_STATE, //  6
 
-    PD_NTRIP_CLIENT_DATA,       //  7
-    PD_NTRIP_CLIENT_GGA,        //  8
-    PD_NTRIP_CLIENT_STATE,      //  9
+    PD_NTRIP_CLIENT_DATA,  //  7
+    PD_NTRIP_CLIENT_GGA,   //  8
+    PD_NTRIP_CLIENT_STATE, //  9
 
-    PD_NTRIP_SERVER_DATA,       // 10
-    PD_NTRIP_SERVER_STATE,      // 11
+    PD_NTRIP_SERVER_DATA,  // 10
+    PD_NTRIP_SERVER_STATE, // 11
 
-    PD_PVT_CLIENT_DATA,         // 12
-    PD_PVT_CLIENT_STATE,        // 13
+    PD_PVT_CLIENT_DATA,  // 12
+    PD_PVT_CLIENT_STATE, // 13
 
-    PD_PVT_SERVER_DATA,         // 14
-    PD_PVT_SERVER_STATE,        // 15
-    PD_PVT_SERVER_CLIENT_DATA,  // 16
+    PD_PVT_SERVER_DATA,        // 14
+    PD_PVT_SERVER_STATE,       // 15
+    PD_PVT_SERVER_CLIENT_DATA, // 16
 
-    PD_PVT_UDP_SERVER_DATA,         // 17
-    PD_PVT_UDP_SERVER_STATE,        // 18
-    PD_PVT_UDP_SERVER_BROADCAST_DATA,  // 19
+    PD_PVT_UDP_SERVER_DATA,           // 17
+    PD_PVT_UDP_SERVER_STATE,          // 18
+    PD_PVT_UDP_SERVER_BROADCAST_DATA, // 19
 
-    PD_RING_BUFFER_MILLIS,      // 20
+    PD_RING_BUFFER_MILLIS, // 20
 
-    PD_SD_LOG_WRITE,            // 21
+    PD_SD_LOG_WRITE, // 21
 
-    PD_TASK_BLUETOOTH_READ,     // 22
-    PD_TASK_BUTTON_CHECK,       // 23
-    PD_TASK_GNSS_READ,          // 24
-    PD_TASK_HANDLE_GNSS_DATA,   // 25
-    PD_TASK_SD_SIZE_CHECK,      // 26
+    PD_TASK_BLUETOOTH_READ,   // 22
+    PD_TASK_BUTTON_CHECK,     // 23
+    PD_TASK_GNSS_READ,        // 24
+    PD_TASK_HANDLE_GNSS_DATA, // 25
+    PD_TASK_SD_SIZE_CHECK,    // 26
 
-    PD_WIFI_IP_ADDRESS,         // 27
-    PD_WIFI_STATE,              // 28
+    PD_WIFI_IP_ADDRESS, // 27
+    PD_WIFI_STATE,      // 28
 
-    PD_ZED_DATA_RX,             // 29
-    PD_ZED_DATA_TX,             // 30
+    PD_ZED_DATA_RX, // 29
+    PD_ZED_DATA_TX, // 30
 
-    PD_OTA_CLIENT_STATE,        // 31
+    PD_OTA_CLIENT_STATE, // 31
     // Add new values before this line
 };
 
@@ -830,21 +827,24 @@ typedef struct
 const ubxCmd ubxCommands[] = {
     {UBLOX_CFG_TMODE_MODE, "CFG_TMODE_MODE", 0, 9999}, // Survey mode is only available on ZED-F9P modules
 
-    {UBLOX_CFG_UART1OUTPROT_RTCM3X, "CFG_UART1OUTPROT_RTCM3X", 0, 9999}, // RTCM not supported on F9R
+    //The F9R is unique WRT RTCM *output*. u-center can correctly enable/disable the RTCM output, but it cannot
+    //be set with setVal commands. Applies to HPS 120, 121, 130.
+
+    {UBLOX_CFG_UART1OUTPROT_RTCM3X, "CFG_UART1OUTPROT_RTCM3X", 0, 9999}, // F9R: RTCM output not supported
     {UBLOX_CFG_UART1INPROT_SPARTN, "CFG_UART1INPROT_SPARTN", 120,
-     9999}, // Supported on F9P 120 and up. Not supported on F9R 120.
+     121}, // Supported on F9P 120 and up. F9R: SPARTN supported starting HPS 121
 
-    {UBLOX_CFG_UART2OUTPROT_RTCM3X, "CFG_UART2OUTPROT_RTCM3X", 0, 9999}, // RTCM not supported on F9R
-    {UBLOX_CFG_UART2INPROT_SPARTN, "CFG_UART2INPROT_SPARTN", 120, 9999}, //
+    {UBLOX_CFG_UART2OUTPROT_RTCM3X, "CFG_UART2OUTPROT_RTCM3X", 0, 9999}, // F9R: RTCM output not supported
+    {UBLOX_CFG_UART2INPROT_SPARTN, "CFG_UART2INPROT_SPARTN", 120, 121}, // F9R: SPARTN supported starting HPS 121
 
-    {UBLOX_CFG_SPIOUTPROT_RTCM3X, "CFG_SPIOUTPROT_RTCM3X", 0, 9999}, // RTCM not supported on F9R
-    {UBLOX_CFG_SPIINPROT_SPARTN, "CFG_SPIINPROT_SPARTN", 120, 9999}, //
+    {UBLOX_CFG_SPIOUTPROT_RTCM3X, "CFG_SPIOUTPROT_RTCM3X", 0, 9999}, // F9R: RTCM output not supported
+    {UBLOX_CFG_SPIINPROT_SPARTN, "CFG_SPIINPROT_SPARTN", 120, 121}, // F9R: SPARTN supported starting HPS 121
 
-    {UBLOX_CFG_I2COUTPROT_RTCM3X, "CFG_I2COUTPROT_RTCM3X", 0, 9999}, // RTCM not supported on F9R
-    {UBLOX_CFG_I2CINPROT_SPARTN, "CFG_I2CINPROT_SPARTN", 120, 9999}, //
+    {UBLOX_CFG_I2COUTPROT_RTCM3X, "CFG_I2COUTPROT_RTCM3X", 0, 9999}, // F9R: RTCM output not supported
+    {UBLOX_CFG_I2CINPROT_SPARTN, "CFG_I2CINPROT_SPARTN", 120, 121}, // F9R: SPARTN supported starting HPS 121
 
-    {UBLOX_CFG_USBOUTPROT_RTCM3X, "CFG_USBOUTPROT_RTCM3X", 0, 9999}, // RTCM not supported on F9R
-    {UBLOX_CFG_USBINPROT_SPARTN, "CFG_USBINPROT_SPARTN", 120, 9999}, //
+    {UBLOX_CFG_USBOUTPROT_RTCM3X, "CFG_USBOUTPROT_RTCM3X", 0, 9999}, // F9R: RTCM output not supported
+    {UBLOX_CFG_USBINPROT_SPARTN, "CFG_USBINPROT_SPARTN", 120, 121}, // F9R: SPARTN supported starting HPS 121
 
     {UBLOX_CFG_NAV2_OUT_ENABLED, "CFG_NAV2_OUT_ENABLED", 130,
      130}, // Supported on F9P 130 and up. Supported on F9R 130 and up.
@@ -979,11 +979,11 @@ typedef struct
 
     bool enablePrintBufferOverrun = false;
     bool enablePrintSDBuffers = false;
-    PeriodicDisplay_t periodicDisplay = (PeriodicDisplay_t)0; //Turn off all periodic debug displays by default.
+    PeriodicDisplay_t periodicDisplay = (PeriodicDisplay_t)0; // Turn off all periodic debug displays by default.
     uint32_t periodicDisplayInterval = 15 * 1000;
 
     uint32_t rebootSeconds = (uint32_t)-1; // Disabled, reboots after uptime reaches this number of seconds
-    bool forceResetOnSDFail = false; // Set to true to reset system if SD is detected but fails to start.
+    bool forceResetOnSDFail = false;       // Set to true to reset system if SD is detected but fails to start.
 
     uint8_t minElev = 10; // Minimum elevation (in deg) for a GNSS satellite to be used in NAV
     uint8_t ubxMessageRatesBase[MAX_UBX_MSG_RTCM] = {
@@ -1016,9 +1016,10 @@ typedef struct
         1;                         // Core where hardware is started and interrupts are assigned to, 0=core, 1=Arduino
     uint8_t i2cInterruptsCore = 1; // Core where hardware is started and interrupts are assigned to, 0=core, 1=Arduino
     uint32_t shutdownNoChargeTimeout_s = 0; // If > 0, shut down unit after timeout if not charging
-    bool disableSetupButton = false;                  // By default, allow setup through the overlay button(s)
-    bool useI2cForLbandCorrections = true; //Set to false to stop I2C callback. Corrections will require direct ZED to NEO UART2 connections.
-    bool useI2cForLbandCorrectionsConfigured = false; //If a user sets useI2cForLbandCorrections, this goes true.
+    bool disableSetupButton = false;        // By default, allow setup through the overlay button(s)
+    bool useI2cForLbandCorrections =
+        true; // Set to false to stop I2C callback. Corrections will require direct ZED to NEO UART2 connections.
+    bool useI2cForLbandCorrectionsConfigured = false; // If a user sets useI2cForLbandCorrections, this goes true.
 
     // Ethernet
     bool enablePrintEthernetDiag = false;
@@ -1103,9 +1104,10 @@ typedef struct
     bool debugPvtUdpServer = false;
     bool enablePvtUdpServer = false;
     uint16_t pvtUdpServerPort =
-        10110; //https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=nmea
+        10110; // https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=nmea
 
-    uint8_t rtcmTimeoutBeforeUsingLBand_s = 10; //If 10s have passed without RTCM, enable PMP corrections over L-Band if available
+    uint8_t rtcmTimeoutBeforeUsingLBand_s =
+        10; // If 10s have passed without RTCM, enable PMP corrections over L-Band if available
 
     // Automatic Firmware Update
     bool debugFirmwareUpdate = false;
@@ -1114,8 +1116,9 @@ typedef struct
 
     bool debugLBand = false;
     bool enableCaptivePortal = true;
+    bool enableZedUsb = true; //Can be used to disable ZED USB config
 
-    //Add new settings above <------------------------------------------------------------>
+    // Add new settings above <------------------------------------------------------------>
 
 } Settings;
 Settings settings;

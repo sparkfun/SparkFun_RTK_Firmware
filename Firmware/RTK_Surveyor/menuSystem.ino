@@ -206,40 +206,40 @@ void menuSystem()
 
         if (incoming == 'b')
         {
-                // Restart Bluetooth
-                bluetoothStop();
-                if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
-                    settings.bluetoothRadioType = BLUETOOTH_RADIO_BLE;
-                else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
-                    settings.bluetoothRadioType = BLUETOOTH_RADIO_OFF;
-                else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF)
-                    settings.bluetoothRadioType = BLUETOOTH_RADIO_SPP;
-                bluetoothStart();
+            // Restart Bluetooth
+            bluetoothStop();
+            if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
+                settings.bluetoothRadioType = BLUETOOTH_RADIO_BLE;
+            else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
+                settings.bluetoothRadioType = BLUETOOTH_RADIO_OFF;
+            else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF)
+                settings.bluetoothRadioType = BLUETOOTH_RADIO_SPP;
+            bluetoothStart();
         }
         else if (incoming == 'c')
         {
-                systemPrint("Enter time in seconds to shutdown unit if not charging (0 to disable): ");
-                int shutdownNoChargeTimeout_s = getNumber(); // Returns EXIT, TIMEOUT, or long
-                if ((shutdownNoChargeTimeout_s != INPUT_RESPONSE_GETNUMBER_EXIT) &&
-                    (shutdownNoChargeTimeout_s != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
-                {
-                    if (shutdownNoChargeTimeout_s < 0 ||
-                        shutdownNoChargeTimeout_s > 60 * 60 * 24 * 7) // Arbitrary 7 day limit
-                        systemPrintln("Error: Time out of range");
-                    else
-                        settings.shutdownNoChargeTimeout_s =
-                            shutdownNoChargeTimeout_s; // Recorded to NVM and file at main menu exit
-                }
+            systemPrint("Enter time in seconds to shutdown unit if not charging (0 to disable): ");
+            int shutdownNoChargeTimeout_s = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((shutdownNoChargeTimeout_s != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                (shutdownNoChargeTimeout_s != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (shutdownNoChargeTimeout_s < 0 ||
+                    shutdownNoChargeTimeout_s > 60 * 60 * 24 * 7) // Arbitrary 7 day limit
+                    systemPrintln("Error: Time out of range");
+                else
+                    settings.shutdownNoChargeTimeout_s =
+                        shutdownNoChargeTimeout_s; // Recorded to NVM and file at main menu exit
+            }
         }
         else if (incoming == 'd')
             menuDebugSoftware();
         else if (incoming == 'e')
         {
-                settings.echoUserInput ^= 1;
+            settings.echoUserInput ^= 1;
         }
         else if ((incoming == 'f') && (settings.enableSD == true) && (online.microSD == true))
         {
-                printFileList();
+            printFileList();
         }
         else if (incoming == 'h')
             menuDebugHardware();
@@ -251,69 +251,68 @@ void menuSystem()
             menuPeriodicPrint();
         else if (incoming == 'r')
         {
-                systemPrintln("\r\nResetting to factory defaults. Press 'y' to confirm:");
-                byte bContinue = getCharacterNumber();
-                if (bContinue == 'y')
-                {
-                    factoryReset(false); // We do not have the SD semaphore
-                }
-                else
-                    systemPrintln("Reset aborted");
+            systemPrintln("\r\nResetting to factory defaults. Press 'y' to confirm:");
+            byte bContinue = getCharacterNumber();
+            if (bContinue == 'y')
+            {
+                factoryReset(false); // We do not have the SD semaphore
+            }
+            else
+                systemPrintln("Reset aborted");
         }
         else if (incoming == 'z')
         {
-                systemPrint("Enter time zone hour offset (-23 <= offset <= 23): ");
-                int value = getNumber(); // Returns EXIT, TIMEOUT, or long
-                if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            systemPrint("Enter time zone hour offset (-23 <= offset <= 23): ");
+            int value = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (value < -23 || value > 23)
+                    systemPrintln("Error: -24 < hours < 24");
+                else
                 {
-                    if (value < -23 || value > 23)
-                        systemPrintln("Error: -24 < hours < 24");
-                    else
+                    settings.timeZoneHours = value;
+
+                    systemPrint("Enter time zone minute offset (-59 <= offset <= 59): ");
+                    int value = getNumber(); // Returns EXIT, TIMEOUT, or long
+                    if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
                     {
-                        settings.timeZoneHours = value;
-
-                        systemPrint("Enter time zone minute offset (-59 <= offset <= 59): ");
-                        int value = getNumber(); // Returns EXIT, TIMEOUT, or long
-                        if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+                        if (value < -59 || value > 59)
+                            systemPrintln("Error: -60 < minutes < 60");
+                        else
                         {
-                            if (value < -59 || value > 59)
-                                systemPrintln("Error: -60 < minutes < 60");
-                            else
-                            {
-                                settings.timeZoneMinutes = value;
+                            settings.timeZoneMinutes = value;
 
-                                systemPrint("Enter time zone second offset (-59 <= offset <= 59): ");
-                                int value = getNumber(); // Returns EXIT, TIMEOUT, or long
-                                if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) &&
-                                    (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+                            systemPrint("Enter time zone second offset (-59 <= offset <= 59): ");
+                            int value = getNumber(); // Returns EXIT, TIMEOUT, or long
+                            if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+                            {
+                                if (value < -59 || value > 59)
+                                    systemPrintln("Error: -60 < seconds < 60");
+                                else
                                 {
-                                    if (value < -59 || value > 59)
-                                        systemPrintln("Error: -60 < seconds < 60");
-                                    else
-                                    {
-                                        settings.timeZoneSeconds = value;
-                                        online.rtc = false;
-                                        syncRTCInterval =
-                                            1000; // Reset syncRTCInterval to 1000ms (tpISR could have set it to 59000)
-                                        rtcSyncd = false;
-                                        updateRTC();
-                                    } // Succesful seconds
-                                }
-                            } // Succesful minute
-                        }
-                    } // Succesful hours
-                }
+                                    settings.timeZoneSeconds = value;
+                                    online.rtc = false;
+                                    syncRTCInterval =
+                                        1000; // Reset syncRTCInterval to 1000ms (tpISR could have set it to 59000)
+                                    rtcSyncd = false;
+                                    updateRTC();
+                                } // Succesful seconds
+                            }
+                        } // Succesful minute
+                    }
+                } // Succesful hours
+            }
         }
         else if (incoming == '~')
         {
-                settings.disableSetupButton ^= 1;
+            settings.disableSetupButton ^= 1;
         }
 
         // Support mode switching
         else if (incoming == 'B')
         {
-                forceSystemStateUpdate = true; // Imediately go to this new state
-                changeState(STATE_BASE_NOT_STARTED);
+            forceSystemStateUpdate = true; // Imediately go to this new state
+            changeState(STATE_BASE_NOT_STARTED);
         }
         else if ((incoming == 'N') && HAS_ETHERNET)
         {
@@ -322,21 +321,21 @@ void menuSystem()
         }
         else if (incoming == 'R')
         {
-                forceSystemStateUpdate = true; // Imediately go to this new state
-                changeState(STATE_ROVER_NOT_STARTED);
+            forceSystemStateUpdate = true; // Imediately go to this new state
+            changeState(STATE_ROVER_NOT_STARTED);
         }
         else if (incoming == 'W')
         {
-                forceSystemStateUpdate = true; // Imediately go to this new state
-                changeState(STATE_WIFI_CONFIG_NOT_STARTED);
+            forceSystemStateUpdate = true; // Imediately go to this new state
+            changeState(STATE_WIFI_CONFIG_NOT_STARTED);
         }
 
         // Menu exit control
         else if (incoming == 'S')
         {
-                systemPrintln("Shutting down...");
-                forceDisplayUpdate = true;
-                powerDown(true);
+            systemPrintln("Shutting down...");
+            forceDisplayUpdate = true;
+            powerDown(true);
         }
         else if (incoming == 'x')
             break;
@@ -639,9 +638,7 @@ void menuDebugSoftware()
             minutes = seconds / SECONDS_IN_A_MINUTE;
             seconds -= minutes * SECONDS_IN_A_MINUTE;
 
-            systemPrintf("%d (%d days %d:%02d:%02d)\r\n",
-                         settings.rebootSeconds,
-                         days, hours, minutes, seconds);
+            systemPrintf("%d (%d days %d:%02d:%02d)\r\n", settings.rebootSeconds, days, hours, minutes, seconds);
         }
 
         // Tasks
@@ -652,8 +649,7 @@ void menuDebugSoftware()
             systemPrintln("Disabled");
 
         // Automatic Firmware Update
-        systemPrintf("60) Print firmware update states: %s\r\n",
-                     settings.debugFirmwareUpdate ? "Enabled" : "Disabled");
+        systemPrintf("60) Print firmware update states: %s\r\n", settings.debugFirmwareUpdate ? "Enabled" : "Disabled");
 
         // Point Perfect
         systemPrintf("70) Point Perfect certificate management: %s\r\n",
@@ -685,8 +681,7 @@ void menuDebugSoftware()
         {
             systemPrint("Enter uptime seconds before reboot, Disabled = 0, Reboot range (30 - 4294967): ");
             int rebootSeconds = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((rebootSeconds != INPUT_RESPONSE_GETNUMBER_EXIT)
-                && (rebootSeconds != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            if ((rebootSeconds != INPUT_RESPONSE_GETNUMBER_EXIT) && (rebootSeconds != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
                 if (rebootSeconds < 30 || rebootSeconds > 4294967) // Disable the reboot
                 {
@@ -711,8 +706,7 @@ void menuDebugSoftware()
                     minutes = seconds / SECONDS_IN_A_MINUTE;
                     seconds -= minutes * SECONDS_IN_A_MINUTE;
 
-                    systemPrintf("Reboot after uptime reaches %d days %d:%02d:%02d\r\n",
-                                 days, hours, minutes, seconds);
+                    systemPrintf("Reboot after uptime reaches %d days %d:%02d:%02d\r\n", days, hours, minutes, seconds);
                 }
             }
         }
@@ -803,7 +797,11 @@ void menuOperation()
         systemPrint("11) Use I2C for L-Band Corrections: ");
         systemPrintf("%s\r\n", settings.useI2cForLbandCorrections ? "Enabled" : "Disabled");
 
-        systemPrintf("12) RTCM timeout before L-Band override (seconds): %d\r\n", settings.rtcmTimeoutBeforeUsingLBand_s);
+        systemPrintf("12) RTCM timeout before L-Band override (seconds): %d\r\n",
+                     settings.rtcmTimeoutBeforeUsingLBand_s);
+
+        systemPrint("13) CONFIG UBLOX USB port: ");
+        systemPrintf("%s\r\n", settings.enableZedUsb ? "Enabled" : "Disabled");
 
         systemPrintln("----  Interrupts  ----");
         systemPrint("30) Bluetooth Interrupts Core: ");
@@ -972,20 +970,68 @@ void menuOperation()
         }
         else if (incoming == 11)
         {
-            settings.useI2cForLbandCorrectionsConfigured = true; //Record that the user has manually modified the settings.
+            settings.useI2cForLbandCorrectionsConfigured =
+                true; // Record that the user has manually modified the settings.
             settings.useI2cForLbandCorrections ^= 1;
         }
         else if (incoming == 12)
         {
             systemPrint("Enter the number of seconds before L-Band is used once RTCM is absent (1 to 255): ");
             int rtcmTimeoutBeforeUsingLBand_s = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((rtcmTimeoutBeforeUsingLBand_s != INPUT_RESPONSE_GETNUMBER_EXIT) && (rtcmTimeoutBeforeUsingLBand_s != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            if ((rtcmTimeoutBeforeUsingLBand_s != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                (rtcmTimeoutBeforeUsingLBand_s != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
                 if (rtcmTimeoutBeforeUsingLBand_s < 1 || rtcmTimeoutBeforeUsingLBand_s > 255)
                     systemPrintln("Error: RTCM timeout out of range");
                 else
                     settings.rtcmTimeoutBeforeUsingLBand_s = rtcmTimeoutBeforeUsingLBand_s; // Recorded to NVM and file
             }
+        }
+        else if (incoming == 13)
+        {
+            settings.enableZedUsb ^= 1;
+
+            bool response = true;
+
+            response &= theGNSS.newCfgValset();
+
+            if (settings.enableZedUsb == true)
+            {
+                // The USB port on the ZED may be used for RTCM to/from the computer (as an NTRIP caster or client)
+                // So let's be sure all protocols are on for the USB port
+                response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_UBX, 1);
+                response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_NMEA, 1);
+                if (commandSupported(UBLOX_CFG_USBOUTPROT_RTCM3X) == true)
+                    response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_RTCM3X, 1);
+                response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_UBX, 1);
+                response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_NMEA, 1);
+                response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_RTCM3X, 1);
+                if (commandSupported(UBLOX_CFG_USBINPROT_SPARTN) == true)
+                {
+                    // See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/713
+                    response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_SPARTN, 1);
+                }
+            }
+            else
+            {
+                // Disable all protocols over USB
+                response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_UBX, 0);
+                response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_NMEA, 0);
+                if (commandSupported(UBLOX_CFG_USBOUTPROT_RTCM3X) == true)
+                    response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_RTCM3X, 0);
+                response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_UBX, 0);
+                response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_NMEA, 0);
+                response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_RTCM3X, 0);
+                if (commandSupported(UBLOX_CFG_USBINPROT_SPARTN) == true)
+                {
+                    // See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/713
+                    response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_SPARTN, 0);
+                }
+            }
+            response &= theGNSS.sendCfgValset();
+
+            if (response == false)
+                systemPrintln("Failed to set UART2 settings");
         }
 
         else if (incoming == 30)

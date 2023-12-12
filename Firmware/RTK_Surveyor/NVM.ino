@@ -446,6 +446,7 @@ void recordSystemSettingsToFile(File *settingsFile)
 
     settingsFile->printf("%s=%d\r\n", "debugLBand", settings.debugLBand);
     settingsFile->printf("%s=%d\r\n", "enableCaptivePortal", settings.enableCaptivePortal);
+    settingsFile->printf("%s=%d\r\n", "enableZedUsb", settings.enableZedUsb);
 
     //Add new settings above <------------------------------------------------------------>
 }
@@ -1372,8 +1373,8 @@ bool parseLine(char *str, Settings *settings)
         settings->debugLBand = d;
     else if (strcmp(settingName, "enableCaptivePortal") == 0)
         settings->enableCaptivePortal = d;
-
-
+    else if (strcmp(settingName, "enableZedUsb") == 0)
+        settings->enableZedUsb = d;
 
     //Add new settings above
     //<------------------------------------------------------------>

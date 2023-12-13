@@ -1883,6 +1883,11 @@ void displayNoWiFi(uint16_t displayTime)
     displayMessage("No WiFi", displayTime);
 }
 
+void displayNoSSIDs(uint16_t displayTime)
+{
+  displayMessage("No SSIDs", displayTime);
+}
+
 void displayRoverStart(uint16_t displayTime)
 {
     if (online.display == true)

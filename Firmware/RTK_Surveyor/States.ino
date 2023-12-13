@@ -744,7 +744,7 @@ void updateSystemState()
             // If there is no WiFi setup, and no keys, skip everything
             else if (wifiNetworkCount() == 0 && strlen(settings.pointPerfectCurrentKey) == 0)
             {
-                displayNoWiFi(2000);
+                displayNoSSIDs(2000);
                 changeState(settings.lastState); // Go to either rover or base
             }
 
@@ -821,7 +821,7 @@ void updateSystemState()
             // Normally, this would be caught during STATE_KEYS_STARTED
             else if (wifiNetworkCount() == 0)
             {
-                displayNoWiFi(1000);
+                displayNoSSIDs(1000);
                 changeState(
                     STATE_KEYS_DAYS_REMAINING); // We have valid keys, we've already tried today. No need to try again.
             }

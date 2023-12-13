@@ -214,9 +214,9 @@ char *printDaysFromDuration(long long duration)
 bool pointperfectProvisionDevice()
 {
 #ifdef COMPILE_WIFI
-    bool bluetoothOriginallyConnected = false;
-    if (bluetoothState == BT_CONNECTED)
-        bluetoothOriginallyConnected = true;
+    bool bluetoothOriginallyStarted = true;
+    if (bluetoothState == BT_OFF)
+        bluetoothOriginallyStarted = false;
 
     bluetoothStop(); // Free heap before starting secure client (requires ~70KB)
 
@@ -396,7 +396,7 @@ bool pointperfectProvisionDevice()
     if (jsonZtp)
         delete jsonZtp;
 
-    if (bluetoothOriginallyConnected == true)
+    if (bluetoothOriginallyStarted == true)
         bluetoothStart();
 
     return (retVal);
@@ -527,9 +527,9 @@ void erasePointperfectCredentials()
 bool pointperfectUpdateKeys()
 {
 #ifdef COMPILE_WIFI
-    bool bluetoothOriginallyConnected = false;
-    if (bluetoothState == BT_CONNECTED)
-        bluetoothOriginallyConnected = true;
+    bool bluetoothOriginallyStarted = true;
+    if (bluetoothState == BT_OFF)
+        bluetoothOriginallyStarted = false;
 
     bluetoothStop(); // Release available heap to allow room for TLS
 
@@ -648,7 +648,7 @@ bool pointperfectUpdateKeys()
     if (certificateContents)
         free(certificateContents);
 
-    if (bluetoothOriginallyConnected == true)
+    if (bluetoothOriginallyStarted == true)
         bluetoothStart();
 
     // Return the key status

@@ -154,7 +154,8 @@ void updateSystemState()
 
             if (carrSoln == 1) // RTK Float
             {
-                lbandTimeFloatStarted = millis(); //Restart timer for L-Band. Don't immediately reset ZED to achieve fix.
+                lbandTimeFloatStarted =
+                    millis(); // Restart timer for L-Band. Don't immediately reset ZED to achieve fix.
                 changeState(STATE_ROVER_RTK_FLOAT);
             }
             else if (carrSoln == 2) // RTK Fix
@@ -179,7 +180,8 @@ void updateSystemState()
                 changeState(STATE_ROVER_FIX);
             if (carrSoln == 1) // RTK Float
             {
-                lbandTimeFloatStarted = millis(); //Restart timer for L-Band. Don't immediately reset ZED to achieve fix.
+                lbandTimeFloatStarted =
+                    millis(); // Restart timer for L-Band. Don't immediately reset ZED to achieve fix.
                 changeState(STATE_ROVER_RTK_FLOAT);
             }
         }
@@ -613,7 +615,7 @@ void updateSystemState()
         case (STATE_DISPLAY_SETUP): {
             if (millis() - lastSetupMenuChange > 1500)
             {
-                forceSystemStateUpdate = true; // Imediately go to this new state
+                forceSystemStateUpdate = true; // Immediately go to this new state
                 changeState(setupState);       // Change to last setup state
                 if (setupState == STATE_BUBBLE_LEVEL)
                     RTK_MODE(RTK_MODE_BUBBLE_LEVEL);
@@ -642,7 +644,7 @@ void updateSystemState()
             bluetoothStop();
             espnowStop();
 
-            tasksStopUART2(); // Delete F9 serial tasks if running
+            tasksStopUART2();      // Delete F9 serial tasks if running
             if (!startWebServer()) // Start in AP mode and show config html page
                 changeState(STATE_ROVER_NOT_STARTED);
             else
@@ -731,7 +733,7 @@ void updateSystemState()
                 rtcWaitTime = millis();
 
             // We want an immediate change from this state
-            forceSystemStateUpdate = true; // Imediately go to this new state
+            forceSystemStateUpdate = true; // Immediately go to this new state
 
             // If user has turned off PointPerfect, skip everything
             if (settings.enablePointPerfectCorrections == false)
@@ -742,6 +744,7 @@ void updateSystemState()
             // If there is no WiFi setup, and no keys, skip everything
             else if (wifiNetworkCount() == 0 && strlen(settings.pointPerfectCurrentKey) == 0)
             {
+                displayNoWiFi(2000);
                 changeState(settings.lastState); // Go to either rover or base
             }
 
@@ -784,11 +787,11 @@ void updateSystemState()
         break;
 
         case (STATE_KEYS_NEEDED): {
-            forceSystemStateUpdate = true; //immediately go to this new state
+            forceSystemStateUpdate = true; // immediately go to this new state
 
             if (online.rtc == false)
             {
-                log_d("Keys Needed RTC off starting WiFi");
+                log_d("Keys Needed. RTC offline. Starting WiFi");
 
                 // Temporarily limit WiFi connection attempts
                 wifiOriginalMaxConnectionAttempts = wifiMaxConnectionAttempts;
@@ -813,6 +816,33 @@ void updateSystemState()
                 wifiStart(); // Starts WiFi state machine
                 changeState(STATE_KEYS_WIFI_STARTED);
             }
+
+            // Added to display WiFi error if user selects GetKeys from the display
+            // Normally, this would be caught during STATE_KEYS_STARTED
+            else if (wifiNetworkCount() == 0)
+            {
+                displayNoWiFi(1000);
+                changeState(
+                    STATE_KEYS_DAYS_REMAINING); // We have valid keys, we've already tried today. No need to try again.
+            }
+
+            // Added to allow user to select GetKeys from the display
+            // This forces a key update
+            else if (lBandForceGetKeys == true)
+            {
+                lBandForceGetKeys = false;
+
+                log_d("Force key update. Starting WiFi");
+
+                // Temporarily limit WiFi connection attempts
+                wifiOriginalMaxConnectionAttempts = wifiMaxConnectionAttempts;
+                wifiMaxConnectionAttempts = 0; // Override setting during key retrieval. Give up after single failure.
+
+                wifiStart(); // Starts WiFi state machine
+
+                changeState(STATE_KEYS_WIFI_STARTED);
+            }
+
             else
             {
                 log_d("Already tried to obtain keys for today");
@@ -851,11 +881,11 @@ void updateSystemState()
                 erasePointperfectCredentials();
 
                 // Provision device
-                if(pointperfectProvisionDevice() == true) // Connect to ThingStream API and get keys
+                if (pointperfectProvisionDevice() == true) // Connect to ThingStream API and get keys
                     displayKeysUpdated();
             }
 
-            wifiShutdown(); // Turn off WiFi
+            wifiShutdown();                // Turn off WiFi
             forceSystemStateUpdate = true; // Imediately go to this new state
             changeState(STATE_KEYS_DAYS_REMAINING);
         }
@@ -1182,7 +1212,7 @@ void requestChangeState(SystemState requestedState)
 }
 
 // Print the current state
-const char * getState(SystemState state, char * buffer)
+const char *getState(SystemState state, char *buffer)
 {
     switch (state)
     {
@@ -1286,10 +1316,10 @@ void changeState(SystemState newState)
 {
     char string1[30];
     char string2[30];
-    const char * arrow;
-    const char * asterisk;
-    const char * initialState;
-    const char * endingState;
+    const char *arrow;
+    const char *asterisk;
+    const char *initialState;
+    const char *endingState;
 
     // Log the heap size at the state change
     reportHeapNow(false);

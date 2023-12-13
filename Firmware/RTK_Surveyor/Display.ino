@@ -985,10 +985,10 @@ uint32_t setWiFiIcon_TwoRadios()
         {
 #ifdef COMPILE_WIFI
             int wifiRSSI = WiFi.RSSI();
-#else   // COMPILE_WIFI
-            int wifiRSSI = -40;     // Dummy
-#endif  // COMPILE_WIFI
-            // Based on RSSI, select icon
+#else  // COMPILE_WIFI
+            int wifiRSSI = -40; // Dummy
+#endif // COMPILE_WIFI
+       // Based on RSSI, select icon
             if (wifiRSSI >= -40)
                 icons |= ICON_WIFI_SYMBOL_3_LEFT;
             else if (wifiRSSI >= -60)
@@ -1015,10 +1015,10 @@ uint32_t setWiFiIcon_TwoRadios()
             {
 #ifdef COMPILE_WIFI
                 int wifiRSSI = WiFi.RSSI();
-#else   // COMPILE_WIFI
+#else  // COMPILE_WIFI
                 int wifiRSSI = -40; // Dummy
-#endif  // COMPILE_WIFI
-                // Based on RSSI, select icon
+#endif // COMPILE_WIFI
+       // Based on RSSI, select icon
                 if (wifiRSSI >= -40)
                     icons |= ICON_WIFI_SYMBOL_3_LEFT;
                 else if (wifiRSSI >= -60)
@@ -1072,10 +1072,10 @@ uint32_t setWiFiIcon_ThreeRadios()
         {
 #ifdef COMPILE_WIFI
             int wifiRSSI = WiFi.RSSI();
-#else   // COMPILE_WIFI
-            int wifiRSSI = -40;     // Dummy
-#endif  // COMPILE_WIFI
-            // Based on RSSI, select icon
+#else  // COMPILE_WIFI
+            int wifiRSSI = -40; // Dummy
+#endif // COMPILE_WIFI
+       // Based on RSSI, select icon
             if (wifiRSSI >= -40)
                 icons |= ICON_WIFI_SYMBOL_3_RIGHT;
             else if (wifiRSSI >= -60)
@@ -1102,10 +1102,10 @@ uint32_t setWiFiIcon_ThreeRadios()
             {
 #ifdef COMPILE_WIFI
                 int wifiRSSI = WiFi.RSSI();
-#else   // COMPILE_WIFI
+#else  // COMPILE_WIFI
                 int wifiRSSI = -40; // Dummy
-#endif  // COMPILE_WIFI
-                // Based on RSSI, select icon
+#endif // COMPILE_WIFI
+       // Based on RSSI, select icon
                 if (wifiRSSI >= -40)
                     icons |= ICON_WIFI_SYMBOL_3_RIGHT;
                 else if (wifiRSSI >= -60)
@@ -1552,9 +1552,9 @@ void paintLogging()
     loggingIconDisplayed %= 4; // Wrap
 #ifdef COMPILE_ETHERNET
     if ((online.logging == true) && (logIncreasing || ntpLogIncreasing))
-#else   // COMPILE_ETHERNET
+#else  // COMPILE_ETHERNET
     if ((online.logging == true) && (logIncreasing))
-#endif  // COMPILE_ETHERNET
+#endif // COMPILE_ETHERNET
     {
         if (loggingType == LOGGING_STANDARD)
         {
@@ -1625,9 +1625,9 @@ void paintLoggingNTP(bool noPulse)
     loggingIconDisplayed %= 4; // Wrap
 #ifdef COMPILE_ETHERNET        // Some redundancy here. paintLoggingNTP should only be called if Ethernet is present
     if ((online.logging == true) && (logIncreasing || ntpLogIncreasing))
-#else   // COMPILE_ETHERNET
+#else  // COMPILE_ETHERNET
     if ((online.logging == true) && (logIncreasing))
-#endif  // COMPILE_ETHERNET
+#endif // COMPILE_ETHERNET
     {
         if (loggingIconDisplayed == 0)
             displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
@@ -1794,9 +1794,9 @@ void paintIPAddress()
     snprintf(ipAddress, sizeof(ipAddress), "       %d.%d.%d.%d       ",
 #ifdef COMPILE_ETHERNET
              Ethernet.localIP()[0], Ethernet.localIP()[1], Ethernet.localIP()[2], Ethernet.localIP()[3]);
-#else   // COMPILE_ETHERNET
+#else  // COMPILE_ETHERNET
              0, 0, 0, 0);
-#endif  // COMPILE_ETHERNET
+#endif // COMPILE_ETHERNET
 
     static uint8_t ipAddressPosition = 0;
 
@@ -1911,9 +1911,9 @@ void displayNoRingBuffer(uint16_t displayTime)
         uint8_t fontHeight = 8;
         uint8_t yPos = oled.getHeight() / 3 - fontHeight;
 
-        printTextCenter("Fix GNSS", yPos, QW_FONT_5X7, 1, false);  // text, y, font type, kerning, inverted
+        printTextCenter("Fix GNSS", yPos, QW_FONT_5X7, 1, false); // text, y, font type, kerning, inverted
         yPos += fontHeight;
-        printTextCenter("Handler", yPos, QW_FONT_5X7, 1, false);   // text, y, font type, kerning, inverted
+        printTextCenter("Handler", yPos, QW_FONT_5X7, 1, false); // text, y, font type, kerning, inverted
         yPos += fontHeight;
         printTextCenter("Buffer Sz", yPos, QW_FONT_5X7, 1, false); // text, y, font type, kerning, inverted
 
@@ -2027,9 +2027,9 @@ void displayWiFiConfig()
         snprintf(mySSID, sizeof(mySSID), "%s", "RTK Config");
     else
         snprintf(mySSID, sizeof(mySSID), "%s", WiFi.SSID().c_str());
-#else   // COMPILE_WIFI
+#else  // COMPILE_WIFI
     snprintf(mySSID, sizeof(mySSID), "%s", "!Compiled");
-#endif  // COMPILE_WIFI
+#endif // COMPILE_WIFI
 
     char mySSIDFront[displayMaxCharacters + 1]; // 1 for null terminator
     char mySSIDBack[displayMaxCharacters + 1];  // 1 for null terminator
@@ -2084,9 +2084,9 @@ void displayWiFiConfig()
     else
         printTextCenter(myIPBack, yPos, QW_FONT_5X7, 1, false);
 
-#else   // COMPILE_AP
+#else  // COMPILE_AP
     printTextCenter("!Compiled", yPos, QW_FONT_5X7, 1, false);
-#endif  // COMPILE_AP
+#endif // COMPILE_AP
 }
 
 // When user does a factory reset, let us know
@@ -2482,7 +2482,8 @@ void getAngles()
                 accelZ *= -1.0;
                 accelX *= -1.0;
             }
-            else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT)
+            else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND ||
+                     productVariant == RTK_FACET_LBAND_DIRECT)
             {
                 accelZ = accel.getX();
                 accelX = accel.getY();
@@ -2554,10 +2555,10 @@ void paintDisplaySetupProfile(const char *firstState)
         // Lookup next available profile, limit to 8 characters
         getProfileNameFromUnit(index, profileName, sizeof(profileName));
 
-        profileName[6]= 0; //Shorten profileName to 6 characters
+        profileName[6] = 0; // Shorten profileName to 6 characters
 
         char miniProfileName[16] = {0};
-        snprintf(miniProfileName, sizeof(miniProfileName), "%d_%s", index, profileName); //Prefix with index #
+        snprintf(miniProfileName, sizeof(miniProfileName), "%d_%s", index, profileName); // Prefix with index #
 
         printTextCenter(miniProfileName, 12 * itemsDisplayed, QW_FONT_8X16, 1, itemsDisplayed == 3);
         index++;
@@ -2701,6 +2702,26 @@ void paintDisplaySetup()
                 printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
             }
         }
+
+        // If we are on an L-Band unit, display GetKeys option
+        else if (setupState == STATE_KEYS_NEEDED)
+        {
+            if (online.accelerometer)
+            {
+                printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false);
+                printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
+                printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+                printTextCenter("GetKeys", 12 * 3, QW_FONT_8X16, 1, true);
+            }
+            else
+            {
+                printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
+                printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
+                printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+                printTextCenter("GetKeys", 12 * 3, QW_FONT_8X16, 1, true);
+            }
+        }
+
         else if (setupState == STATE_ESPNOW_PAIRING_NOT_STARTED)
         {
             if (productVariant == REFERENCE_STATION)
@@ -2709,6 +2730,24 @@ void paintDisplaySetup()
                 printTextCenter("Cfg Eth", 12 * 1, QW_FONT_8X16, 1, false);
                 printTextCenter("CfgWiFi", 12 * 2, QW_FONT_8X16, 1, false);
                 printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
+            }
+            else if (productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT)
+            {
+                // If we are on an L-Band unit, scroll GetKeys option
+                if (online.accelerometer)
+                {
+                    printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
+                    printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+                    printTextCenter("GetKeys", 12 * 0, QW_FONT_8X16, 1, false);
+                    printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
+                }
+                else
+                {
+                    printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
+                    printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+                    printTextCenter("GetKeys", 12 * 0, QW_FONT_8X16, 1, false);
+                    printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
+                }
             }
             else if (online.accelerometer)
             {
@@ -2725,6 +2764,7 @@ void paintDisplaySetup()
                 printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
             }
         }
+
         else if (setupState == STATE_PROFILE)
             paintDisplaySetupProfile("Base");
     } // end type F9P
@@ -3303,11 +3343,11 @@ void displayConfigViaEthernet()
         oled.display();
     }
 
-#else   // COMPILE_ETHERNET
+#else  // COMPILE_ETHERNET
     uint8_t fontHeight = 15;
     uint8_t yPos = oled.getHeight() / 2 - fontHeight;
     printTextCenter("!Compiled", yPos, QW_FONT_5X7, 1, false);
-#endif  // COMPILE_ETHERNET
+#endif // COMPILE_ETHERNET
 }
 
 const uint8_t *getMacAddress()
@@ -3317,14 +3357,14 @@ const uint8_t *getMacAddress()
 #ifdef COMPILE_BT
     if (bluetoothState != BT_OFF)
         return btMACAddress;
-#endif  // COMPILE_BT
+#endif // COMPILE_BT
 #ifdef COMPILE_WIFI
     if (wifiState != WIFI_OFF)
         return wifiMACAddress;
-#endif  // COMPILE_WIFI
+#endif // COMPILE_WIFI
 #ifdef COMPILE_ETHERNET
     if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
         return ethernetMACAddress;
-#endif  // COMPILE_ETHERNET
+#endif // COMPILE_ETHERNET
     return zero;
 }

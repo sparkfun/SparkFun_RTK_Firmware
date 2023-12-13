@@ -529,7 +529,7 @@ bool wifiConnect(unsigned long timeout)
             if (settings.mdnsEnable == true)
             {
                 if (MDNS.begin("rtk") == false) // This should make the module findable from 'rtk.local' in browser
-                    log_d("Error setting up MDNS responder!");
+                    systemPrintln("Error setting up MDNS responder!");
                 else
                     MDNS.addService("http", "tcp", settings.httpPort); // Add service to MDNS
             }

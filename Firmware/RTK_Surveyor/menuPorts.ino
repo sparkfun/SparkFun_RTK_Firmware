@@ -308,8 +308,6 @@ void menuPortsMultiplexed()
                         }
                         else
                         {
-                            Serial.println("Enable port");
-
                             bool response = true;
 
                             response &= theGNSS.newCfgValset();

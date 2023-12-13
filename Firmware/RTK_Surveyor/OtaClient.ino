@@ -460,12 +460,12 @@ void otaClientUpdate()
                 else if (!otaClient->connect(OTA_SERVER, OTA_SERVER_PORT))
                 {
                     // if you didn't get a connection to the server:
-                    Serial.println("OTA: Connection failed");
+                    systemPrintln("OTA: Connection failed");
                     otaStop();
                 }
                 else
                 {
-                    Serial.println("OTA: Requesting JSON file");
+                    systemPrintln("OTA: Requesting JSON file");
 
                     // Make the HTTP request:
                     otaClient->print("GET ");
@@ -680,12 +680,12 @@ void otaClientUpdate()
                 else if (!otaClient->connect(OTA_SERVER, OTA_SERVER_PORT))
                 {
                     // if you didn't get a connection to the server:
-                    Serial.println("OTA: Connection failed");
+                    systemPrintln("OTA: Connection failed");
                     otaStop();
                 }
                 else
                 {
-                    Serial.println("OTA: Requesting BIN file");
+                    systemPrintln("OTA: Requesting BIN file");
 
                     // Make the HTTP request:
                     otaClient->print("GET ");

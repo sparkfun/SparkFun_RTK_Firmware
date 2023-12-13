@@ -2736,16 +2736,16 @@ void paintDisplaySetup()
                 // If we are on an L-Band unit, scroll GetKeys option
                 if (online.accelerometer)
                 {
-                    printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
-                    printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
-                    printTextCenter("GetKeys", 12 * 0, QW_FONT_8X16, 1, false);
+                    printTextCenter("Bubble", 12 * 0, QW_FONT_8X16, 1, false);
+                    printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
+                    printTextCenter("GetKeys", 12 * 2, QW_FONT_8X16, 1, false);
                     printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
                 }
                 else
                 {
-                    printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
-                    printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
-                    printTextCenter("GetKeys", 12 * 0, QW_FONT_8X16, 1, false);
+                    printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false);
+                    printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
+                    printTextCenter("GetKeys", 12 * 2, QW_FONT_8X16, 1, false);
                     printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
                 }
             }

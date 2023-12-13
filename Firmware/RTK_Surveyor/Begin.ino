@@ -9,35 +9,38 @@ Begin.ino
 // Constants
 //----------------------------------------
 
-#define MAX_ADC_VOLTAGE     3300    // Millivolts
+#define MAX_ADC_VOLTAGE 3300 // Millivolts
 
 // Testing shows the combined ADC+resistors is under a 1% window
-#define TOLERANCE           4.75    // Percent:  95.25% - 104.75%
-
-//----------------------------------------
-// Macros
-//----------------------------------------
-
-//                                ADC input
-//                       Ra KOhms     |     Rb KOhms
-//  MAX_ADC_VOLTAGE -----/\/\/\/\-----+-----/\/\/\/\----- Ground
-//
-#define ADC_ID_mV(RaK, RbK)   ((uint16_t)(MAX_ADC_VOLTAGE * RbK / (RaK + RbK)))
+#define TOLERANCE 5.20 // Percent:  94.8% - 105.2%
 
 //----------------------------------------
 // Hardware initialization functions
 //----------------------------------------
 
 // Determine if the measured value matches the product ID value
-bool idWithAdc(uint16_t mvMeasured, uint16_t mvProduct)
+// idWithAdc applies resistor tolerance using worst-case tolerances:
+// Upper threshold: R1 down by TOLERANCE, R2 up by TOLERANCE
+// Lower threshold: R1 up by TOLERANCE, R2 down by TOLERANCE
+bool idWithAdc(uint16_t mvMeasured, float r1, float r2)
 {
-    uint16_t lowerThreshold;
-    uint16_t upperThreshold;
+    float lowerThreshold;
+    float upperThreshold;
+
+    //                                ADC input
+    //                       r1 KOhms     |     r2 KOhms
+    //  MAX_ADC_VOLTAGE -----/\/\/\/\-----+-----/\/\/\/\----- Ground
 
     // Return true if the mvMeasured value is within the tolerance range
     // of the mvProduct value
-    upperThreshold = (1.0 + (TOLERANCE / 100.)) * mvProduct;
-    lowerThreshold = (1.0 - (TOLERANCE / 100.)) * mvProduct;
+    upperThreshold = ceil(MAX_ADC_VOLTAGE * (r2 * (1.0 + (TOLERANCE / 100.0))) /
+                          ((r1 * (1.0 - (TOLERANCE / 100.0))) + (r2 * (1.0 + (TOLERANCE / 100.0)))));
+    lowerThreshold = floor(MAX_ADC_VOLTAGE * (r2 * (1.0 - (TOLERANCE / 100.0))) /
+                           ((r1 * (1.0 + (TOLERANCE / 100.0))) + (r2 * (1.0 - (TOLERANCE / 100.0)))));
+
+    // systemPrintf("r1: %0.2f r2: %0.2f lowerThreshold: %0.0f mvMeasured: %d upperThreshold: %0.0f\r\n", r1, r2,
+    // lowerThreshold, mvMeasured, upperThreshold);
+
     return (upperThreshold > mvMeasured) && (mvMeasured > lowerThreshold);
 }
 
@@ -53,18 +56,18 @@ void identifyBoard()
     uint16_t idValue = analogReadMilliVolts(pin_deviceID);
     log_d("Board ADC ID (mV): %d", idValue);
 
-    // Order checks by millivolt values high to low
+    // Order the following ID checks, by millivolt values high to low
 
-    // Facet L-Band Direct: 4.7/1  -->  551mV < 579mV < 607mV
-    if (idWithAdc(idValue, ADC_ID_mV(4.7, 1)))
+    // Facet L-Band Direct: 4.7/1  -->  534mV < 579mV < 626mV
+    if (idWithAdc(idValue, 4.7, 1))
         productVariant = RTK_FACET_LBAND_DIRECT;
 
-    // Express: 10/3.3  -->  779mV < 819mV < 858mV
-    else if (idWithAdc(idValue, ADC_ID_mV(10, 3.3)))
+    // Express: 10/3.3  -->  761mV < 819mV < 879mV
+    else if (idWithAdc(idValue, 10, 3.3))
         productVariant = RTK_EXPRESS;
 
-    // Reference Station: 20/10  -->  1047mV < 1100mV < 1153mV
-    else if (idWithAdc(idValue, ADC_ID_mV(20, 10)))
+    // Reference Station: 20/10  -->  1031mV < 1100mV < 1171mV
+    else if (idWithAdc(idValue, 20, 10))
     {
         productVariant = REFERENCE_STATION;
         // We can't auto-detect the ZED version if the firmware is in configViaEthernet mode,
@@ -72,15 +75,15 @@ void identifyBoard()
         zedFirmwareVersionInt = 112;
     }
     // Facet: 10/10  -->  1571mV < 1650mV < 1729mV
-    else if (idWithAdc(idValue, ADC_ID_mV(10, 10)))
+    else if (idWithAdc(idValue, 10, 10))
         productVariant = RTK_FACET;
 
-    // Facet L-Band: 10/20  -->  2095mV < 2200mV < 2305mV
-    else if (idWithAdc(idValue, ADC_ID_mV(10, 20)))
+    // Facet L-Band: 10/20  -->  2129mV < 2200mV < 2269mV
+    else if (idWithAdc(idValue, 10, 20))
         productVariant = RTK_FACET_LBAND;
 
-    // Express+: 3.3/10  -->  2363mV < 2481mV < 2600mV
-    else if (idWithAdc(idValue, ADC_ID_mV(3.3, 10)))
+    // Express+: 3.3/10  -->  2421mV < 2481mV < 2539mV
+    else if (idWithAdc(idValue, 3.3, 10))
         productVariant = RTK_EXPRESS_PLUS;
 
     // ID resistors do not exist for the following:
@@ -606,8 +609,7 @@ void beginUART2()
     // after discarding the oldest data
     length = settings.gnssHandlerBufferSize;
     rbOffsetEntries = (length >> 1) / AVERAGE_SENTENCE_LENGTH_IN_BYTES;
-    length = settings.gnssHandlerBufferSize
-           + (rbOffsetEntries * sizeof(RING_BUFFER_OFFSET));
+    length = settings.gnssHandlerBufferSize + (rbOffsetEntries * sizeof(RING_BUFFER_OFFSET));
     ringBuffer = nullptr;
     rbOffsetArray = (RING_BUFFER_OFFSET *)malloc(length);
     if (!rbOffsetArray)
@@ -1267,40 +1269,40 @@ void pinI2CTask(void *pvParameters)
             i2cBusAvailable = true;
             switch (addr)
             {
-                default: {
-                    systemPrintf("0x%02x\r\n", addr);
-                    break;
-                }
+            default: {
+                systemPrintf("0x%02x\r\n", addr);
+                break;
+            }
 
-                case 0x19: {
-                    systemPrintf("0x%02x - LIS2DH12 Accelerometer\r\n", addr);
-                    break;
-                }
+            case 0x19: {
+                systemPrintf("0x%02x - LIS2DH12 Accelerometer\r\n", addr);
+                break;
+            }
 
-                case 0x36: {
-                    systemPrintf("0x%02x - MAX17048 Fuel Gauge\r\n", addr);
-                    break;
-                }
+            case 0x36: {
+                systemPrintf("0x%02x - MAX17048 Fuel Gauge\r\n", addr);
+                break;
+            }
 
-                case 0x3d: {
-                    systemPrintf("0x%02x - SSD1306 (64x48) OLED Driver\r\n", addr);
-                    break;
-                }
+            case 0x3d: {
+                systemPrintf("0x%02x - SSD1306 (64x48) OLED Driver\r\n", addr);
+                break;
+            }
 
-                case 0x42: {
-                    systemPrintf("0x%02x - u-blox ZED-F9P GNSS Receiver\r\n", addr);
-                    break;
-                }
+            case 0x42: {
+                systemPrintf("0x%02x - u-blox ZED-F9P GNSS Receiver\r\n", addr);
+                break;
+            }
 
-                case 0x43: {
-                    systemPrintf("0x%02x - u-blox NEO-D9S-00B Correction Data Receiver\r\n", addr);
-                    break;
-                }
+            case 0x43: {
+                systemPrintf("0x%02x - u-blox NEO-D9S-00B Correction Data Receiver\r\n", addr);
+                break;
+            }
 
-                case 0x60: {
-                    systemPrintf("0x%02x - Crypto Coprocessor\r\n", addr);
-                    break;
-                }
+            case 0x60: {
+                systemPrintf("0x%02x - Crypto Coprocessor\r\n", addr);
+                break;
+            }
             }
         }
         else if ((millis() - timer) > 3)

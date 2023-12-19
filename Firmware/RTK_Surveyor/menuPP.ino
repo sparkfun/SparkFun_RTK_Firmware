@@ -130,10 +130,17 @@ void menuPointPerfectKeys()
 
             if (settings.debugLBand == true)
             {
-                systemPrintf("  settings.pointPerfectCurrentKeyStart: %lld - %s\r\n", settings.pointPerfectCurrentKeyStart, printDateFromUnixEpoch(settings.pointPerfectCurrentKeyStart / 1000));
-                systemPrintf("  settings.pointPerfectCurrentKeyDuration: %lld - %s\r\n", settings.pointPerfectCurrentKeyDuration, printDaysFromDuration(settings.pointPerfectCurrentKeyDuration));
-                systemPrintf("  settings.pointPerfectNextKeyStart: %lld - %s\r\n", settings.pointPerfectNextKeyStart, printDateFromUnixEpoch(settings.pointPerfectNextKeyStart / 1000));
-                systemPrintf("  settings.pointPerfectNextKeyDuration: %lld - %s\r\n", settings.pointPerfectNextKeyDuration, printDaysFromDuration(settings.pointPerfectNextKeyDuration));
+                systemPrintf("  settings.pointPerfectCurrentKeyStart: %lld - %s\r\n",
+                             settings.pointPerfectCurrentKeyStart,
+                             printDateFromUnixEpoch(settings.pointPerfectCurrentKeyStart / 1000));
+                systemPrintf("  settings.pointPerfectCurrentKeyDuration: %lld - %s\r\n",
+                             settings.pointPerfectCurrentKeyDuration,
+                             printDaysFromDuration(settings.pointPerfectCurrentKeyDuration));
+                systemPrintf("  settings.pointPerfectNextKeyStart: %lld - %s\r\n", settings.pointPerfectNextKeyStart,
+                             printDateFromUnixEpoch(settings.pointPerfectNextKeyStart / 1000));
+                systemPrintf("  settings.pointPerfectNextKeyDuration: %lld - %s\r\n",
+                             settings.pointPerfectNextKeyDuration,
+                             printDaysFromDuration(settings.pointPerfectNextKeyDuration));
             }
         }
         else if (incoming == 4)
@@ -189,25 +196,25 @@ char *printDateFromGPSEpoch(long long gpsEpoch)
 // https://www.epochconverter.com/programming/c
 char *printDateFromUnixEpoch(long long unixEpoch)
 {
-  char *buf = (char *)malloc(strlen("01/01/2023") + 1); //Make room for terminator
-  time_t rawtime = unixEpoch;
+    char *buf = (char *)malloc(strlen("01/01/2023") + 1); // Make room for terminator
+    time_t rawtime = unixEpoch;
 
-  struct tm ts;
-  ts = *localtime(&rawtime);
+    struct tm ts;
+    ts = *localtime(&rawtime);
 
-  // Format time, "dd/mm/yyyy"
-  strftime(buf, strlen("01/01/2023") + 1, "%d/%m/%Y", &ts);
-  return (buf);
+    // Format time, "dd/mm/yyyy"
+    strftime(buf, strlen("01/01/2023") + 1, "%d/%m/%Y", &ts);
+    return (buf);
 }
 
 // Given a duration in ms, print days
 char *printDaysFromDuration(long long duration)
 {
-  float days = duration / (1000.0 * 60 * 60 * 24); //Convert ms to days
+    float days = duration / (1000.0 * 60 * 60 * 24); // Convert ms to days
 
-  char *response = (char *)malloc(strlen("34.9") + 1); //Make room for terminator
-  sprintf(response, "%0.2f", days);
-  return (response);
+    char *response = (char *)malloc(strlen("34.9") + 1); // Make room for terminator
+    sprintf(response, "%0.2f", days);
+    return (response);
 }
 
 // Connect to 'home' WiFi and then ThingStream API. This will attach this unique device to the ThingStream network.
@@ -363,22 +370,31 @@ bool pointperfectProvisionDevice()
                     strcpy(settings.pointPerfectBrokerHost, (const char *)((*jsonZtp)["brokerHost"]));
                     strcpy(settings.pointPerfectLBandTopic, (const char *)((*jsonZtp)["subscriptions"][0]["path"]));
 
-                    strcpy(settings.pointPerfectCurrentKey, (const char *)((*jsonZtp)["dynamickeys"]["current"]["value"]));
+                    strcpy(settings.pointPerfectCurrentKey,
+                           (const char *)((*jsonZtp)["dynamickeys"]["current"]["value"]));
                     settings.pointPerfectCurrentKeyDuration = (*jsonZtp)["dynamickeys"]["current"]["duration"];
                     settings.pointPerfectCurrentKeyStart = (*jsonZtp)["dynamickeys"]["current"]["start"];
 
                     strcpy(settings.pointPerfectNextKey, (const char *)((*jsonZtp)["dynamickeys"]["next"]["value"]));
                     settings.pointPerfectNextKeyDuration = (*jsonZtp)["dynamickeys"]["next"]["duration"];
                     settings.pointPerfectNextKeyStart = (*jsonZtp)["dynamickeys"]["next"]["start"];
-                
+
                     if (settings.debugLBand == true)
                     {
                         systemPrintf("  pointPerfectCurrentKey: %s\r\n", settings.pointPerfectCurrentKey);
-                        systemPrintf("  pointPerfectCurrentKeyStart: %lld - %s\r\n", settings.pointPerfectCurrentKeyStart, printDateFromUnixEpoch(settings.pointPerfectCurrentKeyStart / 1000)); //printDateFromUnixEpoch expects seconds
-                        systemPrintf("  pointPerfectCurrentKeyDuration: %lld - %s\r\n", settings.pointPerfectCurrentKeyDuration, printDaysFromDuration(settings.pointPerfectCurrentKeyDuration));
+                        systemPrintf("  pointPerfectCurrentKeyStart: %lld - %s\r\n",
+                                     settings.pointPerfectCurrentKeyStart,
+                                     printDateFromUnixEpoch(settings.pointPerfectCurrentKeyStart /
+                                                            1000)); // printDateFromUnixEpoch expects seconds
+                        systemPrintf("  pointPerfectCurrentKeyDuration: %lld - %s\r\n",
+                                     settings.pointPerfectCurrentKeyDuration,
+                                     printDaysFromDuration(settings.pointPerfectCurrentKeyDuration));
                         systemPrintf("  pointPerfectNextKey: %s\r\n", settings.pointPerfectNextKey);
-                        systemPrintf("  pointPerfectNextKeyStart: %lld - %s\r\n", settings.pointPerfectNextKeyStart, printDateFromUnixEpoch(settings.pointPerfectNextKeyStart / 1000)); 
-                        systemPrintf("  pointPerfectNextKeyDuration: %lld - %s\r\n", settings.pointPerfectNextKeyDuration, printDaysFromDuration(settings.pointPerfectNextKeyDuration));
+                        systemPrintf("  pointPerfectNextKeyStart: %lld - %s\r\n", settings.pointPerfectNextKeyStart,
+                                     printDateFromUnixEpoch(settings.pointPerfectNextKeyStart / 1000));
+                        systemPrintf("  pointPerfectNextKeyDuration: %lld - %s\r\n",
+                                     settings.pointPerfectNextKeyDuration,
+                                     printDaysFromDuration(settings.pointPerfectNextKeyDuration));
                     }
                 }
             }
@@ -494,10 +510,7 @@ bool checkPrivateKeyValidity(char *privateKey, int privateKeySize)
     mbedtls_pk_context pk;
     mbedtls_pk_init(&pk);
 
-    int result_code =
-        mbedtls_pk_parse_key(&pk,
-                             (unsigned char *)privateKey, privateKeySize + 1,
-                             nullptr, 0);
+    int result_code = mbedtls_pk_parse_key(&pk, (unsigned char *)privateKey, privateKeySize + 1, nullptr, 0);
     mbedtls_pk_free(&pk);
     if (result_code < 0)
     {
@@ -724,11 +737,15 @@ void mqttCallback(char *topic, byte *message, unsigned int length)
         {
             systemPrintln();
             systemPrintf("  pointPerfectCurrentKey: %s\r\n", settings.pointPerfectCurrentKey);
-            systemPrintf("  pointPerfectCurrentKeyStart: %lld - %s\r\n", settings.pointPerfectCurrentKeyStart, printDateFromUnixEpoch(settings.pointPerfectCurrentKeyStart));
-            systemPrintf("  pointPerfectCurrentKeyDuration: %lld - %s\r\n", settings.pointPerfectCurrentKeyDuration, printDaysFromDuration(settings.pointPerfectCurrentKeyDuration));
+            systemPrintf("  pointPerfectCurrentKeyStart: %lld - %s\r\n", settings.pointPerfectCurrentKeyStart,
+                         printDateFromUnixEpoch(settings.pointPerfectCurrentKeyStart));
+            systemPrintf("  pointPerfectCurrentKeyDuration: %lld - %s\r\n", settings.pointPerfectCurrentKeyDuration,
+                         printDaysFromDuration(settings.pointPerfectCurrentKeyDuration));
             systemPrintf("  pointPerfectNextKey: %s\r\n", settings.pointPerfectNextKey);
-            systemPrintf("  pointPerfectNextKeyStart: %lld - %s\r\n", settings.pointPerfectNextKeyStart, printDateFromUnixEpoch(settings.pointPerfectNextKeyStart));
-            systemPrintf("  pointPerfectNextKeyDuration: %lld - %s\r\n", settings.pointPerfectNextKeyDuration, printDaysFromDuration(settings.pointPerfectNextKeyDuration));
+            systemPrintf("  pointPerfectNextKeyStart: %lld - %s\r\n", settings.pointPerfectNextKeyStart,
+                         printDateFromUnixEpoch(settings.pointPerfectNextKeyStart));
+            systemPrintf("  pointPerfectNextKeyDuration: %lld - %s\r\n", settings.pointPerfectNextKeyDuration,
+                         printDaysFromDuration(settings.pointPerfectNextKeyDuration));
         }
     }
 

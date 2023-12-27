@@ -144,19 +144,38 @@ bool configureUbloxModule()
         }
     }
 
-    // The USB port on the ZED may be used for RTCM to/from the computer (as an NTRIP caster or client)
-    // So let's be sure all protocols are on for the USB port
-    response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_UBX, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_NMEA, 1);
-    if (commandSupported(UBLOX_CFG_USBOUTPROT_RTCM3X) == true)
-        response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_RTCM3X, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_UBX, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_NMEA, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_RTCM3X, 1);
-    if (commandSupported(UBLOX_CFG_USBINPROT_SPARTN) == true)
+    if (settings.enableZedUsb == true)
     {
-        //See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/713
-        response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_SPARTN, 1);
+        // The USB port on the ZED may be used for RTCM to/from the computer (as an NTRIP caster or client)
+        // So let's be sure all protocols are on for the USB port
+        response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_UBX, 1);
+        response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_NMEA, 1);
+        if (commandSupported(UBLOX_CFG_USBOUTPROT_RTCM3X) == true)
+            response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_RTCM3X, 1);
+        response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_UBX, 1);
+        response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_NMEA, 1);
+        response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_RTCM3X, 1);
+        if (commandSupported(UBLOX_CFG_USBINPROT_SPARTN) == true)
+        {
+            // See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/713
+            response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_SPARTN, 1);
+        }
+    }
+    else
+    {
+        //Disable all protocols over USB
+        response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_UBX, 0);
+        response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_NMEA, 0);
+        if (commandSupported(UBLOX_CFG_USBOUTPROT_RTCM3X) == true)
+            response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_RTCM3X, 0);
+        response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_UBX, 0);
+        response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_NMEA, 0);
+        response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_RTCM3X, 0);
+        if (commandSupported(UBLOX_CFG_USBINPROT_SPARTN) == true)
+        {
+            // See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/713
+            response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_SPARTN, 0);
+        }
     }
 
     if (commandSupported(UBLOX_CFG_NAVSPG_INFIL_MINCNO) == true)
@@ -597,7 +616,7 @@ bool messageSupported(int messageNumber)
 
     return (messageSupported);
 }
-// Given a command key, return true if that key is supported on this platform and fimrware version
+// Given a command key, return true if that key is supported on this platform and firmware version
 bool commandSupported(const uint32_t key)
 {
     bool commandSupported = false;

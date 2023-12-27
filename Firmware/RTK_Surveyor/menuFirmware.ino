@@ -41,8 +41,7 @@ void menuFirmware()
         systemPrintf("e) Allow Beta Firmware: %s\r\n", enableRCFirmware ? "Enabled" : "Disabled");
 
         if (settings.enableAutoFirmwareUpdate)
-            systemPrintf("i) Automatic firmware check minutes: %d\r\n",
-                         settings.autoFirmwareCheckMinutes);
+            systemPrintf("i) Automatic firmware check minutes: %d\r\n", settings.autoFirmwareCheckMinutes);
 
         if (newOTAFirmwareAvailable)
             systemPrintf("u) Update to new firmware: v%s\r\n", reportedVersion);
@@ -86,8 +85,9 @@ void menuFirmware()
                         char currentVersion[21];
                         getFirmwareVersion(currentVersion, sizeof(currentVersion), enableRCFirmware);
 
-                        //Allow update if locally compiled developer version
-                        if (isReportedVersionNewer(reportedVersion, &currentVersion[1]) == true || FIRMWARE_VERSION_MAJOR == 99)
+                        // Allow update if locally compiled developer version
+                        if (isReportedVersionNewer(reportedVersion, &currentVersion[1]) == true ||
+                            FIRMWARE_VERSION_MAJOR == 99)
                         {
                             systemPrintln("New version detected");
                             newOTAFirmwareAvailable = true;
@@ -108,7 +108,7 @@ void menuFirmware()
                     bool previouslyConnected = wifiIsConnected();
 
                     bool bluetoothOriginallyConnected = false;
-                    if(bluetoothState == BT_CONNECTED)
+                    if (bluetoothState == BT_CONNECTED)
                         bluetoothOriginallyConnected = true;
 
                     bluetoothStop(); // Stop Bluetooth to allow for SSL on the heap
@@ -144,10 +144,10 @@ void menuFirmware()
                     if (previouslyConnected == false)
                         WIFI_STOP();
 
-                    if(bluetoothOriginallyConnected == true)
+                    if (bluetoothOriginallyConnected == true)
                         bluetoothStart(); // Restart BT according to settings
                 }
-            } //End wifiNetworkCount() check
+            } // End wifiNetworkCount() check
         }
         else if (incoming == 'c' && btPrintEcho == true)
         {
@@ -159,14 +159,14 @@ void menuFirmware()
         {
             enableRCFirmware ^= 1;
             strncpy(reportedVersion, "", sizeof(reportedVersion) - 1); // Reset to force c) menu
+            newOTAFirmwareAvailable = false;
         }
 
         else if ((incoming == 'i') && settings.enableAutoFirmwareUpdate)
         {
             systemPrint("Enter minutes (1 - 999999) before next firmware check: ");
             int minutes = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((minutes != INPUT_RESPONSE_GETNUMBER_EXIT) &&
-                (minutes != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            if ((minutes != INPUT_RESPONSE_GETNUMBER_EXIT) && (minutes != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
                 if ((minutes < 1) || (minutes > 999999))
                     systemPrintln("Error: Out of range (1 - 999999)");
@@ -739,23 +739,30 @@ const char *otaPullErrorText(int code)
 // Returns true if reportedVersion is newer than currentVersion
 // Version number comes in as v2.7-Jan 5 2023
 // 2.7-Jan 5 2023 is newer than v2.7-Jan 1 2023
+// We can't use just the float number: v3.12 is a greater version than v3.9 but it is a smaller float number
 bool isReportedVersionNewer(char *reportedVersion, char *currentVersion)
 {
-    float currentVersionNumber = 0.0;
+    int currentVersionNumberMajor = 0;
+    int currentVersionNumberMinor = 0;
     int currentDay = 0;
     int currentMonth = 0;
     int currentYear = 0;
 
-    float reportedVersionNumber = 0.0;
+    int reportedVersionNumberMajor = 0;
+    int reportedVersionNumberMinor = 0;
     int reportedDay = 0;
     int reportedMonth = 0;
     int reportedYear = 0;
 
-    breakVersionIntoParts(currentVersion, &currentVersionNumber, &currentYear, &currentMonth, &currentDay);
-    breakVersionIntoParts(reportedVersion, &reportedVersionNumber, &reportedYear, &reportedMonth, &reportedDay);
+    breakVersionIntoParts(currentVersion, &currentVersionNumberMajor, &currentVersionNumberMinor, &currentYear,
+                          &currentMonth, &currentDay);
+    breakVersionIntoParts(reportedVersion, &reportedVersionNumberMajor, &reportedVersionNumberMinor, &reportedYear,
+                          &reportedMonth, &reportedDay);
 
-    log_d("currentVersion: %f %d %d %d", currentVersionNumber, currentYear, currentMonth, currentDay);
-    log_d("reportedVersion: %f %d %d %d", reportedVersionNumber, reportedYear, reportedMonth, reportedDay);
+    log_d("currentVersion (%s): %d.%d %d %d %d", currentVersion, currentVersionNumberMajor, currentVersionNumberMinor,
+          currentYear, currentMonth, currentDay);
+    log_d("reportedVersion (%s): %d.%d %d %d %d", reportedVersion, reportedVersionNumberMajor,
+          reportedVersionNumberMinor, reportedYear, reportedMonth, reportedDay);
     if (enableRCFirmware)
         log_d("RC firmware enabled");
 
@@ -765,15 +772,20 @@ bool isReportedVersionNewer(char *reportedVersion, char *currentVersion)
     // If the user is not using Release Candidate firmware, then check only the version number
     if (enableRCFirmware == false)
     {
-        // Check only the version number
-        if (reportedVersionNumber > currentVersionNumber)
+        if (reportedVersionNumberMajor > currentVersionNumberMajor)
+            return (true);
+        if (reportedVersionNumberMajor == currentVersionNumberMajor &&
+            reportedVersionNumberMinor > currentVersionNumberMinor)
             return (true);
         return (false);
     }
 
     // For RC firmware, compare firmware date as well
     // Check version number
-    if (reportedVersionNumber > currentVersionNumber)
+    if (reportedVersionNumberMajor > currentVersionNumberMajor)
+        return (true);
+    if (reportedVersionNumberMajor == currentVersionNumberMajor &&
+        reportedVersionNumberMinor > currentVersionNumberMinor)
         return (true);
 
     // Check which date is more recent
@@ -791,17 +803,18 @@ bool isReportedVersionNewer(char *reportedVersion, char *currentVersion)
 }
 
 // Version number comes in as v2.7-Jan 5 2023
-// Given a char string, break into version number, year, month, day
+// Given a char string, break into version number major/minor, year, month, day
 // Returns false if parsing failed
-bool breakVersionIntoParts(char *version, float *versionNumber, int *year, int *month, int *day)
+bool breakVersionIntoParts(char *version, int *versionNumberMajor, int *versionNumberMinor, int *year, int *month,
+                           int *day)
 {
     char monthStr[20];
     int placed = 0;
 
     if (enableRCFirmware == false)
     {
-        placed = sscanf(version, "%f", versionNumber);
-        if (placed != 1)
+        placed = sscanf(version, "%d.%d", versionNumberMajor, versionNumberMinor);
+        if (placed != 2)
         {
             log_d("Failed to sscanf basic");
             return (false); // Something went wrong
@@ -809,9 +822,9 @@ bool breakVersionIntoParts(char *version, float *versionNumber, int *year, int *
     }
     else
     {
-        placed = sscanf(version, "%f-%s %d %d", versionNumber, monthStr, day, year);
+        placed = sscanf(version, "%d.%d-%s %d %d", versionNumberMajor, versionNumberMinor, monthStr, day, year);
 
-        if (placed != 4)
+        if (placed != 5)
         {
             log_d("Failed to sscanf RC");
             return (false); // Something went wrong

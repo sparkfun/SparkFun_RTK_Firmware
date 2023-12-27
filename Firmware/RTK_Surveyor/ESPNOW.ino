@@ -32,7 +32,7 @@ void espnowOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
     //  else
     //    systemPrintln("Delivery Fail");
 }
-#endif  // COMPILE_ESPNOW
+#endif // COMPILE_ESPNOW
 
 // Callback when data is received
 void espnowOnDataReceived(const uint8_t *mac, const uint8_t *incomingData, int len)
@@ -73,7 +73,7 @@ void espnowOnDataReceived(const uint8_t *mac, const uint8_t *incomingData, int l
         espnowIncomingRTCM = true;
         lastEspnowRssiUpdate = millis();
     }
-#endif  // COMPILE_ESPNOW
+#endif // COMPILE_ESPNOW
 }
 
 // Callback for all RX Packets
@@ -88,7 +88,7 @@ void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type)
     const wifi_promiscuous_pkt_t *ppkt = (wifi_promiscuous_pkt_t *)buf;
     packetRSSI = ppkt->rx_ctrl.rssi;
 }
-#endif  // COMPILE_ESPNOW
+#endif // COMPILE_ESPNOW
 
 // If WiFi is already enabled, simply add the LR protocol
 // If the radio is off entirely, start the radio, turn on only the LR protocol
@@ -100,7 +100,7 @@ void espnowStart()
 
     if (wifiState == WIFI_OFF && espnowState == ESPNOW_OFF)
     {
-        if (WiFi.getMode() == WIFI_OFF)
+        if (WiFi.getMode() != WIFI_STA)
             WiFi.mode(WIFI_STA);
 
         // Radio is off, turn it on
@@ -114,6 +114,9 @@ void espnowStart()
     // If WiFi is on but ESP NOW is off, then enable LR protocol
     else if (wifiState > WIFI_OFF && espnowState == ESPNOW_OFF)
     {
+        if (WiFi.getMode() != WIFI_STA)
+            WiFi.mode(WIFI_STA);
+
         // Enable WiFi + ESP-Now
         // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
         // esp_wifi_set_protocol requires WiFi to be started
@@ -188,7 +191,7 @@ void espnowStart()
     }
 
     systemPrintln("ESP-Now Started");
-#endif  // COMPILE_ESPNOW
+#endif // COMPILE_ESPNOW
 }
 
 // If WiFi is already enabled, simply remove the LR protocol
@@ -215,6 +218,9 @@ void espnowStop()
     // Forget all ESP-Now Peers
     for (int x = 0; x < settings.espnowPeerCount; x++)
         espnowRemovePeer(settings.espnowPeers[x]);
+
+    if (WiFi.getMode() != WIFI_STA)
+        WiFi.mode(WIFI_STA);
 
     // Leave WiFi with default settings (no WIFI_PROTOCOL_LR for ESP NOW)
     // esp_wifi_set_protocol requires WiFi to be started
@@ -247,7 +253,7 @@ void espnowStop()
         wifiStart(); // Force WiFi to restart
     }
 
-#endif  // COMPILE_ESPNOW
+#endif // COMPILE_ESPNOW
 }
 
 // Start ESP-Now if needed, put ESP-Now into broadcast state
@@ -300,7 +306,7 @@ bool espnowIsPaired()
         espnowSetState(ESPNOW_PAIRED);
         return (true);
     }
-#endif  // COMPILE_ESPNOW
+#endif // COMPILE_ESPNOW
     return (false);
 }
 
@@ -321,9 +327,9 @@ esp_err_t espnowSendPairMessage(uint8_t *sendToMac)
         pairMessage.crc += wifiMACAddress[x];
 
     return (esp_now_send(sendToMac, (uint8_t *)&pairMessage, sizeof(pairMessage))); // Send packet to given MAC
-#else   // COMPILE_ESPNOW
+#else                                                                               // COMPILE_ESPNOW
     return (ESP_OK);
-#endif  // COMPILE_ESPNOW
+#endif                                                                              // COMPILE_ESPNOW
 }
 
 // Add a given MAC address to the peer list
@@ -349,9 +355,9 @@ esp_err_t espnowAddPeer(uint8_t *peerMac, bool encrypt)
         log_d("Failed to add peer: 0x%02X%02X%02X%02X%02X%02X", peerMac[0], peerMac[1], peerMac[2], peerMac[3],
               peerMac[4], peerMac[5]);
     return (result);
-#else   // COMPILE_ESPNOW
+#else  // COMPILE_ESPNOW
     return (ESP_OK);
-#endif  // COMPILE_ESPNOW
+#endif // COMPILE_ESPNOW
 }
 
 // Remove a given MAC address from the peer list
@@ -363,9 +369,9 @@ esp_err_t espnowRemovePeer(uint8_t *peerMac)
         log_d("Failed to remove peer: %s", esp_err_to_name(response));
 
     return (response);
-#else   // COMPILE_ESPNOW
+#else  // COMPILE_ESPNOW
     return (ESP_OK);
-#endif  // COMPILE_ESPNOW
+#endif // COMPILE_ESPNOW
 }
 
 // Update the state of the ESP Now state machine
@@ -428,7 +434,7 @@ void espnowProcessRTCM(byte incoming)
             espnowOutgoingRTCM = true;
         }
     }
-#endif  // COMPILE_ESPNOW
+#endif // COMPILE_ESPNOW
 }
 
 // A blocking function that is used to pair two devices

@@ -16,12 +16,26 @@ void menuPortsSurveyor()
         systemPrintln("Menu: Ports");
 
         systemPrint("1) Set serial baud rate for Radio Port: ");
-        systemPrint(theGNSS.getVal32(UBLOX_CFG_UART2_BAUDRATE));
-        systemPrintln(" bps");
+        if (settings.radioPortBaud == 0)
+        {
+            systemPrintln("Disabled");
+        }
+        else
+        {
+            systemPrint(theGNSS.getVal32(UBLOX_CFG_UART2_BAUDRATE));
+            systemPrintln(" bps");
+        }
 
         systemPrint("2) Set serial baud rate for Data Port: ");
-        systemPrint(theGNSS.getVal32(UBLOX_CFG_UART1_BAUDRATE));
-        systemPrintln(" bps");
+        if (settings.dataPortBaud == 0)
+        {
+            systemPrintln("Disabled");
+        }
+        else
+        {
+            systemPrint(theGNSS.getVal32(UBLOX_CFG_UART1_BAUDRATE));
+            systemPrintln(" bps");
+        }
 
         systemPrint("3) GNSS UART2 UBX Protocol In: ");
         if (settings.enableUART2UBXIn == true)
@@ -35,16 +49,63 @@ void menuPortsSurveyor()
 
         if (incoming == 1)
         {
-            systemPrint("Enter baud rate (4800 to 921600) for Radio Port: ");
+            systemPrint("Enter baud rate (4800 to 921600, 0 = disable) for Radio Port: ");
             int newBaud = getNumber(); // Returns EXIT, TIMEOUT, or long
             if ((newBaud != INPUT_RESPONSE_GETNUMBER_EXIT) && (newBaud != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
-                if (newBaud == 4800 || newBaud == 9600 || newBaud == 19200 || newBaud == 38400 || newBaud == 57600 ||
-                    newBaud == 115200 || newBaud == 230400 || newBaud == 460800 || newBaud == 921600)
+                if (newBaud == 0 || newBaud == 4800 || newBaud == 9600 || newBaud == 19200 || newBaud == 38400 ||
+                    newBaud == 57600 || newBaud == 115200 || newBaud == 230400 || newBaud == 460800 ||
+                    newBaud == 921600)
                 {
                     settings.radioPortBaud = newBaud;
                     if (online.gnss == true)
-                        theGNSS.setVal32(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud);
+                    {
+                        if (newBaud == 0)
+                        {
+                            // Disable all protocols in/out of UART2
+                            bool response = true;
+
+                            response &= theGNSS.newCfgValset();
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_NMEA, 0);
+                            if (commandSupported(UBLOX_CFG_UART2OUTPROT_RTCM3X) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_RTCM3X, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_UBX, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_NMEA, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_RTCM3X, 0);
+                            if (commandSupported(UBLOX_CFG_UART2INPROT_SPARTN) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_SPARTN, 0);
+                            response &= theGNSS.sendCfgValset();
+
+                            if (response == false)
+                                systemPrintln("Failed to set UART2 settings");
+                        }
+                        else
+                        {
+                            bool response = true;
+
+                            response &= theGNSS.newCfgValset();
+
+                            // Set the baud rate
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud);
+
+                            // Set the UART2 to only do RTCM (in case this device goes into base mode)
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_NMEA, 0);
+                            if (commandSupported(UBLOX_CFG_UART2OUTPROT_RTCM3X) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_RTCM3X, 1);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_UBX, settings.enableUART2UBXIn);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_NMEA, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_RTCM3X, 1);
+                            if (commandSupported(UBLOX_CFG_UART2INPROT_SPARTN) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_SPARTN, 0);
+
+                            response &= theGNSS.sendCfgValset();
+
+                            if (response == false)
+                                systemPrintln("Failed to set UART2 settings");
+                        }
+                    }
                 }
                 else
                 {
@@ -54,16 +115,62 @@ void menuPortsSurveyor()
         }
         else if (incoming == 2)
         {
-            systemPrint("Enter baud rate (4800 to 921600) for Data Port: ");
+            systemPrint("Enter baud rate (4800 to 921600, 0 = disable) for Data Port: ");
             int newBaud = getNumber(); // Returns EXIT, TIMEOUT, or long
             if ((newBaud != INPUT_RESPONSE_GETNUMBER_EXIT) && (newBaud != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
-                if (newBaud == 4800 || newBaud == 9600 || newBaud == 19200 || newBaud == 38400 || newBaud == 57600 ||
-                    newBaud == 115200 || newBaud == 230400 || newBaud == 460800 || newBaud == 921600)
+                if (newBaud == 0 || newBaud == 4800 || newBaud == 9600 || newBaud == 19200 || newBaud == 38400 ||
+                    newBaud == 57600 || newBaud == 115200 || newBaud == 230400 || newBaud == 460800 ||
+                    newBaud == 921600)
                 {
                     settings.dataPortBaud = newBaud;
                     if (online.gnss == true)
-                        theGNSS.setVal32(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud);
+                    {
+                        if (newBaud == 0)
+                        {
+                            // Disable all protocols in/out of UART1
+                            bool response = true;
+
+                            response &= theGNSS.newCfgValset();
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_UBX, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_NMEA, 0);
+                            if (commandSupported(UBLOX_CFG_UART1OUTPROT_RTCM3X) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_RTCM3X, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_UBX, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_NMEA, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_RTCM3X, 0);
+                            if (commandSupported(UBLOX_CFG_UART1INPROT_SPARTN) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_SPARTN, 0);
+                            response &= theGNSS.sendCfgValset();
+
+                            if (response == false)
+                                systemPrintln("Failed to set UART1 settings");
+                        }
+                        else
+                        {
+                            bool response = true;
+
+                            response &= theGNSS.newCfgValset();
+
+                            // Set the baud rate
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud);
+
+                            // Turn on all protocols except SPARTN
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_UBX, 1);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_NMEA, 1);
+                            if (commandSupported(UBLOX_CFG_UART1OUTPROT_RTCM3X) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_RTCM3X, 1);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_UBX, 1);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_NMEA, 1);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_RTCM3X, 1);
+                            if (commandSupported(UBLOX_CFG_UART1INPROT_SPARTN) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_SPARTN, 0);
+                            response &= theGNSS.sendCfgValset();
+
+                            if (response == false)
+                                systemPrintln("Failed to set UART1 settings");
+                        }
+                    }
                 }
                 else
                 {
@@ -99,8 +206,15 @@ void menuPortsMultiplexed()
         systemPrintln("Menu: Ports");
 
         systemPrint("1) Set Radio port serial baud rate: ");
-        systemPrint(theGNSS.getVal32(UBLOX_CFG_UART2_BAUDRATE));
-        systemPrintln(" bps");
+        if (settings.radioPortBaud == 0)
+        {
+            systemPrintln("Disabled");
+        }
+        else
+        {
+            systemPrint(theGNSS.getVal32(UBLOX_CFG_UART2_BAUDRATE));
+            systemPrintln(" bps");
+        }
 
         systemPrint("2) Set Data port connections: ");
         if (settings.dataPortChannel == MUX_UBLOX_NMEA)
@@ -120,8 +234,15 @@ void menuPortsMultiplexed()
         if (settings.dataPortChannel == MUX_UBLOX_NMEA)
         {
             systemPrint("3) Set Data port serial baud rate: ");
-            systemPrint(theGNSS.getVal32(UBLOX_CFG_UART1_BAUDRATE));
-            systemPrintln(" bps");
+            if (settings.dataPortBaud == 0)
+            {
+                systemPrintln("Disabled");
+            }
+            else
+            {
+                systemPrint(theGNSS.getVal32(UBLOX_CFG_UART1_BAUDRATE));
+                systemPrintln(" bps");
+            }
         }
         else if (settings.dataPortChannel == MUX_PPS_EVENTTRIGGER)
         {
@@ -153,16 +274,63 @@ void menuPortsMultiplexed()
 
         if (incoming == 1)
         {
-            systemPrint("Enter baud rate (4800 to 921600) for Radio Port: ");
+            systemPrint("Enter baud rate (4800 to 921600, 0 = disable) for Radio Port: ");
             int newBaud = getNumber(); // Returns EXIT, TIMEOUT, or long
             if ((newBaud != INPUT_RESPONSE_GETNUMBER_EXIT) && (newBaud != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
-                if (newBaud == 4800 || newBaud == 9600 || newBaud == 19200 || newBaud == 38400 || newBaud == 57600 ||
-                    newBaud == 115200 || newBaud == 230400 || newBaud == 460800 || newBaud == 921600)
+                if (newBaud == 0 || newBaud == 4800 || newBaud == 9600 || newBaud == 19200 || newBaud == 38400 ||
+                    newBaud == 57600 || newBaud == 115200 || newBaud == 230400 || newBaud == 460800 ||
+                    newBaud == 921600)
                 {
                     settings.radioPortBaud = newBaud;
                     if (online.gnss == true)
-                        theGNSS.setVal32(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud);
+                    {
+                        if (newBaud == 0)
+                        {
+                            // Disable all protocols in/out of UART2
+                            bool response = true;
+
+                            response &= theGNSS.newCfgValset();
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_NMEA, 0);
+                            if (commandSupported(UBLOX_CFG_UART2OUTPROT_RTCM3X) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_RTCM3X, 0);
+
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_UBX, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_NMEA, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_RTCM3X, 0);
+                            if (commandSupported(UBLOX_CFG_UART2INPROT_SPARTN) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_SPARTN, 0);
+                            response &= theGNSS.sendCfgValset();
+
+                            if (response == false)
+                                systemPrintln("Failed to set UART2 settings");
+                        }
+                        else
+                        {
+                            bool response = true;
+
+                            response &= theGNSS.newCfgValset();
+
+                            // Set the baud rate
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud);
+
+                            // Set the UART2 to only do RTCM (in case this device goes into base mode)
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_NMEA, 0);
+                            if (commandSupported(UBLOX_CFG_UART2OUTPROT_RTCM3X) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_RTCM3X, 1);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_UBX, settings.enableUART2UBXIn);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_NMEA, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_RTCM3X, 1);
+                            if (commandSupported(UBLOX_CFG_UART2INPROT_SPARTN) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_SPARTN, 0);
+                            response &= theGNSS.sendCfgValset();
+
+                            if (response == false)
+                                systemPrintln("Failed to set UART2 settings");
+                        }
+                    }
                 }
                 else
                 {
@@ -194,16 +362,63 @@ void menuPortsMultiplexed()
         }
         else if (incoming == 3 && settings.dataPortChannel == MUX_UBLOX_NMEA)
         {
-            systemPrint("Enter baud rate (4800 to 921600) for Data Port: ");
+            systemPrint("Enter baud rate (4800 to 921600, 0 = disable) for Data Port: ");
             int newBaud = getNumber(); // Returns EXIT, TIMEOUT, or long
             if ((newBaud != INPUT_RESPONSE_GETNUMBER_EXIT) && (newBaud != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
-                if (newBaud == 4800 || newBaud == 9600 || newBaud == 19200 || newBaud == 38400 || newBaud == 57600 ||
-                    newBaud == 115200 || newBaud == 230400 || newBaud == 460800 || newBaud == 921600)
+                if (newBaud == 0 || newBaud == 4800 || newBaud == 9600 || newBaud == 19200 || newBaud == 38400 ||
+                    newBaud == 57600 || newBaud == 115200 || newBaud == 230400 || newBaud == 460800 ||
+                    newBaud == 921600)
                 {
                     settings.dataPortBaud = newBaud;
                     if (online.gnss == true)
-                        theGNSS.setVal32(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud);
+                    {
+                        if (newBaud == 0)
+                        {
+                            // Disable all protocols in/out of UART1
+                            bool response = true;
+
+                            response &= theGNSS.newCfgValset();
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_UBX, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_NMEA, 0);
+                            if (commandSupported(UBLOX_CFG_UART1OUTPROT_RTCM3X) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_RTCM3X, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_UBX, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_NMEA, 0);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_RTCM3X, 0);
+                            if (commandSupported(UBLOX_CFG_UART1INPROT_SPARTN) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_SPARTN, 0);
+                            response &= theGNSS.sendCfgValset();
+
+                            if (response == false)
+                                systemPrintln("Failed to set UART1 settings");
+                        }
+                        else
+                        {
+                            bool response = true;
+
+                            response &= theGNSS.newCfgValset();
+
+                            // Set the baud rate
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud);
+
+                            // Turn on all protocols except SPARTN
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_UBX, 1);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_NMEA, 1);
+                            if (commandSupported(UBLOX_CFG_UART1OUTPROT_RTCM3X) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_RTCM3X, 1);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_UBX, 1);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_NMEA, 1);
+                            response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_RTCM3X, 1);
+                            if (commandSupported(UBLOX_CFG_UART1INPROT_SPARTN) == true)
+                                response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_SPARTN, 0);
+
+                            response &= theGNSS.sendCfgValset();
+
+                            if (response == false)
+                                systemPrintln("Failed to set UART1 settings");
+                        }
+                    }
                 }
                 else
                 {
@@ -222,7 +437,8 @@ void menuPortsMultiplexed()
         }
         else if (productVariant == RTK_FACET_LBAND_DIRECT && incoming == 5)
         {
-            settings.useI2cForLbandCorrectionsConfigured = true; //Record that the user has manually modified the settings.
+            settings.useI2cForLbandCorrectionsConfigured =
+                true; // Record that the user has manually modified the settings.
             settings.useI2cForLbandCorrections ^= 1;
             systemPrintln("External radio port updated. Changes will be applied at next restart.");
         }

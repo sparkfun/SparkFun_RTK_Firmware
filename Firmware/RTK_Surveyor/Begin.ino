@@ -9,43 +9,37 @@ Begin.ino
 // Constants
 //----------------------------------------
 
-#define MAX_ADC_VOLTAGE     3300    // Millivolts
+#define MAX_ADC_VOLTAGE 3300 // Millivolts
 
 // Testing shows the combined ADC+resistors is under a 1% window
-#define TOLERANCE           4.75    // Percent:  95.25% - 104.75%
+#define TOLERANCE 5.20 // Percent:  94.8% - 105.2%
 
 //----------------------------------------
 // Hardware initialization functions
 //----------------------------------------
-
-//                                ADC input
-//                       Ra KOhms     |     Rb KOhms
-//  MAX_ADC_VOLTAGE -----/\/\/\/\-----+-----/\/\/\/\----- Ground
-//
-
 // Determine if the measured value matches the product ID value
-bool idWithAdc(uint16_t mvMeasured, float resVcc, float resGnd)
+// idWithAdc applies resistor tolerance using worst-case tolerances:
+// Upper threshold: R1 down by TOLERANCE, R2 up by TOLERANCE
+// Lower threshold: R1 up by TOLERANCE, R2 down by TOLERANCE
+bool idWithAdc(uint16_t mvMeasured, float r1, float r2)
 {
-    uint16_t lowerThreshold;
-    float raK;
-    float rbK;
-    uint16_t upperThreshold;
-    float voltage;
+    float lowerThreshold;
+    float upperThreshold;
 
-    // Compute the upper threshold
-    raK = resVcc * (1.0 - (TOLERANCE / 100.));
-    rbK = resGnd * (1.0 + (TOLERANCE / 100.));
-    voltage = MAX_ADC_VOLTAGE * rbK / (raK + rbK);
-    upperThreshold = (int)ceil(voltage);
-
-    // Compute the lower threshold
-    raK = (double)resVcc * (1.0 + (TOLERANCE / 100.));
-    rbK = (double)resGnd * (1.0 - (TOLERANCE / 100.));
-    voltage = MAX_ADC_VOLTAGE * rbK / (raK + rbK);
-    lowerThreshold = (int)floor(voltage);
+    //                                ADC input
+    //                       r1 KOhms     |     r2 KOhms
+    //  MAX_ADC_VOLTAGE -----/\/\/\/\-----+-----/\/\/\/\----- Ground
 
     // Return true if the mvMeasured value is within the tolerance range
     // of the mvProduct value
+    upperThreshold = ceil(MAX_ADC_VOLTAGE * (r2 * (1.0 + (TOLERANCE / 100.0))) /
+                          ((r1 * (1.0 - (TOLERANCE / 100.0))) + (r2 * (1.0 + (TOLERANCE / 100.0)))));
+    lowerThreshold = floor(MAX_ADC_VOLTAGE * (r2 * (1.0 - (TOLERANCE / 100.0))) /
+                           ((r1 * (1.0 + (TOLERANCE / 100.0))) + (r2 * (1.0 - (TOLERANCE / 100.0)))));
+
+    // systemPrintf("r1: %0.2f r2: %0.2f lowerThreshold: %0.0f mvMeasured: %d upperThreshold: %0.0f\r\n", r1, r2,
+    // lowerThreshold, mvMeasured, upperThreshold);
+
     return (upperThreshold > mvMeasured) && (mvMeasured > lowerThreshold);
 }
 
@@ -61,13 +55,13 @@ void identifyBoard()
     uint16_t idValue = analogReadMilliVolts(pin_deviceID);
     log_d("Board ADC ID (mV): %d", idValue);
 
-    // Order checks by millivolt values high to low
+    // Order the following ID checks, by millivolt values high to low
 
-    // Facet L-Band Direct: 4.7/1  -->  534mV < 578mV < 626mV
+    // Facet L-Band Direct: 4.7/1  -->  534mV < 579mV < 626mV
     if (idWithAdc(idValue, 4.7, 1))
         productVariant = RTK_FACET_LBAND_DIRECT;
 
-    // Express: 10/3.3  -->  761mV < 818mV < 879mV
+    // Express: 10/3.3  -->  761mV < 819mV < 879mV
     else if (idWithAdc(idValue, 10, 3.3))
         productVariant = RTK_EXPRESS;
 
@@ -95,7 +89,10 @@ void identifyBoard()
     //      Surveyor
     //      Unknown
     else
+    {
+        log_d("Out of band or nonexistent resistor IDs");
         productVariant = RTK_UNKNOWN; // Need to wait until the GNSS and Accel have been initialized
+    }
 }
 
 // Setup any essential power pins
@@ -611,8 +608,7 @@ void beginUART2()
     // after discarding the oldest data
     length = settings.gnssHandlerBufferSize;
     rbOffsetEntries = (length >> 1) / AVERAGE_SENTENCE_LENGTH_IN_BYTES;
-    length = settings.gnssHandlerBufferSize
-           + (rbOffsetEntries * sizeof(RING_BUFFER_OFFSET));
+    length = settings.gnssHandlerBufferSize + (rbOffsetEntries * sizeof(RING_BUFFER_OFFSET));
     ringBuffer = nullptr;
     rbOffsetArray = (RING_BUFFER_OFFSET *)malloc(length);
     if (!rbOffsetArray)
@@ -1272,40 +1268,40 @@ void pinI2CTask(void *pvParameters)
             i2cBusAvailable = true;
             switch (addr)
             {
-                default: {
-                    systemPrintf("0x%02x\r\n", addr);
-                    break;
-                }
+            default: {
+                systemPrintf("0x%02x\r\n", addr);
+                break;
+            }
 
-                case 0x19: {
-                    systemPrintf("0x%02x - LIS2DH12 Accelerometer\r\n", addr);
-                    break;
-                }
+            case 0x19: {
+                systemPrintf("0x%02x - LIS2DH12 Accelerometer\r\n", addr);
+                break;
+            }
 
-                case 0x36: {
-                    systemPrintf("0x%02x - MAX17048 Fuel Gauge\r\n", addr);
-                    break;
-                }
+            case 0x36: {
+                systemPrintf("0x%02x - MAX17048 Fuel Gauge\r\n", addr);
+                break;
+            }
 
-                case 0x3d: {
-                    systemPrintf("0x%02x - SSD1306 (64x48) OLED Driver\r\n", addr);
-                    break;
-                }
+            case 0x3d: {
+                systemPrintf("0x%02x - SSD1306 (64x48) OLED Driver\r\n", addr);
+                break;
+            }
 
-                case 0x42: {
-                    systemPrintf("0x%02x - u-blox ZED-F9P GNSS Receiver\r\n", addr);
-                    break;
-                }
+            case 0x42: {
+                systemPrintf("0x%02x - u-blox ZED-F9P GNSS Receiver\r\n", addr);
+                break;
+            }
 
-                case 0x43: {
-                    systemPrintf("0x%02x - u-blox NEO-D9S-00B Correction Data Receiver\r\n", addr);
-                    break;
-                }
+            case 0x43: {
+                systemPrintf("0x%02x - u-blox NEO-D9S-00B Correction Data Receiver\r\n", addr);
+                break;
+            }
 
-                case 0x60: {
-                    systemPrintf("0x%02x - Crypto Coprocessor\r\n", addr);
-                    break;
-                }
+            case 0x60: {
+                systemPrintf("0x%02x - Crypto Coprocessor\r\n", addr);
+                break;
+            }
             }
         }
         else if ((millis() - timer) > 3)

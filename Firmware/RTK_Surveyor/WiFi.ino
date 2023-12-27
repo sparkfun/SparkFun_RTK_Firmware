@@ -236,7 +236,7 @@ bool wifiStartAP(bool forceAP)
         // Before starting AP mode, be sure we have default WiFi protocols enabled.
         // esp_wifi_set_protocol requires WiFi to be started
         esp_err_t response =
-            esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+            esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
         if (response != ESP_OK)
             systemPrintf("wifiStartAP: Error setting WiFi protocols: %s\r\n", esp_err_to_name(response));
         else
@@ -392,7 +392,7 @@ void wifiStart()
     if (wifiNetworkCount() == 0)
     {
         systemPrintln("Error: Please enter at least one SSID before using WiFi");
-        // paintNoWiFi(2000); //TODO
+        displayNoSSIDs(2000);
         WIFI_STOP();
         return;
     }
@@ -440,7 +440,7 @@ void wifiShutdown()
     // If ESP-Now is active, change protocol to only Long Range and re-start WiFi
     if (espnowState > ESPNOW_OFF)
     {
-        if (WiFi.getMode() == WIFI_OFF)
+        if (WiFi.getMode() != WIFI_STA)
             WiFi.mode(WIFI_STA);
 
         // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
@@ -477,7 +477,7 @@ bool wifiConnect(unsigned long timeout)
     displayWiFiConnect();
 
     // Before we can issue esp_wifi_() commands WiFi must be started
-    if (WiFi.getMode() == WIFI_OFF)
+    if (WiFi.getMode() != WIFI_STA)
         WiFi.mode(WIFI_STA);
 
     // Verify that the necessary protocols are set
@@ -506,7 +506,7 @@ bool wifiConnect(unsigned long timeout)
             esp_err_t response = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G |
                                                                         WIFI_PROTOCOL_11N); // Enable WiFi.
             if (response != ESP_OK)
-                systemPrintf("wifiConnect: Error setting WiFi + ESP-NOW protocols: %s\r\n", esp_err_to_name(response));
+                systemPrintf("wifiConnect: Error setting WiFi protocols: %s\r\n", esp_err_to_name(response));
         }
     }
 
@@ -529,7 +529,7 @@ bool wifiConnect(unsigned long timeout)
             if (settings.mdnsEnable == true)
             {
                 if (MDNS.begin("rtk") == false) // This should make the module findable from 'rtk.local' in browser
-                    log_d("Error setting up MDNS responder!");
+                    systemPrintln("Error setting up MDNS responder!");
                 else
                     MDNS.addService("http", "tcp", settings.httpPort); // Add service to MDNS
             }

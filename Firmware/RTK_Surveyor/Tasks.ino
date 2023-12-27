@@ -38,12 +38,12 @@ Tasks.ino
 // Macros
 //----------------------------------------
 
-#define WRAP_OFFSET(offset, increment, arraySize)   \
-{                                                   \
-    offset += increment;                            \
-    if (offset >= arraySize)                        \
-        offset -= arraySize;                        \
-}
+#define WRAP_OFFSET(offset, increment, arraySize)                                                                      \
+    {                                                                                                                  \
+        offset += increment;                                                                                           \
+        if (offset >= arraySize)                                                                                       \
+            offset -= arraySize;                                                                                       \
+    }
 
 //----------------------------------------
 // Constants
@@ -60,13 +60,8 @@ enum RingBufferConsumers
     RBC_MAX
 };
 
-const char * const ringBufferConsumer[] =
-{
-    "Bluetooth",
-    "PVT Client",
-    "PVT Server",
-    "SD Card",
-    "PVT UDP Server",
+const char *const ringBufferConsumer[] = {
+    "Bluetooth", "PVT Client", "PVT Server", "SD Card", "PVT UDP Server",
 };
 
 const int ringBufferConsumerEntries = sizeof(ringBufferConsumer) / sizeof(ringBufferConsumer[0]);
@@ -75,8 +70,8 @@ const int ringBufferConsumerEntries = sizeof(ringBufferConsumer) / sizeof(ringBu
 // Locals
 //----------------------------------------
 
-volatile static RING_BUFFER_OFFSET dataHead;      // Head advances as data comes in from GNSS's UART
-volatile int32_t availableHandlerSpace; // settings.gnssHandlerBufferSize - usedSpace
+volatile static RING_BUFFER_OFFSET dataHead; // Head advances as data comes in from GNSS's UART
+volatile int32_t availableHandlerSpace;      // settings.gnssHandlerBufferSize - usedSpace
 volatile const char *slowConsumer;
 
 // Buffer the incoming Bluetooth stream so that it can be passed in bulk over I2C
@@ -632,7 +627,7 @@ void updateRingBufferTails(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET n
 }
 
 // Remove previous messages from the ring buffer
-void discardRingBufferBytes(RING_BUFFER_OFFSET * tail, RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail)
+void discardRingBufferBytes(RING_BUFFER_OFFSET *tail, RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET newTail)
 {
     // The longest tail is being trimmed.  Medium length tails may contain
     // some data within the region begin trimmed.  The shortest tails will
@@ -1095,7 +1090,8 @@ void ButtonCheckTask(void *e)
 
         if (productVariant == RTK_SURVEYOR)
         {
-            if (setupBtn && (settings.disableSetupButton == false)) // Allow check of the setup button if not overridden by settings
+            if (setupBtn &&
+                (settings.disableSetupButton == false)) // Allow check of the setup button if not overridden by settings
             {
                 setupBtn->read();
 
@@ -1276,8 +1272,9 @@ void ButtonCheckTask(void *e)
                     }
                 } // End disabdisableSetupButton check
             }
-        }                                                                          // End Platform = RTK Express
-        else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT) // Check one momentary button
+        } // End Platform = RTK Express
+        else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND ||
+                 productVariant == RTK_FACET_LBAND_DIRECT) // Check one momentary button
         {
             if (powerBtn != nullptr)
                 powerBtn->read();
@@ -1388,8 +1385,20 @@ void ButtonCheckTask(void *e)
                             setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                             break;
                         case STATE_WIFI_CONFIG_NOT_STARTED:
+                            if (productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT)
+                            {
+                                lBandForceGetKeys = true;
+                                setupState = STATE_KEYS_NEEDED;
+                            }
+                            else
+                                setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
+                            break;
+
+                        case STATE_KEYS_NEEDED:
+                            lBandForceGetKeys = false; // User has scrolled past the GetKeys option
                             setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
                             break;
+
                         case STATE_ESPNOW_PAIRING_NOT_STARTED:
                             // If only one active profile do not show any profiles
                             index = getProfileNumberFromUnit(0);
@@ -1551,7 +1560,7 @@ void ButtonCheckTask(void *e)
                         requestChangeState(STATE_BASE_NOT_STARTED);
                         break;
                     }
-                } //End disableSetupButton check
+                } // End disableSetupButton check
             }
         } // End Platform = REFERENCE_STATION
 

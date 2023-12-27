@@ -238,7 +238,8 @@ bool pointperfectProvisionDevice()
 
         char hardwareID[13];
         snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1],
-                 lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5] - 2); // Get ready for JSON
+                 lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4],
+                 lbandMACAddress[5]); // Get ready for JSON
 
 #ifdef WHITELISTED_ID
         // Override ID with testing ID
@@ -317,6 +318,9 @@ bool pointperfectProvisionDevice()
 
         if (httpResponseCode != 200)
         {
+            systemPrintf("HTTP response error %d: ", httpResponseCode);
+            systemPrintln(response);
+
             // If a device has been deactivated, response will be: "HTTP response error 403: No plan for device
             // device:9f49e97f-e6a7-4a08-8d58-ac7ecdc90e23"
             if (response.indexOf("No plan for device") >= 0)
@@ -333,7 +337,8 @@ bool pointperfectProvisionDevice()
 
                 displayAccountExpired(5000);
             }
-            //If a device is not whitelisted, reponse will be: "HTTP response error 403: Device hardware code not whitelisted"
+            // If a device is not whitelisted, reponse will be: "HTTP response error 403: Device hardware code not
+            // whitelisted"
             else if (response.indexOf("not whitelisted") >= 0)
             {
                 char hardwareID[13];
@@ -341,16 +346,12 @@ bool pointperfectProvisionDevice()
                          lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4],
                          lbandMACAddress[5]);
 
-                systemPrintf("This device is not white-listed. Please contact "
-                             "support@sparkfun.com to get your subscription activated. Please reference device ID: %s\r\n",
-                             hardwareID);
+                systemPrintf(
+                    "This device is not white-listed. Please contact "
+                    "support@sparkfun.com to get your subscription activated. Please reference device ID: %s\r\n",
+                    hardwareID);
 
                 displayNotListed(5000);
-            }
-            else
-            {
-                systemPrintf("HTTP response error %d: ", httpResponseCode);
-                systemPrintln(response);
             }
             break;
         }

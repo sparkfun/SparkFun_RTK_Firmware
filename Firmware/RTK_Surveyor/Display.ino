@@ -1893,6 +1893,11 @@ void displayAccountExpired(uint16_t displayTime)
   displayMessage("Account Expired", displayTime);
 }
 
+void displayNotListed(uint16_t displayTime)
+{
+  displayMessage("Not Listed", displayTime);
+}
+
 void displayRoverStart(uint16_t displayTime)
 {
     if (online.display == true)

@@ -238,7 +238,7 @@ bool pointperfectProvisionDevice()
 
         char hardwareID[13];
         snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1],
-                 lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); // Get ready for JSON
+                 lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5] - 2); // Get ready for JSON
 
 #ifdef WHITELISTED_ID
         // Override ID with testing ID
@@ -326,12 +326,26 @@ bool pointperfectProvisionDevice()
                          lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4],
                          lbandMACAddress[5]);
 
-                systemPrintf("This device's L-Band subscription has lapsed or is not white-listed. Please contact "
+                systemPrintf("This device has been deactivated. Please contact "
                              "support@sparkfun.com to renew the L-Band "
                              "subscription. Please reference device ID: %s\r\n",
                              hardwareID);
 
                 displayAccountExpired(5000);
+            }
+            //If a device is not whitelisted, reponse will be: "HTTP response error 403: Device hardware code not whitelisted"
+            else if (response.indexOf("not whitelisted") >= 0)
+            {
+                char hardwareID[13];
+                snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0],
+                         lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4],
+                         lbandMACAddress[5]);
+
+                systemPrintf("This device is not white-listed. Please contact "
+                             "support@sparkfun.com to get your subscription activated. Please reference device ID: %s\r\n",
+                             hardwareID);
+
+                displayNotListed(5000);
             }
             else
             {

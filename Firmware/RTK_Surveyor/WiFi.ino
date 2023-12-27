@@ -392,7 +392,7 @@ void wifiStart()
     if (wifiNetworkCount() == 0)
     {
         systemPrintln("Error: Please enter at least one SSID before using WiFi");
-        // paintNoWiFi(2000); //TODO
+        displayNoSSIDs(2000);
         WIFI_STOP();
         return;
     }

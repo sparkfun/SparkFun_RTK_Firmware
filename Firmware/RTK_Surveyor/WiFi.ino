@@ -236,7 +236,7 @@ bool wifiStartAP(bool forceAP)
         // Before starting AP mode, be sure we have default WiFi protocols enabled.
         // esp_wifi_set_protocol requires WiFi to be started
         esp_err_t response =
-            esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+            esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
         if (response != ESP_OK)
             systemPrintf("wifiStartAP: Error setting WiFi protocols: %s\r\n", esp_err_to_name(response));
         else

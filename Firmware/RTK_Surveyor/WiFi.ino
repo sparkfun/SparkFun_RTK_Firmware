@@ -506,7 +506,7 @@ bool wifiConnect(unsigned long timeout)
             esp_err_t response = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G |
                                                                         WIFI_PROTOCOL_11N); // Enable WiFi.
             if (response != ESP_OK)
-                systemPrintf("wifiConnect: Error setting WiFi + ESP-NOW protocols: %s\r\n", esp_err_to_name(response));
+                systemPrintf("wifiConnect: Error setting WiFi protocols: %s\r\n", esp_err_to_name(response));
         }
     }
 

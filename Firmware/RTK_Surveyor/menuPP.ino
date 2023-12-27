@@ -613,7 +613,7 @@ bool pointperfectUpdateKeys()
 
         systemPrintf("Attempting to connect to MQTT broker: %s\r\n", settings.pointPerfectBrokerHost);
 
-        if (mqttClient.connect(settings.pointPerfectClientID))
+        if (mqttClient.connect(settings.pointPerfectClientID) == true)
         {
             // Successful connection
             systemPrintln("MQTT connected");
@@ -621,18 +621,15 @@ bool pointperfectUpdateKeys()
             // Originally the provisioning process reported the '/pp/key/Lb' channel which fails to respond with
             // keys. Looks like they fixed it to /pp/ubx/0236/Lb.
             mqttClient.subscribe(settings.pointPerfectLBandTopic);
-            break;
         }
-
-        // Check for connection failure
-        if (mqttClient.connected() == false)
+        else
         {
             systemPrintln("Failed to connect to MQTT Broker");
 
             // MQTT does not provide good error reporting.
             // Throw out everything and attempt to provision the device to get better error checking.
             pointperfectProvisionDevice();
-            break;
+            break; //Skip the remaining MQTT checking, release resources
         }
 
         systemPrint("Waiting for keys");

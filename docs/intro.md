@@ -139,7 +139,6 @@ These companies set up a large number of reference stations that cover entire re
 
 * [PointOneNav](https://app.pointonenav.com/trial?src=sparkfun) ($50/month) - US, EU
 * [Skylark](https://www.swiftnav.com/skylark) ($29 to $69/month) - US, EU, Japan, Australia
-* [Vector RTK](https://vectorrtk.com/) ($115/month) - UK
 * [SensorCloud RTK](https://rtk.sensorcloud.com/pricing/) ($100/month) partial US, EU
 * [KeyNetGPS](https://www.keypre.com/KeynetGPS) ($375/month) North Eastern US
 * [Hexagon/Leica](https://hxgnsmartnet.com/en-US) ($500/month) - partial US, EU

@@ -440,7 +440,7 @@ void wifiShutdown()
     // If ESP-Now is active, change protocol to only Long Range and re-start WiFi
     if (espnowState > ESPNOW_OFF)
     {
-        if (WiFi.getMode() == WIFI_OFF)
+        if (WiFi.getMode() != WIFI_STA)
             WiFi.mode(WIFI_STA);
 
         // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
@@ -477,7 +477,7 @@ bool wifiConnect(unsigned long timeout)
     displayWiFiConnect();
 
     // Before we can issue esp_wifi_() commands WiFi must be started
-    if (WiFi.getMode() == WIFI_OFF)
+    if (WiFi.getMode() != WIFI_STA)
         WiFi.mode(WIFI_STA);
 
     // Verify that the necessary protocols are set

@@ -1118,6 +1118,8 @@ typedef struct
     bool enableCaptivePortal = true;
     bool enableZedUsb = true; //Can be used to disable ZED USB config
 
+    bool debugWiFiConfig = false;
+
     // Add new settings above <------------------------------------------------------------>
 
 } Settings;

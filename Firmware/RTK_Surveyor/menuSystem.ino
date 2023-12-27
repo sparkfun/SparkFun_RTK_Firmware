@@ -534,6 +534,10 @@ void menuDebugNetwork()
         systemPrint("27) Debug PVT UDP server: ");
         systemPrintf("%s\r\n", settings.debugPvtUdpServer ? "Enabled" : "Disabled");
 
+        // WiFi Config
+        systemPrint("28) Debug WiFi Config: ");
+        systemPrintf("%s\r\n", settings.debugWiFiConfig ? "Enabled" : "Disabled");
+
         systemPrintln("r) Force system reset");
 
         systemPrintln("x) Exit");
@@ -566,6 +570,8 @@ void menuDebugNetwork()
             settings.debugPvtServer ^= 1;
         else if (incoming == 27)
             settings.debugPvtUdpServer ^= 1;
+        else if (incoming == 28)
+            settings.debugWiFiConfig ^= 1;
 
         // Menu exit control
         else if (incoming == 'r')

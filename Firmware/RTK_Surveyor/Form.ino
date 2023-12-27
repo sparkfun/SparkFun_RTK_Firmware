@@ -104,7 +104,7 @@ bool startWebServer(bool startWiFi = true, int httpPort = 80)
             break;
         }
 
-        if(settings.enableCaptivePortal == true)
+        if (settings.enableCaptivePortal == true)
             webserver->addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER); // only when requested from AP
 
         websocket->onEvent(onWsEvent);
@@ -322,7 +322,8 @@ bool startWebServer(bool startWiFi = true, int httpPort = 80)
 
         webserver->begin();
 
-        log_d("Web Server Started");
+        if (settings.debugWiFiConfig == true)
+            systemPrintln("Web Server Started");
         reportHeapNow(false);
         return true;
     } while (0);
@@ -359,7 +360,8 @@ void stopWebServer()
         incomingSettings = nullptr;
     }
 
-    log_d("Web Server Stopped");
+    if (settings.debugWiFiConfig == true)
+        systemPrintln("Web Server Stopped");
     reportHeapNow(false);
 }
 
@@ -585,14 +587,16 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 {
     if (type == WS_EVT_CONNECT)
     {
-        log_d("Websocket client connected");
+        if (settings.debugWiFiConfig == true)
+            systemPrintln("Websocket client connected");
         client->text(settingsCSV);
         lastDynamicDataUpdate = millis();
         websocketConnected = true;
     }
     else if (type == WS_EVT_DISCONNECT)
     {
-        log_d("Websocket client disconnected");
+        if (settings.debugWiFiConfig == true)
+            systemPrintln("Websocket client disconnected");
 
         // User has either refreshed the page or disconnected. Recompile the current settings.
         createSettingsString(settingsCSV);
@@ -611,7 +615,10 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         }
     }
     else
-        log_d("onWsEvent: unrecognised AwsEventType %d", type);
+    {
+        if (settings.debugWiFiConfig == true)
+            systemPrintf("onWsEvent: unrecognised AwsEventType %d\r\n", type);
+    }
 }
 // Create a csv string with current settings
 void createSettingsString(char *newSettings)
@@ -944,7 +951,10 @@ void createSettingsString(char *newSettings)
             true) // fileName, lineNumber, array, arraySize
         {
             trim(stationInfo); // Remove trailing whitespace
-            // log_d("ECEF SD station %d - found: %s", index, stationInfo);
+
+            if (settings.debugWiFiConfig == true)
+                systemPrintf("ECEF SD station %d - found: %s\r\n", index, stationInfo);
+
             replaceCharacter(stationInfo, ',', ' '); // Change all , to ' ' for easier parsing on the JS side
             snprintf(tagText, sizeof(tagText), "stationECEF%d", index);
             stringRecord(newSettings, tagText, stationInfo);
@@ -953,7 +963,10 @@ void createSettingsString(char *newSettings)
                  true) // fileName, lineNumber, array, arraySize
         {
             trim(stationInfo); // Remove trailing whitespace
-            // log_d("ECEF LFS station %d - found: %s", index, stationInfo);
+
+            if (settings.debugWiFiConfig == true)
+                systemPrintf("ECEF LFS station %d - found: %s\r\n", index, stationInfo);
+
             replaceCharacter(stationInfo, ',', ' '); // Change all , to ' ' for easier parsing on the JS side
             snprintf(tagText, sizeof(tagText), "stationECEF%d", index);
             stringRecord(newSettings, tagText, stationInfo);
@@ -975,7 +988,10 @@ void createSettingsString(char *newSettings)
             true) // fileName, lineNumber, array, arraySize
         {
             trim(stationInfo); // Remove trailing whitespace
-            // log_d("Geo SD station %d - found: %s", index, stationInfo);
+
+            if (settings.debugWiFiConfig == true)
+                systemPrintf("Geo SD station %d - found: %s\r\n", index, stationInfo);
+
             replaceCharacter(stationInfo, ',', ' '); // Change all , to ' ' for easier parsing on the JS side
             snprintf(tagText, sizeof(tagText), "stationGeodetic%d", index);
             stringRecord(newSettings, tagText, stationInfo);
@@ -984,7 +1000,10 @@ void createSettingsString(char *newSettings)
                  true) // fileName, lineNumber, array, arraySize
         {
             trim(stationInfo); // Remove trailing whitespace
-            // log_d("Geo LFS station %d - found: %s", index, stationInfo);
+
+            if (settings.debugWiFiConfig == true)
+                systemPrintf("Geo LFS station %d - found: %s\r\n", index, stationInfo);
+
             replaceCharacter(stationInfo, ',', ' '); // Change all , to ' ' for easier parsing on the JS side
             snprintf(tagText, sizeof(tagText), "stationGeodetic%d", index);
             stringRecord(newSettings, tagText, stationInfo);
@@ -1107,7 +1126,8 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         // This is one of the first settings to be received. If seen, remove the station files.
         removeFile(stationCoordinateECEFFileName);
         removeFile(stationCoordinateGeodeticFileName);
-        log_d("Station coordinate files removed");
+        if (settings.debugWiFiConfig == true)
+            systemPrintln("Station coordinate files removed");
     }
     else if (strcmp(settingName, "dynamicModel") == 0)
         settings.dynamicModel = settingValue;
@@ -1251,14 +1271,16 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         replaceCharacter((char *)settingValueStr, ' ', ','); // Replace all ' ' with ',' before recording to file
         recordLineToSD(stationCoordinateECEFFileName, settingValueStr);
         recordLineToLFS(stationCoordinateECEFFileName, settingValueStr);
-        log_d("%s recorded", settingValueStr);
+        if (settings.debugWiFiConfig == true)
+            systemPrintf("%s recorded\r\n", settingValueStr);
     }
     else if (strstr(settingName, "stationGeodetic") != nullptr)
     {
         replaceCharacter((char *)settingValueStr, ' ', ','); // Replace all ' ' with ',' before recording to file
         recordLineToSD(stationCoordinateGeodeticFileName, settingValueStr);
         recordLineToLFS(stationCoordinateGeodeticFileName, settingValueStr);
-        log_d("%s recorded", settingValueStr);
+        if (settings.debugWiFiConfig == true)
+            systemPrintf("%s recorded\r\n", settingValueStr);
     }
     else if (strcmp(settingName, "pvtServerPort") == 0)
         settings.pvtServerPort = settingValue;
@@ -1418,7 +1440,9 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
     else if (strcmp(settingName, "exitAndReset") == 0)
     {
         // Confirm receipt
-        log_d("Sending reset confirmation");
+        if (settings.debugWiFiConfig == true)
+            systemPrintln("Sending reset confirmation");
+
         websocket->textAll("confirmReset,1,");
         delay(500); // Allow for delivery
 
@@ -1448,7 +1472,8 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
     else if (strcmp(settingName, "setProfile") == 0)
     {
         // Change to new profile
-        log_d("Changing to profile number %d\r\n", settingValue);
+        if (settings.debugWiFiConfig == true)
+            systemPrintf("Changing to profile number %d\r\n", settingValue);
         changeProfileNumber(settingValue);
 
         // Load new profile into system
@@ -1459,8 +1484,11 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
 
         createSettingsString(settingsCSV);
 
-        log_d("Sending profile %d\r\n", settingValue);
-        log_d("Profile contents: %s", settingsCSV);
+        if (settings.debugWiFiConfig == true)
+        {
+            systemPrintf("Sending profile %d\r\n", settingValue);
+            systemPrintf("Profile contents: %s\r\n", settingsCSV);
+        }
         websocket->textAll(settingsCSV);
     }
     else if (strcmp(settingName, "resetProfile") == 0)
@@ -1477,8 +1505,11 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
 
         createSettingsString(settingsCSV);
 
-        log_d("Sending reset profile %d\r\n", settingValue);
-        log_d("Profile contents: %s", settingsCSV);
+        if (settings.debugWiFiConfig == true)
+        {
+            systemPrintf("Sending reset profile %d\r\n", settingValue);
+            systemPrintf("Profile contents: %s\r\n", settingsCSV);
+        }
         websocket->textAll(settingsCSV);
     }
     else if (strcmp(settingName, "forgetEspNowPeers") == 0)
@@ -1504,7 +1535,8 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
     }
     else if (strcmp(settingName, "checkNewFirmware") == 0)
     {
-        log_d("Checking for new OTA Pull firmware");
+        if (settings.debugWiFiConfig == true)
+            systemPrintln("Checking for new OTA Pull firmware");
 
         websocket->textAll("checkingNewFirmware,1,"); // Tell the config page we received their request
 
@@ -1519,19 +1551,22 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             getFirmwareVersion(currentVersion, sizeof(currentVersion), enableRCFirmware);
             if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
             {
-                log_d("New version detected");
+                if (settings.debugWiFiConfig == true)
+                    systemPrintln("New version detected");
                 snprintf(newVersionCSV, sizeof(newVersionCSV), "newFirmwareVersion,%s,", reportedVersion);
             }
             else
             {
-                log_d("No new firmware available");
+                if (settings.debugWiFiConfig == true)
+                    systemPrintln("No new firmware available");
                 snprintf(newVersionCSV, sizeof(newVersionCSV), "newFirmwareVersion,CURRENT,");
             }
         }
         else
         {
             // Failed to get version number
-            log_d("Sending error to AP config page");
+            if (settings.debugWiFiConfig == true)
+                systemPrintln("Sending error to AP config page");
             snprintf(newVersionCSV, sizeof(newVersionCSV), "newFirmwareVersion,ERROR,");
         }
 
@@ -1539,7 +1574,8 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
     }
     else if (strcmp(settingName, "getNewFirmware") == 0)
     {
-        log_d("Getting new OTA Pull firmware");
+        if (settings.debugWiFiConfig == true)
+            systemPrintln("Getting new OTA Pull firmware");
 
         websocket->textAll("gettingNewFirmware,1,"); // Tell the config page we received their request
 
@@ -1750,7 +1786,8 @@ bool parseIncomingSettings()
     if (counter < maxAttempts)
     {
         // Confirm receipt
-        log_d("Sending receipt confirmation of settings");
+        if (settings.debugWiFiConfig == true)
+            systemPrintln("Sending receipt confirmation of settings");
         websocket->textAll("confirmDataReceipt,1,");
     }
 
@@ -1843,7 +1880,8 @@ void getFileList(String &returnText)
         systemPrintf("sdCardSemaphore failed to yield, held by %s, Form.ino line %d\r\n", semaphoreHolder, __LINE__);
     }
 
-    log_d("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
+    if (settings.debugWiFiConfig == true)
+        systemPrintf("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
 }
 
 // When called, responds with the messages supported on this platform
@@ -1859,7 +1897,8 @@ void createMessageList(String &returnText)
                           String(settings.ubxMessageRates[messageNumber]) + ","; // UBX_RTCM_1074,4,
     }
 
-    log_d("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
+    if (settings.debugWiFiConfig == true)
+        systemPrintf("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
 }
 
 // When called, responds with the RTCM/Base messages supported on this platform
@@ -1877,7 +1916,8 @@ void createMessageListBase(String &returnText)
                           String(settings.ubxMessageRatesBase[messageNumber]) + ","; // UBX_RTCM_1074Base,4,
     }
 
-    log_d("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
+    if (settings.debugWiFiConfig == true)
+        systemPrintf("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
 }
 
 // Handles uploading of user files to SD

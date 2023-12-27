@@ -17,7 +17,6 @@ Begin.ino
 //----------------------------------------
 // Hardware initialization functions
 //----------------------------------------
-
 // Determine if the measured value matches the product ID value
 // idWithAdc applies resistor tolerance using worst-case tolerances:
 // Upper threshold: R1 down by TOLERANCE, R2 up by TOLERANCE

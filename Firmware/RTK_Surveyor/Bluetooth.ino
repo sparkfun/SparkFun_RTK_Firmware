@@ -156,7 +156,10 @@ void bluetoothStart()
         else if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
             strncpy(stateName, "Base-", sizeof(stateName) - 1);
         else
+        {
+            strncpy(stateName, "Rover-", sizeof(stateName) - 1);
             log_d("State out of range for Bluetooth Broadcast: %d", systemState);
+        }
 
         char productName[50] = {0};
         strncpy(productName, platformPrefix, sizeof(productName));

@@ -272,7 +272,7 @@ InputResponse getString(char *userString, uint8_t stringSize)
 
         //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-        if (btPrintEchoExit) // User has disconnect from BT. Force exit all menus.
+        if (btPrintEchoExit) // User has disconnected from BT. Force exit all menus.
             return INPUT_RESPONSE_TIMEOUT;
 
         // Get the next input character

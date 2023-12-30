@@ -692,7 +692,6 @@ bool parseLine(char *str, Settings *settings)
     snprintf(settingName, sizeof(settingName), "%s", str);
 
     double d = 0.0;
-    char settingValue[100] = "";
     char settingString[100] = "";
 
     // Move pointer to end of line
@@ -720,7 +719,7 @@ bool parseLine(char *str, Settings *settings)
         {
             if (settingString[x] == '.')
                 decimalCount++;
-            else if (x == 0 && settingValue[x] == '-')
+            else if (x == 0 && settingString[x] == '-')
             {
                 ; // Do nothing
             }
@@ -745,7 +744,7 @@ bool parseLine(char *str, Settings *settings)
 
             if (d == 0.0) // strtod failed, may be string or may be 0 but let it pass
             {
-                snprintf(settingValue, sizeof(settingValue), "%s", str);
+                snprintf(settingString, sizeof(settingString), "%s", str);
             }
             else
             {
@@ -1020,10 +1019,7 @@ bool parseLine(char *str, Settings *settings)
         }
     }
     else if (strcmp(settingName, "profileName") == 0)
-    {
-        Serial.printf("record profileName: %s\r\n", settings.profileName);
         strcpy(settings->profileName, settingString);
-    }
     else if (strcmp(settingName, "enableNtripServer") == 0)
         settings->enableNtripServer = d;
     else if (strcmp(settingName, "ntripServer_StartAtSurveyIn") == 0)

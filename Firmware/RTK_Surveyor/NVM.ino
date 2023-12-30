@@ -750,10 +750,6 @@ bool parseLine(char *str, Settings *settings)
             {
                 if (str == ptr || *skipSpace(ptr))
                     return false; // Check str pointer
-
-                // See issue https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/47
-                snprintf(settingString, sizeof(settingString), "%1.0lf",
-                         d); // Catch when the input is pure numbers (strtod was successful), store as settingString
             }
         }
     }

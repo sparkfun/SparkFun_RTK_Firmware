@@ -137,7 +137,7 @@ To get millimeter accuracy we need to provide the RTK unit with correction value
 
 These companies set up a large number of reference stations that cover entire regions and countries, but charge a monthly fee. They are often easy to use but can be expensive.
 
-* [PointOneNav](https://app.pointonenav.com/trial?src=sparkfun) ($50/month) - US, EU
+* [PointOneNav](https://app.pointonenav.com/trial?src=sparkfun) ($50/month) - US, EU, Australia, South Korea
 * [Skylark](https://www.swiftnav.com/skylark) ($29 to $69/month) - US, EU, Japan, Australia
 * [SensorCloud RTK](https://rtk.sensorcloud.com/pricing/) ($100/month) partial US, EU
 * [KeyNetGPS](https://www.keypre.com/KeynetGPS) ($375/month) North Eastern US

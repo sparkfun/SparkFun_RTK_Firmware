@@ -28,6 +28,8 @@ While a survey-in is easy to set up and fine for an in-the-field way to establis
 
 [![L1/L2 antenna attached to the roof](img/Corrections/Antenna_Semi-Fixed_to_roof.jpg)](img/Corrections/Antenna_Semi-Fixed_to_roof - Big.jpg)
 
+[![L1/L2 antenna attached to the roof](img/Corrections/Antenna_Semi-Fixed_to_roof.jpg)](img/Corrections/Antenna_Semi-Fixed_to_roof - Big.jpg=450x450)
+
 *[L1/L2 antenna](https://www.sparkfun.com/products/21801) semi-fixed to a flat roof*
 
 The PPP process works like this:

@@ -1,0 +1,2381 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A guide to the SparkFun RTK hardware, firmware, and features.">
+      
+      
+      
+        <link rel="canonical" href="https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/">
+      
+      
+        <link rel="prev" href="../menu_debug/">
+      
+      
+        <link rel="next" href="../displays/">
+      
+      
+      <link rel="icon" href="../img/Icons/sfe_logo_sq.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.3">
+    
+    
+      
+        <title>Updating RTK Firmware - SparkFun RTK Product Manual</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.50c56a3b.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+  
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+  
+  <style>:root{--md-admonition-icon--note:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/></svg>');--md-admonition-icon--abstract:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M2.5 1.75v11.5c0 .138.112.25.25.25h3.17a.75.75 0 0 1 0 1.5H2.75A1.75 1.75 0 0 1 1 13.25V1.75C1 .784 1.784 0 2.75 0h8.5C12.216 0 13 .784 13 1.75v7.736a.75.75 0 0 1-1.5 0V1.75a.25.25 0 0 0-.25-.25h-8.5a.25.25 0 0 0-.25.25Zm13.274 9.537v-.001l-4.557 4.45a.75.75 0 0 1-1.055-.008l-1.943-1.95a.75.75 0 0 1 1.062-1.058l1.419 1.425 4.026-3.932a.75.75 0 1 1 1.048 1.074ZM4.75 4h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM4 7.75A.75.75 0 0 1 4.75 7h2a.75.75 0 0 1 0 1.5h-2A.75.75 0 0 1 4 7.75Z"/></svg>');--md-admonition-icon--info:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>');--md-admonition-icon--tip:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M3.499.75a.75.75 0 0 1 1.5 0v.996C5.9 2.903 6.793 3.65 7.662 4.376l.24.202c-.036-.694.055-1.422.426-2.163C9.1.873 10.794-.045 12.622.26 14.408.558 16 1.94 16 4.25c0 1.278-.954 2.575-2.44 2.734l.146.508.065.22c.203.701.412 1.455.476 2.226.142 1.707-.4 3.03-1.487 3.898C11.714 14.671 10.27 15 8.75 15h-6a.75.75 0 0 1 0-1.5h1.376a4.484 4.484 0 0 1-.563-1.191 3.835 3.835 0 0 1-.05-2.063 4.647 4.647 0 0 1-2.025-.293.75.75 0 0 1 .525-1.406c1.357.507 2.376-.006 2.698-.318l.009-.01a.747.747 0 0 1 1.06 0 .748.748 0 0 1-.012 1.074c-.912.92-.992 1.835-.768 2.586.221.74.745 1.337 1.196 1.621H8.75c1.343 0 2.398-.296 3.074-.836.635-.507 1.036-1.31.928-2.602-.05-.603-.216-1.224-.422-1.93l-.064-.221c-.12-.407-.246-.84-.353-1.29a2.425 2.425 0 0 1-.507-.441 3.075 3.075 0 0 1-.633-1.248.75.75 0 0 1 1.455-.364c.046.185.144.436.31.627.146.168.353.305.712.305.738 0 1.25-.615 1.25-1.25 0-1.47-.95-2.315-2.123-2.51-1.172-.196-2.227.387-2.706 1.345-.46.92-.27 1.774.019 3.062l.042.19a.884.884 0 0 1 .01.05c.348.443.666.949.94 1.553a.75.75 0 1 1-1.365.62c-.553-1.217-1.32-1.94-2.3-2.768L6.7 5.527c-.814-.68-1.75-1.462-2.692-2.619a3.737 3.737 0 0 0-1.023.88c-.406.495-.663 1.036-.722 1.508.116.122.306.21.591.239.388.038.797-.06 1.032-.19a.75.75 0 0 1 .728 1.31c-.515.287-1.23.439-1.906.373-.682-.067-1.473-.38-1.879-1.193L.75 5.677V5.5c0-.984.48-1.94 1.077-2.664.46-.559 1.05-1.055 1.673-1.353V.75Z"/></svg>');--md-admonition-icon--success:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>');--md-admonition-icon--question:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.92 6.085h.001a.749.749 0 1 1-1.342-.67c.169-.339.436-.701.849-.977C6.845 4.16 7.369 4 8 4a2.756 2.756 0 0 1 1.637.525c.503.377.863.965.863 1.725 0 .448-.115.83-.329 1.15-.205.307-.47.513-.692.662-.109.072-.22.138-.313.195l-.006.004a6.24 6.24 0 0 0-.26.16.952.952 0 0 0-.276.245.75.75 0 0 1-1.248-.832c.184-.264.42-.489.692-.661.103-.067.207-.132.313-.195l.007-.004c.1-.061.182-.11.258-.161a.969.969 0 0 0 .277-.245C8.96 6.514 9 6.427 9 6.25a.612.612 0 0 0-.262-.525A1.27 1.27 0 0 0 8 5.5c-.369 0-.595.09-.74.187a1.01 1.01 0 0 0-.34.398ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>');--md-admonition-icon--warning:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>');--md-admonition-icon--failure:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M2.344 2.343h-.001a8 8 0 0 1 11.314 11.314A8.002 8.002 0 0 1 .234 10.089a8 8 0 0 1 2.11-7.746Zm1.06 10.253a6.5 6.5 0 1 0 9.108-9.275 6.5 6.5 0 0 0-9.108 9.275ZM6.03 4.97 8 6.94l1.97-1.97a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l1.97 1.97a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-1.97 1.97a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734L6.94 8 4.97 6.03a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018Z"/></svg>');--md-admonition-icon--danger:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M9.504.43a1.516 1.516 0 0 1 2.437 1.713L10.415 5.5h2.123c1.57 0 2.346 1.909 1.22 3.004l-7.34 7.142a1.249 1.249 0 0 1-.871.354h-.302a1.25 1.25 0 0 1-1.157-1.723L5.633 10.5H3.462c-1.57 0-2.346-1.909-1.22-3.004L9.503.429Zm1.047 1.074L3.286 8.571A.25.25 0 0 0 3.462 9H6.75a.75.75 0 0 1 .694 1.034l-1.713 4.188 6.982-6.793A.25.25 0 0 0 12.538 7H9.25a.75.75 0 0 1-.683-1.06l2.008-4.418.003-.006a.036.036 0 0 0-.004-.009l-.006-.006-.008-.001c-.003 0-.006.002-.009.004Z"/></svg>');--md-admonition-icon--bug:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M4.72.22a.75.75 0 0 1 1.06 0l1 .999a3.488 3.488 0 0 1 2.441 0l.999-1a.748.748 0 0 1 1.265.332.75.75 0 0 1-.205.729l-.775.776c.616.63.995 1.493.995 2.444v.327c0 .1-.009.197-.025.292.408.14.764.392 1.029.722l1.968-.787a.75.75 0 0 1 .556 1.392L13 7.258V9h2.25a.75.75 0 0 1 0 1.5H13v.5c0 .409-.049.806-.141 1.186l2.17.868a.75.75 0 0 1-.557 1.392l-2.184-.873A4.997 4.997 0 0 1 8 16a4.997 4.997 0 0 1-4.288-2.427l-2.183.873a.75.75 0 0 1-.558-1.392l2.17-.868A5.036 5.036 0 0 1 3 11v-.5H.75a.75.75 0 0 1 0-1.5H3V7.258L.971 6.446a.75.75 0 0 1 .558-1.392l1.967.787c.265-.33.62-.583 1.03-.722a1.677 1.677 0 0 1-.026-.292V4.5c0-.951.38-1.814.995-2.444L4.72 1.28a.75.75 0 0 1 0-1.06Zm.53 6.28a.75.75 0 0 0-.75.75V11a3.5 3.5 0 1 0 7 0V7.25a.75.75 0 0 0-.75-.75ZM6.173 5h3.654A.172.172 0 0 0 10 4.827V4.5a2 2 0 1 0-4 0v.327c0 .096.077.173.173.173Z"/></svg>');--md-admonition-icon--example:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M5 5.782V2.5h-.25a.75.75 0 0 1 0-1.5h6.5a.75.75 0 0 1 0 1.5H11v3.282l3.666 5.76C15.619 13.04 14.543 15 12.767 15H3.233c-1.776 0-2.852-1.96-1.899-3.458Zm-2.4 6.565a.75.75 0 0 0 .633 1.153h9.534a.75.75 0 0 0 .633-1.153L12.225 10.5h-8.45ZM9.5 2.5h-3V6c0 .143-.04.283-.117.403L4.73 9h6.54L9.617 6.403A.746.746 0 0 1 9.5 6Z"/></svg>');--md-admonition-icon--quote:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M1.75 2.5h10.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5Zm4 5h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5Zm0 5h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5ZM2.5 7.75v6a.75.75 0 0 1-1.5 0v-6a.75.75 0 0 1 1.5 0Z"/></svg>');}</style>
+
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="grey" data-md-color-accent="red">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#updating-rtk-firmware" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="SparkFun RTK Product Manual" class="md-header__button md-logo" aria-label="SparkFun RTK Product Manual" data-md-component="logo">
+      
+  <img src="../img/Icons/sfe_logo_sm.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SparkFun RTK Product Manual
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Updating RTK Firmware
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    sparkfun/SparkFun_RTK_Firmware
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="SparkFun RTK Product Manual" class="md-nav__button md-logo" aria-label="SparkFun RTK Product Manual" data-md-component="logo">
+      
+  <img src="../img/Icons/sfe_logo_sm.png" alt="logo">
+
+    </a>
+    SparkFun RTK Product Manual
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    sparkfun/SparkFun_RTK_Firmware
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../intro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quick Start
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../connecting_bluetooth/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Connecting Bluetooth
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gis_software/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GIS Software
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Configuration Methods
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Configuration Methods
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configure_with_wifi/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configure with WiFi
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configure_with_bluetooth/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configure with Bluetooth
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configure_with_serial/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configure with Serial
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configure_with_settings_file/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configure with Settings File
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configure_with_ucenter/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configure with u-center
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Configuration Menus
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Configuration Menus
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_gnss/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GNSS Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_messages/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Messages Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_base/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Base Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_wifi/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    WiFi Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_ports/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Ports Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_data_logging/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data Logging Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_profiles/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Profiles Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_pointperfect/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PointPerfect Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_sensor/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sensor Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_radios/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Radios Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_system/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    System Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_ethernet/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Ethernet Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_ntp/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Network Time Protocol Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_debug/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Debug Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Hardware
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Hardware
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Updating RTK Firmware
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Updating RTK Firmware
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#updating-firmware-over-the-air" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating Firmware Over-The-Air
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#updating-firmware-using-the-uploader-gui" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating Firmware Using The Uploader GUI
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#updating-firmware-from-the-sd-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating Firmware From the SD Card
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Updating Firmware From the SD Card">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#force-firmware-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      Force Firmware Loading
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#updating-firmware-from-wifi" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating Firmware From WiFi
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#updating-firmware-from-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating Firmware From CLI
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Updating Firmware From CLI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      Windows
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#macos-linux" class="md-nav__link">
+    <span class="md-ellipsis">
+      macOS / Linux
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#updating-4mb-surveyors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating 4MB Surveyors
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Updating 4MB Surveyors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#determining-the-size-of-flash" class="md-nav__link">
+    <span class="md-ellipsis">
+      Determining The Size of Flash
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#updating-u-blox-firmware" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating u-blox Firmware
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#updating-using-windows-gui" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating Using Windows GUI
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Updating Using Windows GUI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#updating-using-u-center" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating Using u-center
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zed-f9p-firmware-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      ZED-F9P Firmware Changes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zed-f9r-firmware-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      ZED-F9R Firmware Changes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#neo-d9s-firmware-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      NEO-D9S Firmware Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compiling-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      Compiling Source
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Compiling Source">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#windows_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Windows
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Windows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#required-libraries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Required Libraries
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ubuntu-2004" class="md-nav__link">
+    <span class="md-ellipsis">
+      Ubuntu 20.04
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ubuntu 20.04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#virtual-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      Virtual Machine
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Build Environment
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arduino-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      Arduino CLI
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../displays/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Displays
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../embeddedsystem_connection/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Output to an Embedded System
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../repair/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Disassembly / Repair
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    RTK Corrections
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            RTK Corrections
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../correction_sources/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Correction Sources
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../correction_transport/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Correction Transport
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../permanent_base/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Creating a Permanent Base
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../accuracy_verification/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Accuracy Verification
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contribute/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Fix That Typo!
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#updating-firmware-over-the-air" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating Firmware Over-The-Air
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#updating-firmware-using-the-uploader-gui" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating Firmware Using The Uploader GUI
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#updating-firmware-from-the-sd-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating Firmware From the SD Card
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Updating Firmware From the SD Card">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#force-firmware-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      Force Firmware Loading
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#updating-firmware-from-wifi" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating Firmware From WiFi
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#updating-firmware-from-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating Firmware From CLI
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Updating Firmware From CLI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      Windows
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#macos-linux" class="md-nav__link">
+    <span class="md-ellipsis">
+      macOS / Linux
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#updating-4mb-surveyors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating 4MB Surveyors
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Updating 4MB Surveyors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#determining-the-size-of-flash" class="md-nav__link">
+    <span class="md-ellipsis">
+      Determining The Size of Flash
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#updating-u-blox-firmware" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating u-blox Firmware
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#updating-using-windows-gui" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating Using Windows GUI
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Updating Using Windows GUI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#updating-using-u-center" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating Using u-center
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zed-f9p-firmware-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      ZED-F9P Firmware Changes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zed-f9r-firmware-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      ZED-F9R Firmware Changes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#neo-d9s-firmware-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      NEO-D9S Firmware Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compiling-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      Compiling Source
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Compiling Source">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#windows_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Windows
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Windows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#required-libraries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Required Libraries
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ubuntu-2004" class="md-nav__link">
+    <span class="md-ellipsis">
+      Ubuntu 20.04
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ubuntu 20.04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#virtual-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      Virtual Machine
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Build Environment
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arduino-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      Arduino CLI
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+
+    <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/gh-pages/pdf/SparkFun_RTK_User_Manual.pdf?raw=true" title="Download Site" class="md-content__button md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m-9.5 8.5c0 .8-.7 1.5-1.5 1.5H7v2H5.5V9H8c.8 0 1.5.7 1.5 1.5v1m5 2c0 .8-.7 1.5-1.5 1.5h-2.5V9H13c.8 0 1.5.7 1.5 1.5v3m4-3H17v1h1.5V13H17v2h-1.5V9h3v1.5m-6.5 0h1v3h-1v-3m-5 0h1v1H7v-1Z"/></svg>
+    </a>
+
+
+
+                  
+
+  
+    <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware/edit/main/docs/firmware_update.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 12h8v2H8v-2m2 8H6V4h7v5h5v3.1l2-2V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4v-2m-2-2h4.1l.9-.9V16H8v2m12.2-5c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="updating-rtk-firmware">Updating RTK Firmware</h1>
+<p>Surveyor: <img alt="Feature Supported" src="../img/Icons/GreenDot.png" /> / Express: <img alt="Feature Supported" src="../img/Icons/GreenDot.png" /> / Express Plus: <img alt="Feature Supported" src="../img/Icons/GreenDot.png" /> / Facet: <img alt="Feature Supported" src="../img/Icons/GreenDot.png" /> / Facet L-Band: <img alt="Feature Supported" src="../img/Icons/GreenDot.png" /> / Reference Station: <img alt="Feature Supported" src="../img/Icons/GreenDot.png" /></p>
+<p>The device has two primary firmwares:</p>
+<ul>
+<li>Firmware on the ESP32 microcontroller. Keep reading.</li>
+<li>Firmware on the u-blox ZED-F9P, ZED-F9P, or NEO-D9S Receiver. <a href="./#updating-u-blox-firmware">See below</a>.</li>
+</ul>
+<p>The device firmware is displayed in a variety of places:</p>
+<ul>
+<li>Power On</li>
+<li>Serial Config Menu</li>
+<li>WiFi Config</li>
+</ul>
+<p><img alt="RTK Express with firmware v3.0" src="../img/Displays/SparkFun%20RTK%20Boot%20Screen%20Version%20Number.png" /></p>
+<p><em>RTK Express with firmware v3.0</em></p>
+<p>During power-on, the display will show the current device Firmware.</p>
+<p><img alt="Main Menu showing RTK Firmware v3.0-Jan 19 2023" src="../img/Terminal/SparkFun%20RTK%20Main%20Menu.png" /></p>
+<p><em>Main Menu showing RTK Firmware v3.0-Jan 19 2023</em></p>
+<p>The firmware is displayed when the main menu is opened over a serial connection.</p>
+<p><img alt="WiFi Config page showing device firmware v2.7" src="../img/WiFi%20Config/SparkFun%20RTK%20WiFi%20Config%20Screen%20Version%20Number.png" /></p>
+<p><em>WiFi Config page showing device firmware v2.7 and ZED-F9P firmware HPG 1.32</em></p>
+<p>The firmware is shown at the top of the WiFi config page.</p>
+<p>From time to time SparkFun will release new firmware for the RTK product line to add and improve functionality. For most users, firmware can be upgraded over WiFi using the OTA method.</p>
+<ul>
+<li><a href="./#updating-firmware-over-the-air">OTA Method</a>: Connect over WiFi to SparkFun to download the latest firmware <em>over-the-air</em>. This can be done using the serial menu or while in WiFi AP Config Mode. Requires a local WiFi network.</li>
+<li><a href="./#updating-firmware-using-windows-gui">GUI Method</a>: Use the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader">Windows, Linux, MacOS or Python GUI</a> and a USB cable. (The Python package has been tested on Raspberry Pi)</li>
+<li><a href="./#updating-firmware-from-the-sd-card">SD Method</a>: Load the firmware on an SD card, then use a serial terminal with the <em>Firmware Upgrade</em> menu</li>
+<li><a href="./#updating-firmware-from-wifi">WiFi Method</a>: Load the firmware over WiFi when the device is in WiFi AP Config Mode</li>
+<li><a href="./#updating-firmware-from-cli">CLI Method</a>: Use the command line <em>batch_program.bat</em></li>
+</ul>
+<p>The OTA method is generally recommended. For more information see <a href="./#updating-firmware-over-the-air">here</a>.</p>
+<p>Remember, all SparkFun RTK devices are open source hardware meaning you have total access to the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware">firmware</a> and <a href="https://github.com/sparkfun/SparkFun_RTK_Facet">hardware</a>. Be sure to check out each repo for the latest firmware and hardware information.</p>
+<h2 id="updating-firmware-over-the-air">Updating Firmware Over-The-Air</h2>
+<p><img alt="Updating Firmware from WiFi config page" src="../img/WiFi%20Config/RTK-Firmware-Update-OTA.gif" /></p>
+<p><em>Updating the firmware via WiFi config page</em></p>
+<p><img alt="Updating the firmware via Firmware serial menu" src="../img/Terminal/SparkFun%20RTK%20Firmware%20Update%20Menu.png" /></p>
+<p><em>Updating the firmware via Firmware serial menu</em></p>
+<p>Introduced with version 3.0, firmware can be updated by pressing a button in the System Configuration section of the WiFi Config page, or over the Firmware menu of the serial interface. This makes checking and upgrading a unit very easy.</p>
+<p>Additionally, users may opt into checking for Beta firmware. This is the latest firmware that may have new features and is meant for testing. Beta firmware is not recommended for units deployed into the field as it may not be stable.</p>
+<p>If you have a device with firmware lower than v3.0, you will need to use the <a href="./#updating-firmware-using-the-uploader-gui">GUI</a> or a method listed below to get to v3.x.</p>
+<p>With version 3.10 automatic release firmware update is supported over WiFi.  Enabling this feature is done using the serial firmware menu.  The polling period is speified in minutes and defaults to once a day.  The automatic firmware update only checks for and installs the current SparkFun released firmware versions over top of any:</p>
+<ul>
+<li>Older released versions (continual upgrade)</li>
+<li>Beta firmware versions (newer or older, restore to released version)</li>
+<li>Locally built versions (newer or older, restore to released version)</li>
+</ul>
+<h2 id="updating-firmware-using-the-uploader-gui">Updating Firmware Using The Uploader GUI</h2>
+<p><img alt="RTK Firmware GUI" src="../img/RTK_Uploader_Windows.png" /></p>
+<p><em>RTK Firmware GUI</em></p>
+<p>This GUI makes it easy to point and click your way through a firmware update. There are versions for Windows, Linux, MacOS and a Python package installer.</p>
+<p>The latest GUI release can be downloaded <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader/releases">here</a>.</p>
+<p>Download the latest RTK firmware binary file located on the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware/releases">releases page</a> or from the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries">binaries repo</a>.</p>
+<p><strong>To Use</strong></p>
+<ul>
+<li>Attach the RTK device to your computer using a USB cable.</li>
+<li>Turn the RTK device on.</li>
+<li>On Windows, open the Device Manager to confirm which COM port the device is operating on. On other platforms, check <code>/dev</code>.</li>
+</ul>
+<p><img alt="Device Manager showing USB-Serial CH340 port on COM27" src="../img/Serial/SparkFun%20RTK%20Firmware%20Uploader%20COM%20Port.jpg" /></p>
+<p><em>Device Manager showing 'USB-Serial CH340' port on COM27</em></p>
+<ul>
+<li>Get the latest binary file located on the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware/releases">releases page</a> or from the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries">binaries repo</a>.</li>
+<li>Run <em>RTKUploader.exe</em> (it takes a few seconds to start)</li>
+<li>Click <em>Browse</em> and select the binary file to upload</li>
+<li>Select the COM port previously seen in the Device Manager</li>
+<li>Click <em>Upload Firmware</em></li>
+</ul>
+<p>Once complete, the device will reset and power down.</p>
+<p>If your RTK 'freezes' after the update, press <code>Reset ESP32</code> to get it going again.</p>
+<h2 id="updating-firmware-from-the-sd-card">Updating Firmware From the SD Card</h2>
+<p><img alt="Firmware update menu" src="../img/Terminal/SparkFun_RTK_Firmware_Update-ProgressBar.jpg" /></p>
+<p><em>Firmware update taking place</em></p>
+<p>Download the latest binary file located on the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware/releases">releases page</a> or from the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries">binaries repo</a>.</p>
+<p>The firmware upgrade menu will only display files that have the "RTK_Surveyor_Firmware*.bin" file name format so don't change the file names once loaded onto the SD card. Select the firmware you'd like to load and the system will proceed to load the new firmware, then reboot.</p>
+<p><strong>Note:</strong> The firmware is called <code>RTK_Surveyor_Firmware_vXX.bin</code> even though there are various RTK products (Facet, Express, Surveyor, etc). We united the different platforms into one. The <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware">RTK Firmware</a> runs on all our RTK products.</p>
+<h3 id="force-firmware-loading">Force Firmware Loading</h3>
+<p>In the rare event that a unit is not staying on long enough for new firmware to be loaded into a COM port, the RTK Firmware (as of version 1.2) has an override function. If a file named <em>RTK_Surveyor_Firmware_Force.bin</em> is detected on the SD card at boot that file will be used to overwrite the current firmware, and then be deleted. This update path is generally not recommended. Use the <a href="./#updating-firmware-using-windows-gui">GUI</a> or <a href="./#updating-firmware-from-wifi">WiFi OTA</a> methods as the first resort.</p>
+<h2 id="updating-firmware-from-wifi">Updating Firmware From WiFi</h2>
+<p><img alt="Advanced system settings" src="../img/WiFi%20Config/SparkFun%20RTK%20System%20Config%20Upload%20BIN.png" /></p>
+<p><strong>Note:</strong> Firmware versions 1.1 to 1.9 have an issue that severely limits firmware upload over WiFi and is not recommended; use the <a href="./#updating-firmware-using-the-uploader-gui">GUI</a> method instead. Firmware versions v1.10 and beyond support direct firmware updates via WiFi.</p>
+<p>Firmware may be uploaded to the unit by clicking on 'Upload BIN', selecting the binary such as 'RTK_Surveyor_Firmware_v3_x.bin' and pressing upload. The unit will automatically reset once the firmware upload is complete.</p>
+<h2 id="updating-firmware-from-cli">Updating Firmware From CLI</h2>
+<p>The command-line interface is also available. You’ll need to download the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries">RTK Firmware Binaries</a> repo. This repo contains the binaries but also various supporting tools including esptool.exe and the three binaries required along with the firmware (bootloader, partitions, and app0).</p>
+<h3 id="windows">Windows</h3>
+<p>Connect a USB A to C cable from your computer to the ESP32 port on the RTK device. Turn the unit on. Now identify the COM port the RTK enumerated at. The easiest way to do this is to open the Device Manager:</p>
+<p><img alt="CH340 is on COM6 as shown in Device Manager" src="../img/Serial/RTK_Surveyor_-_Firmware_Update_COM_Port.jpg" /></p>
+<p><em>CH340 is on COM6 as shown in Device Manager</em></p>
+<p>If the COM port is not showing be sure the unit is turned <strong>On</strong>. If an unknown device is appearing, you’ll need to <a href="https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all">install drivers for the CH340</a>. Once you know the COM port, open a command prompt (Windows button + r then type ‘cmd’).</p>
+<p><img alt="batch_program.bat running esptool" src="../img/Terminal/SparkFun%20RTK%20Firmware%20Update%20CLI.png" /></p>
+<p><em>batch_program.bat running esptool</em></p>
+<p>Once the correct COM is identified, run 'batch_program.bat' along with the binary file name and COM port. For example <em>batch_program.bat RTK_Surveyor_Firmware_v2_0.bin COM6</em>. COM6 should be replaced by the COM port you identified earlier.</p>
+<p>The batch file runs the following commands:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor_Partitions_16MB.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
+</code></pre></div>
+<p>Where <em>COM6</em> is replaced with the COM port that the RTK product enumerated at and <em>RTK_Surveyor_Firmware_vxx.bin</em> is the firmware you would like to load.</p>
+<p><strong>Note:</strong> Some users have reported the 921600bps baud rate does not work. Decrease this to 115200 as needed.</p>
+<p>Upon completion, your RTK device will reset and power down.</p>
+<h3 id="macos-linux">macOS / Linux</h3>
+<p>Get <a href="https://github.com/espressif/esptool">esptool.py</a>. Connect a USB A to C cable from your computer to the ESP32 port on the RTK device. Turn the unit on. Now identify the COM port the RTK enumerated at.</p>
+<p>If the COM port is not showing be sure the unit is turned <strong>On</strong>. If an unknown device is appearing, you’ll need to <a href="https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all">install drivers for the CH340</a>. Once you know the COM port, run the following command:</p>
+<p>py esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor_Partitions_16MB.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin</p>
+<p>Where <em>/dev/ttyUSB0</em> is replaced with the port that the RTK product enumerated at and <em>RTK_Surveyor_Firmware_vxx.bin</em> is the firmware you would like to load.</p>
+<p><strong>Note:</strong> Some users have reported the 921600bps baud rate does not work. Decrease this to 115200 as needed.</p>
+<p>Upon completion, your RTK device will reset and power down.</p>
+<h2 id="updating-4mb-surveyors">Updating 4MB Surveyors</h2>
+<p>RTK Surveyors sold before September 2021 may have an ESP32 WROOM module with 4MB flash instead of 16MB flash. These units still support all the functionality of other RTK products with the following limitations:</p>
+<ul>
+<li>There is not enough flash space for OTA. Upgrading the firmware must be done via <a href="./#updating-firmware-from-cli">CLI</a> or <a href="./#updating-firmware-using-windows-gui">GUI</a>. OTA, WiFi, or SD update paths are not possible.</li>
+</ul>
+<p>The GUI (as of v1.3) will autodetect the ESP32's flash size and load the appropriate partition file. No user interaction is required.</p>
+<p>If you are using the CLI method, be sure to point to the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/blob/main/bin/RTK_Surveyor_Partitions_4MB.bin?raw=true">4MB partition file</a>. For example:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/**RTK_Surveyor_Partitions_4MB**.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
+</code></pre></div>
+<h3 id="determining-the-size-of-flash">Determining The Size of Flash</h3>
+<p>To determine if the device has a 4MB module:</p>
+<ul>
+<li>Use the esptool via CLI. Please see the <a href="https://docs.espressif.com/projects/esptool/en/latest/esp32s3/esptool/basic-commands.html#read-spi-flash-id-flash-id">flash_id</a> command for usage.</li>
+<li>Use the GUI and attempt a firmware update. The output will auto-detect and show the flash size, as shown below:</li>
+</ul>
+<p><img alt="Module with 4MB flash" src="../img/SparkFun%20RTK%20Firmware%20Update%20GUI%20-%204MB.png" /></p>
+<h2 id="updating-u-blox-firmware">Updating u-blox Firmware</h2>
+<p>The following products contain the following u-blox receivers:</p>
+<ul>
+<li>RTK Surveyor: ZED-F9P</li>
+<li>RTK Express: ZED-F9P</li>
+<li>RTK Express Plus: ZED-F9R</li>
+<li>RTK Facet: ZED-F9P</li>
+<li>RTK Facet L-Band: ZED-F9P and NEO-D9S</li>
+</ul>
+<p>The firmware loaded onto the ZED-F9P, ZED-F9R, and NEO-D9S receivers is written by u-blox and can vary depending on the manufacture date. The RTK Firmware (that runs on the ESP32) is designed to flexibly work with any u-blox firmware. Upgrading the ZED-F9x/NEO-D9S is a good thing to consider but is not crucial to the use of RTK products.</p>
+<p>Not sure what firmware is loaded onto your RTK product? Open the <a href="../menu_system/">System Menu</a> to display the module's current firmware version.</p>
+<p>The firmware on u-blox devices can be updated using a <a href="./#updating-using-windows-gui">Windows-based GUI</a> or <a href="./#updating-using-u-center">u-center</a>. A CLI method is also possible using the <code>ubxfwupdate.exe</code> tool provided with u-center. Additionally, u-blox offers the source for the ubxfwupdate tool that is written in C. It is currently released only under an NDA so contact your local u-blox Field Applications Engineer if you need a different method.</p>
+<h2 id="updating-using-windows-gui">Updating Using Windows GUI</h2>
+<p><img alt="SparkFun u-blox firmware update tool" src="../img/SparkFun%20RTK%20Facet%20L-Band%20u-blox%20Firmware%20Update%20GUI.png" /></p>
+<p><em>SparkFun RTK u-blox Firmware Update Tool</em></p>
+<p>The <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/tree/main/u-blox_Update_GUI">SparkFun RTK u-blox Firmware Update Tool</a> is a simple Windows GUI and python script that runs the ubxfwupdate.exe tool. This allows users to directly update module firmware without the need for u-center. Additionally, this tool queries the module to verify that the firmware type matches the module. Because the RTK Facet L-Band contains two u-blox modules that both appear as identical serial ports, it can be difficult and perilous to know which port to load firmware. This tool prevents ZED-F9P firmware from being accidentally loaded onto a NEO-D9S receiver and vice versa.</p>
+<p>The SparkFun RTK u-blox Firmware Update Tool will only run on Windows as it relies upon u-blox's <code>ubxfwupdate.exe</code>. The full, integrated executable for Windows is available <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/raw/main/u-blox_Update_GUI/Windows_exe/RTK_u-blox_Update_GUI.exe">here</a>.</p>
+<ul>
+<li>Attach the RTK device's USB port to your computer using a USB cable</li>
+<li>Turn the RTK device on</li>
+<li>Open Device Manager to confirm which COM port the device is operating on</li>
+</ul>
+<p><img alt="Device Manager showing USB Serial port on COM14" src="https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/raw/main/u-blox_Update_GUI/SparkFun_RTK_u-blox_Updater_COM_Port.jpg" /></p>
+<p><em>Device Manager showing USB Serial port on COM14</em></p>
+<ul>
+<li>Get the latest binary firmware file from the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/tree/main/ZED%20Firmware">ZED Firmware</a>, <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/tree/main/NEO%20Firmware">NEO Firmware</a> folder, or the <a href="https://www.u-blox.com/">u-blox</a> website</li>
+<li>Run <em>RTK_u-blox_Update_GUI.exe</em> (it takes a few seconds to start)</li>
+<li>Click the Firmware File <em>Browse</em> and select the binary file for the update</li>
+<li>Select the COM port previously seen in the Device Manager</li>
+<li>Click <em>Update Firmware</em></li>
+</ul>
+<p>Once complete, the u-blox module will restart.</p>
+<h3 id="updating-using-u-center">Updating Using u-center</h3>
+<p>If you're familiar with u-center a tutorial with step-by-step instructions for locating the firmware version as well as changing the firmware can be found in <a href="https://learn.sparkfun.com/tutorials/how-to-upgrade-firmware-of-a-u-blox-gnss-receiver/all">How to Upgrade Firmware of a u-blox Receiver</a>.</p>
+<h3 id="zed-f9p-firmware-changes">ZED-F9P Firmware Changes</h3>
+<p>This module is used in the Surveyor, Express, and Facet. It is capable of both Rover <em>and</em> base modes.</p>
+<p>Most of these binaries can be found in the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/tree/main/ZED%20Firmware/ZED-F9P">ZED Firmware/ZED-F9P</a> folder.</p>
+<p>All field testing and device-specific performance parameters were obtained with ZED-F9P v1.30.</p>
+<ul>
+<li>
+<p>v1.12 has the benefit of working with SBAS and an operational RTK status signal (the LED illuminates correctly). See <a href="https://content.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG112_RN_%28UBX-19026698%29.pdf">release notes</a>.</p>
+</li>
+<li>
+<p>v1.13 has a few RTK and receiver performance improvements but introduces a bug that causes the RTK Status LED to fail when SBAS is enabled. See <a href="https://content.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG113_RN_%28UBX-20019211%29.pdf">release notes</a>.</p>
+</li>
+<li>
+<p>v1.30 has a few RTK and receiver performance improvements, I<sup>2</sup>C communication improvements, and most importantly support for SPARTN PMP packets. See <a href="https://www.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG130_RN_UBX-21047459.pdf">release notes</a>.</p>
+</li>
+<li>
+<p>v1.32 has a few SPARTN protocol-specific improvements. See <a href="https://www.u-blox.com/sites/default/files/documents/ZED-F9P-FW100-HPG132_RN_UBX-22004887.pdf">release notes</a>. This firmware is required for use with the NEO-D9S and the decryption of PMP messages.</p>
+</li>
+</ul>
+<h3 id="zed-f9r-firmware-changes">ZED-F9R Firmware Changes</h3>
+<p>This module is used in the Express Plus. It contains an internal IMU and additional algorithms to support high-precision location fixes using dead reckoning. The ZED-F9R is not capable of operating in base mode.</p>
+<p>Most of these binaries can be found in the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/tree/main/ZED%20Firmware/ZED-F9R">ZED Firmware/ZED-F9R</a> folder.</p>
+<ul>
+<li>
+<p>v1.00 Initial release.</p>
+</li>
+<li>
+<p>v1.21 SPARTN support as well as adding E-scooter and robotic lawnmower dynamic models. See <a href="https://www.u-blox.com/sites/default/files/ZED-F9R-02B_FW1.00HPS1.21_RN_UBX-21035491_1.3.pdf">release notes</a>.</p>
+</li>
+</ul>
+<h3 id="neo-d9s-firmware-changes">NEO-D9S Firmware Changes</h3>
+<p>This module is used in the Facet L-Band to receive encrypted PMP messages over ~1.55GHz broadcast via a geosynchronous Inmarsat.</p>
+<p>This binary file can be found in the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/tree/main/NEO%20Firmware">NEO Firmware</a> folder.</p>
+<ul>
+<li>v1.04 Initial release.</li>
+</ul>
+<p>As of writing, no additional releases of the NEO-D9S firmware have been made.</p>
+<h2 id="compiling-source">Compiling Source</h2>
+<h3 id="windows_1">Windows</h3>
+<p>The SparkFun RTK firmware is compiled using Arduino (currently v1.8.15). To compile:</p>
+<ol>
+<li>
+<p>Install <a href="https://www.arduino.cc/en/software">Arduino</a>.</p>
+</li>
+<li>
+<p>Install ESP32 for Arduino. <a href="https://learn.sparkfun.com/tutorials/esp32-thing-hookup-guide#installing-via-arduino-ide-boards-manager">Here</a> are some good instructions for installing it via the Arduino Boards Manager. <strong>Note</strong>: Use v2.0.2 of the core. <strong>Note:</strong> We use the 'ESP32 Dev Module' for pin numbering. Select the correct board under Tools-&gt;Board-&gt;ESP32 Arduino-&gt;ESP32 Dev Module.</p>
+</li>
+<li>
+<p>Change the Partition table. Replace</p>
+<p><code>C:\Users\\[user name]\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.2\tools\partitions\app3M_fat9M_16MB.csv</code></p>
+<p>with the app3M_fat9M_16MB.csv <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/Firmware/app3M_fat9M_16MB.csv?raw=true">file</a> found in the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Firmware">Firmware folder</a>. This will increase the program partition from a maximum of 1.9MB to 3MB.</p>
+</li>
+<li>
+<p>From the Arduino IDE, set the core settings from the <strong>Tools</strong> menu:</p>
+<p>A. Set the 'Partition Scheme' to <em>16M Flash (3MB APP/9MB FATFS)</em>. This will use the 'app3M_fat9M_16MB.csv' updated partition table.</p>
+<p>B. Set the 'Flash Size' to 16MB (128mbit)</p>
+</li>
+<li>
+<p>Obtain all the <a href="./#required-libraries">required libraries</a>.</p>
+</li>
+</ol>
+<p>Once compiled, firmware can be uploaded directly to a unit when the RTK unit is on and the correct COM port is selected under the Arduino IDE Tools-&gt;Port menu.</p>
+<p>If you are seeing the error:</p>
+<blockquote>
+<p>text section exceeds available space ...</p>
+</blockquote>
+<p>You have not replaced the partition file correctly. See the 'Change Partition table' step inside the <a href="./#windows_1">Windows instructions</a>.</p>
+<p><strong>Note:</strong> There are a variety of compile guards (COMPILE_WIFI, COMPILE_AP, etc) at the top of RTK_Surveyor.ino that can be commented out to remove them from compilation. This will greatly reduce the firmware size and allow for faster development of functions that do not rely on these features (serial menus, system configuration, logging, etc).</p>
+<h4 id="required-libraries">Required Libraries</h4>
+<p><strong>Note:</strong> You should click on the link next to each of the #includes at the top of RTK_Surveyor.ino within the Arduino IDE to open the library manager and download them. Getting them directly from Github also works but may not be 'official' releases.</p>
+<p>Using the library manager in the Arduino IDE, for each of the libraries below:</p>
+<div class="highlight"><pre><span></span><code>1. Locate the library by typing the libary name into the search box
+
+2. Click on the library
+
+3. Select the version listed in the compile-rtk-firmware.yml file for the [main](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-rtk-firmware.yml) or the [release_candidate](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/release_candidate/.github/workflows/compile-rtk-firmware.yml) branch
+
+4. Click on the Install button in the lower right
+</code></pre></div>
+<p>The RTK firmware requires the following libraries:</p>
+<div class="highlight"><pre><span></span><code>* [Arduino JSON](https://github.com/bblanchon/ArduinoJson)
+
+* [ESP32Time](https://github.com/fbiego/ESP32Time)
+
+* [ESP32 BleSerial](https://github.com/avinabmalla/ESP32_BleSerial)
+
+* [ESP32-OTA-Pull](https://github.com/mikalhart/ESP32-OTA-Pull)
+
+* Ethernet
+
+* [JC_Button](https://github.com/JChristensen/JC_Button)
+
+* [PubSub Client for MQTT](https://github.com/knolleary/pubsubclient)
+
+* [SdFat](https://github.com/greiman/SdFat)
+
+* [SparkFun LIS2DH12 Arduino Library](https://github.com/sparkfun/SparkFun_LIS2DH12_Arduino_Library)
+
+* [SparkFun MAX1704x Fuel Gauge Arduino Library](https://github.com/sparkfun/SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library)
+
+* [SparkFun u-blox GNSS v3](https://github.com/sparkfun/SparkFun_u-blox_GNSS_v3)
+
+* [SparkFun_WebServer_ESP32_W5500](https://github.com/SparkFun/SparkFun_WebServer_ESP32_W5500)
+</code></pre></div>
+<p>The following libraries are only available via GitHub:</p>
+<div class="highlight"><pre><span></span><code>* [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) (not available via library manager)
+
+* [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) (not available via library manager)
+
+* [SparkFun Micro OLED Breakout](https://github.com/sparkfun/SparkFun_Micro_OLED_Arduino_Library)
+</code></pre></div>
+<h3 id="ubuntu-2004">Ubuntu 20.04</h3>
+<h4 id="virtual-machine">Virtual Machine</h4>
+<p>Execute the following commands to create the Linux virtual machine:</p>
+<ol>
+<li>
+<p>Using a browser, download the Ubuntu 20.04 Desktop image</p>
+</li>
+<li>
+<p>virtualbox</p>
+<ol>
+<li>Click on the new button</li>
+<li>Specify the machine Name, e.g.: Sparkfun_RTK_20.04</li>
+<li>Select Type: Linux</li>
+<li>Select Version: Ubuntu (64-bit)</li>
+<li>Click the Next&gt; button</li>
+<li>Select the memory size: 7168</li>
+<li>Click the Next&gt; button</li>
+<li>Click on Create a virtual hard disk now</li>
+<li>Click the Create button</li>
+<li>Select VDI (VirtualBox Disk Image)</li>
+<li>Click the Next&gt; button</li>
+<li>Select Dynamically allocated</li>
+<li>Click the Next&gt; button</li>
+<li>Select the disk size: 128 GB</li>
+<li>Click the Create button</li>
+<li>Click on Storage</li>
+<li>Click the empty CD icon</li>
+<li>On the right-hand side, click the CD icon</li>
+<li>Click on Choose a disk file...</li>
+<li>Choose the ubuntu-20.04... iso file</li>
+<li>Click the Open button</li>
+<li>Click on Network</li>
+<li>Under 'Attached to:' select Bridged Adapter</li>
+<li>Click the OK button</li>
+<li>Click the Start button</li>
+</ol>
+</li>
+<li>
+<p>Install Ubuntu 20.04</p>
+</li>
+<li>
+<p>Log into Ubuntu</p>
+</li>
+<li>
+<p>Click on Activities</p>
+</li>
+<li>
+<p>Type terminal into the search box</p>
+</li>
+<li>
+<p>Optionally install the SSH server</p>
+<ol>
+<li>
+<p>In the terminal window</p>
+<ol>
+<li>sudo apt install -y net-tools openssh-server</li>
+<li>ifconfig</li>
+</ol>
+<p>Write down the IP address</p>
+</li>
+<li>
+<p>On the PC</p>
+<ol>
+<li>ssh-keygen -t rsa -f ~/.ssh/Sparkfun_RTK_20.04</li>
+<li>ssh-copy-id -o IdentitiesOnly=yes -i ~/.ssh/Sparkfun_RTK_20.04  &lt;username&gt;@&lt;IP address&gt;</li>
+<li>ssh -Y &lt;username&gt;@&lt;IP address&gt;</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<h4 id="build-environment">Build Environment</h4>
+<p>Execute the following commands to create the build environment for the SparkFun RTK Firmware:</p>
+<ol>
+<li>sudo adduser $USER dialout</li>
+<li>
+<p>sudo shutdown -r 0</p>
+<p>Reboot to ensure that the dialout privilege is available to the user</p>
+</li>
+<li>
+<p>sudo apt update</p>
+</li>
+<li>sudo apt install -y  git  gitk  git-cola  minicom  python3-pip</li>
+<li>sudo pip3 install pyserial</li>
+<li>mkdir ~/SparkFun</li>
+<li>mkdir ~/SparkFun/esptool</li>
+<li>cd ~/SparkFun/esptool</li>
+<li>git clone https://github.com/espressif/esptool .</li>
+<li>cd ~/SparkFun</li>
+<li>
+<p>nano serial-port.sh</p>
+<p>Insert the following text into the file:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="cp">#!/bin/bash</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="cp">#   serial-port.sh</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="cp">#</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="cp">#   Shell script to read the serial data from the RTK Express ESP32 port</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="cp">#</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="cp">#   Parameters:</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="cp">#       1:  ttyUSBn</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="cp">#</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">sudo</span><span class="w"> </span><span class="n">minicom</span><span class="w"> </span><span class="o">-</span><span class="n">b</span><span class="w"> </span><span class="mi">115200</span><span class="w"> </span><span class="mi">-8</span><span class="w"> </span><span class="o">-</span><span class="n">D</span><span class="w"> </span><span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">$1</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">tty</span>
+</code></pre></div>
+</li>
+<li>
+<p>chmod +x serial-port.sh</p>
+</li>
+<li>
+<p>nano new-firmware.sh</p>
+<p>Insert the following text into the file:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="cp">#!/bin/bash</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="cp">#   new-firmware.sh</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="cp">#</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="cp">#   Shell script to load firmware into the RTK Express via the ESP32 port</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="cp">#</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="cp">#   Parameters:</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="cp">#      1: ttyUSBn</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="cp">#      2: Firmware file</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="cp">#</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="n">sudo</span><span class="w"> </span><span class="n">python3</span><span class="w"> </span><span class="o">~/</span><span class="n">SparkFun</span><span class="o">/</span><span class="n">RTK_Binaries</span><span class="o">/</span><span class="n">Uploader_GUI</span><span class="o">/</span><span class="n">esptool</span><span class="p">.</span><span class="n">py</span><span class="w"> </span><span class="o">--</span><span class="n">chip</span><span class="w"> </span><span class="n">esp32</span><span class="w"> </span><span class="o">--</span><span class="n">port</span><span class="w"> </span><span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">$1</span><span class="w"> </span><span class="o">--</span><span class="n">baud</span><span class="w"> </span><span class="mi">921600</span><span class="w"> </span><span class="o">--</span><span class="n">before</span><span class="w"> </span><span class="n">default_reset</span><span class="w"> </span><span class="o">--</span><span class="n">after</span><span class="w"> </span><span class="n">hard_reset</span><span class="w"> </span><span class="n">write_flash</span><span class="w"> </span><span class="o">-</span><span class="n">z</span><span class="w"> </span><span class="o">--</span><span class="n">flash_mode</span><span class="w"> </span><span class="n">dio</span><span class="w"> </span><span class="o">--</span><span class="n">flash_freq</span><span class="w"> </span><span class="mi">80</span><span class="n">m</span><span class="w"> </span><span class="o">--</span><span class="n">flash_size</span><span class="w"> </span><span class="n">detect</span><span class="w"> </span>\
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="mh">0x1000</span><span class="w">   </span><span class="o">~/</span><span class="n">SparkFun</span><span class="o">/</span><span class="n">RTK_Binaries</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">RTK_Surveyor</span><span class="p">.</span><span class="n">ino</span><span class="p">.</span><span class="n">bootloader</span><span class="p">.</span><span class="n">bin</span><span class="w"> </span>\
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="mh">0x8000</span><span class="w">   </span><span class="o">~/</span><span class="n">SparkFun</span><span class="o">/</span><span class="n">RTK_Binaries</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">RTK_Surveyor_Partitions_16MB</span><span class="p">.</span><span class="n">bin</span><span class="w"> </span>\
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="mh">0xe000</span><span class="w">   </span><span class="o">~/</span><span class="n">SparkFun</span><span class="o">/</span><span class="n">RTK_Binaries</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">boot_app0</span><span class="p">.</span><span class="n">bin</span><span class="w"> </span>\
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="mh">0x10000</span><span class="w">  </span><span class="n">$2</span>
+</code></pre></div>
+</li>
+<li>
+<p>chmod +x new-firmware.sh</p>
+</li>
+<li>
+<p>nano new-firmware-4mb.sh</p>
+<p>Insert the following text into the file:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="cp">#!/bin/bash</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="cp">#   new-firmware-4mb.sh</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="cp">#</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="cp">#   Shell script to load firmware into the 4MB RTK Express via the ESP32 port</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="cp">#</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="cp">#   Parameters:</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="cp">#      1: ttyUSBn</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="cp">#      2: Firmware file</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="cp">#</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="n">sudo</span><span class="w"> </span><span class="n">python3</span><span class="w"> </span><span class="o">~/</span><span class="n">SparkFun</span><span class="o">/</span><span class="n">RTK_Binaries</span><span class="o">/</span><span class="n">Uploader_GUI</span><span class="o">/</span><span class="n">esptool</span><span class="p">.</span><span class="n">py</span><span class="w"> </span><span class="o">--</span><span class="n">chip</span><span class="w"> </span><span class="n">esp32</span><span class="w"> </span><span class="o">--</span><span class="n">port</span><span class="w"> </span><span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">$1</span><span class="w"> </span><span class="o">--</span><span class="n">baud</span><span class="w"> </span><span class="mi">921600</span><span class="w"> </span><span class="o">--</span><span class="n">before</span><span class="w"> </span><span class="n">default_reset</span><span class="w"> </span><span class="o">--</span><span class="n">after</span><span class="w"> </span><span class="n">hard_reset</span><span class="w"> </span><span class="n">write_flash</span><span class="w"> </span><span class="o">-</span><span class="n">z</span><span class="w"> </span><span class="o">--</span><span class="n">flash_mode</span><span class="w"> </span><span class="n">dio</span><span class="w"> </span><span class="o">--</span><span class="n">flash_freq</span><span class="w"> </span><span class="mi">80</span><span class="n">m</span><span class="w"> </span><span class="o">--</span><span class="n">flash_size</span><span class="w"> </span><span class="n">detect</span><span class="w"> </span>\
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="mh">0x1000</span><span class="w">   </span><span class="o">~/</span><span class="n">SparkFun</span><span class="o">/</span><span class="n">RTK_Binaries</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">RTK_Surveyor</span><span class="p">.</span><span class="n">ino</span><span class="p">.</span><span class="n">bootloader</span><span class="p">.</span><span class="n">bin</span><span class="w"> </span>\
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="mh">0x8000</span><span class="w">   </span><span class="o">~/</span><span class="n">SparkFun</span><span class="o">/</span><span class="n">RTK_Binaries</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">RTK_Surveyor_Partitions_4MB</span><span class="p">.</span><span class="n">bin</span><span class="w"> </span>\
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="mh">0xe000</span><span class="w">   </span><span class="o">~/</span><span class="n">SparkFun</span><span class="o">/</span><span class="n">RTK_Binaries</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">boot_app0</span><span class="p">.</span><span class="n">bin</span><span class="w"> </span>\
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="mh">0x10000</span><span class="w">  </span><span class="n">$2</span>
+</code></pre></div>
+</li>
+<li>
+<p>chmod +x new-firmware-4mb.sh</p>
+<p>Get the SparkFun RTK Firmware sources</p>
+</li>
+<li>
+<p>mkdir ~/SparkFun/RTK</p>
+</li>
+<li>cd ~/SparkFun/RTK</li>
+<li>
+<p>git clone https://github.com/sparkfun/SparkFun_RTK_Firmware .</p>
+<p>Get the SparkFun RTK binaries</p>
+</li>
+<li>
+<p>mkdir ~/SparkFun/RTK_Binaries</p>
+</li>
+<li>cd ~/SparkFun/RTK_Binaries</li>
+<li>
+<p>git clone https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries.git .</p>
+<p>Install the Arduino IDE</p>
+</li>
+<li>
+<p>mkdir ~/SparkFun/arduino</p>
+</li>
+<li>cd ~/SparkFun/arduino</li>
+<li>wget https://downloads.arduino.cc/arduino-1.8.15-linux64.tar.xz</li>
+<li>tar -xvf ./arduino-1.8.15-linux64.tar.xz</li>
+<li>cd arduino-1.8.15/</li>
+<li>
+<p>sudo ./install.sh</p>
+<p>Add the ESP32 support</p>
+</li>
+<li>
+<p>Arduino</p>
+<ol>
+<li>Click on File in the menu bar</li>
+<li>Click on Preferences</li>
+<li>Go down to the Additional Boards Manager URLs text box</li>
+<li>Only if the textbox already has a value, go to the end of the value or values and add a comma</li>
+<li>Add the link: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json</li>
+<li>Note the value in Sketchbook location</li>
+<li>Click the OK button</li>
+<li>Click on File in the menu bar</li>
+<li>Click on Quit</li>
+</ol>
+<p>Get the required external libraries, then add to the Sketchbook location from above</p>
+</li>
+<li>
+<p>cd   ~/Arduino/libraries</p>
+</li>
+<li>mkdir AsyncTCP</li>
+<li>cd AsyncTCP/</li>
+<li>git clone https://github.com/me-no-dev/AsyncTCP.git .</li>
+<li>cd ..</li>
+<li>mkdir ESPAsyncWebServer</li>
+<li>cd ESPAsyncWebServer</li>
+<li>
+<p>git clone https://github.com/me-no-dev/ESPAsyncWebServer .</p>
+<p>Connect the Config ESP32 port of the RTK to a USB port on the computer</p>
+</li>
+<li>
+<p>ls /dev/ttyUSB*</p>
+<p>Enable the libraries in the Arduino IDE</p>
+</li>
+<li>
+<p>Arduino</p>
+<ol>
+<li>From the menu, click on File</li>
+<li>Click on Open...</li>
+<li>Select the ~/SparkFun/RTK/Firmware/RTK_Surveyor/RTK_Surveyor.ino file</li>
+<li>Click on the Open button</li>
+</ol>
+<p>Select the ESP32 development module</p>
+<ol>
+<li>From the menu, click on Tools</li>
+<li>Click on Board</li>
+<li>Click on Board Manager…</li>
+<li>Click on esp32</li>
+<li>Select version 2.0.2</li>
+<li>Click on the Install button in the lower right</li>
+<li>Close the Board Manager...</li>
+<li>From the menu, click on Tools</li>
+<li>Click on Board</li>
+<li>Click on ESP32 Arduino</li>
+<li>Click on ESP32 Dev Module</li>
+</ol>
+<p>Load the required libraries</p>
+<ol>
+<li>From the menu, click on Tools</li>
+<li>Click on Manage Libraries…</li>
+<li>
+<p>For each of the following libraries:</p>
+<ol>
+<li>Locate the library</li>
+<li>Click on the library</li>
+<li>Select the version listed in the compile-rtk-firmware.yml file for the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-rtk-firmware.yml">main</a> or the <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/release_candidate/.github/workflows/compile-rtk-firmware.yml">release_candidate</a> branch</li>
+<li>Click on the Install button in the lower right</li>
+</ol>
+<p>Library List:</p>
+<ul>
+<li>ArduinoJson</li>
+<li>ESP32Time</li>
+<li>ESP32-OTA-Pull</li>
+<li>ESP32_BleSerial</li>
+<li>Ethernet</li>
+<li>JC_Button</li>
+<li>MAX17048 - Used for “Test Sketch/Batt_Monitor”</li>
+<li>PubSubClient</li>
+<li>SdFat</li>
+<li>SparkFun LIS2DH12 Arduino Library</li>
+<li>SparkFun MAX1704x Fuel Gauge Arduino Library</li>
+<li>SparkFun Qwiic OLED Graphics Library</li>
+<li>SparkFun u-blox GNSS v3</li>
+<li>SparkFun_WebServer_ESP32_W5500</li>
+</ul>
+</li>
+<li>
+<p>Click on the Close button</p>
+</li>
+</ol>
+<p>Select the terminal port</p>
+<ol>
+<li>From the menu, click on Tools</li>
+<li>Click on Port, Select the port that was displayed in step 38 above</li>
+<li>Select /dev/ttyUSB0</li>
+<li>Click on Upload Speed</li>
+<li>Select 230400</li>
+</ol>
+<p>Setup the partitions for the 16 MB flash</p>
+<ol>
+<li>From the menu, click on Tools</li>
+<li>Click on Flash Size</li>
+<li>Select 16MB</li>
+<li>From the menu, click on Tools</li>
+<li>Click on Partition Scheme</li>
+<li>Click on 16M Flash (3MB APP/9MB FATFS)</li>
+<li>From the menu click on File</li>
+<li>Click on Quit</li>
+</ol>
+</li>
+<li>
+<p>cd ~/SparkFun/RTK/</p>
+</li>
+<li>cp  Firmware/app3M_fat9M_16MB.csv  ~/.arduino15/packages/esp32/hardware/esp32/2.0.2/tools/partitions/app3M_fat9M_16MB.csv</li>
+</ol>
+<h3 id="arduino-cli">Arduino CLI</h3>
+<p>The firmware can be compiled using <a href="https://github.com/arduino/arduino-cli">Arduino CLI</a>. This makes compilation fairly platform independent and flexible. All release candidates and firmware releases are compiled using Arduino CLI using a github action. You can see the source of the action <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-release.yml">here</a>, and use it as a starting point for Arduino CLI compilation.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright 2023 - <a href="https://www.sparkfun.com/" target="_blank" rel="noopener">SparkFun Electronics&#174;<br> <a href="https://goo.gl/maps/vkstCpQZW6jZMjzYA" target="_blank" rel="noopener">6333 Dry Creek Parkway, Niwot, Colorado 80503</a>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.youtube.com/sparkfun" target="_blank" rel="noopener" title="www.youtube.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.instagram.com/sparkfun" target="_blank" rel="noopener" title="www.instagram.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.github.com/sparkfun" target="_blank" rel="noopener" title="www.github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.facebook.com/SparkFun" target="_blank" rel="noopener" title="www.facebook.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M512 256C512 114.6 397.4 0 256 0S0 114.6 0 256c0 120 82.7 220.8 194.2 248.5V334.2h-52.8V256h52.8v-33.7c0-87.1 39.4-127.5 125-127.5 16.2 0 44.2 3.2 55.7 6.4V172c-6-.6-16.5-1-29.6-1-42 0-58.2 15.9-58.2 57.2V256h83.6l-14.4 78.2H287v175.9C413.8 494.8 512 386.9 512 256z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://twitter.com/sparkfun" target="_blank" rel="noopener" title="twitter.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.code.annotate", "content.action.edit", "navigation.tracking", "navigation.tabs.sticky", "navigation.top", "navigation.path"], "search": "../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7c377c4.min.js"></script>
+      
+    
+  </body>
+</html>

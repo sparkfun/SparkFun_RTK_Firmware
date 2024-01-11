@@ -1,0 +1,1634 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A guide to the SparkFun RTK hardware, firmware, and features.">
+      
+      
+      
+        <link rel="canonical" href="https://docs.sparkfun.com/SparkFun_RTK_Firmware/permanent_base/">
+      
+      
+        <link rel="prev" href="../correction_transport/">
+      
+      
+        <link rel="next" href="../accuracy_verification/">
+      
+      
+      <link rel="icon" href="../img/Icons/sfe_logo_sq.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.3">
+    
+    
+      
+        <title>Creating a Permanent Base - SparkFun RTK Product Manual</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.50c56a3b.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+  
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+  
+  <style>:root{--md-admonition-icon--note:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/></svg>');--md-admonition-icon--abstract:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M2.5 1.75v11.5c0 .138.112.25.25.25h3.17a.75.75 0 0 1 0 1.5H2.75A1.75 1.75 0 0 1 1 13.25V1.75C1 .784 1.784 0 2.75 0h8.5C12.216 0 13 .784 13 1.75v7.736a.75.75 0 0 1-1.5 0V1.75a.25.25 0 0 0-.25-.25h-8.5a.25.25 0 0 0-.25.25Zm13.274 9.537v-.001l-4.557 4.45a.75.75 0 0 1-1.055-.008l-1.943-1.95a.75.75 0 0 1 1.062-1.058l1.419 1.425 4.026-3.932a.75.75 0 1 1 1.048 1.074ZM4.75 4h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM4 7.75A.75.75 0 0 1 4.75 7h2a.75.75 0 0 1 0 1.5h-2A.75.75 0 0 1 4 7.75Z"/></svg>');--md-admonition-icon--info:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>');--md-admonition-icon--tip:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M3.499.75a.75.75 0 0 1 1.5 0v.996C5.9 2.903 6.793 3.65 7.662 4.376l.24.202c-.036-.694.055-1.422.426-2.163C9.1.873 10.794-.045 12.622.26 14.408.558 16 1.94 16 4.25c0 1.278-.954 2.575-2.44 2.734l.146.508.065.22c.203.701.412 1.455.476 2.226.142 1.707-.4 3.03-1.487 3.898C11.714 14.671 10.27 15 8.75 15h-6a.75.75 0 0 1 0-1.5h1.376a4.484 4.484 0 0 1-.563-1.191 3.835 3.835 0 0 1-.05-2.063 4.647 4.647 0 0 1-2.025-.293.75.75 0 0 1 .525-1.406c1.357.507 2.376-.006 2.698-.318l.009-.01a.747.747 0 0 1 1.06 0 .748.748 0 0 1-.012 1.074c-.912.92-.992 1.835-.768 2.586.221.74.745 1.337 1.196 1.621H8.75c1.343 0 2.398-.296 3.074-.836.635-.507 1.036-1.31.928-2.602-.05-.603-.216-1.224-.422-1.93l-.064-.221c-.12-.407-.246-.84-.353-1.29a2.425 2.425 0 0 1-.507-.441 3.075 3.075 0 0 1-.633-1.248.75.75 0 0 1 1.455-.364c.046.185.144.436.31.627.146.168.353.305.712.305.738 0 1.25-.615 1.25-1.25 0-1.47-.95-2.315-2.123-2.51-1.172-.196-2.227.387-2.706 1.345-.46.92-.27 1.774.019 3.062l.042.19a.884.884 0 0 1 .01.05c.348.443.666.949.94 1.553a.75.75 0 1 1-1.365.62c-.553-1.217-1.32-1.94-2.3-2.768L6.7 5.527c-.814-.68-1.75-1.462-2.692-2.619a3.737 3.737 0 0 0-1.023.88c-.406.495-.663 1.036-.722 1.508.116.122.306.21.591.239.388.038.797-.06 1.032-.19a.75.75 0 0 1 .728 1.31c-.515.287-1.23.439-1.906.373-.682-.067-1.473-.38-1.879-1.193L.75 5.677V5.5c0-.984.48-1.94 1.077-2.664.46-.559 1.05-1.055 1.673-1.353V.75Z"/></svg>');--md-admonition-icon--success:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>');--md-admonition-icon--question:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.92 6.085h.001a.749.749 0 1 1-1.342-.67c.169-.339.436-.701.849-.977C6.845 4.16 7.369 4 8 4a2.756 2.756 0 0 1 1.637.525c.503.377.863.965.863 1.725 0 .448-.115.83-.329 1.15-.205.307-.47.513-.692.662-.109.072-.22.138-.313.195l-.006.004a6.24 6.24 0 0 0-.26.16.952.952 0 0 0-.276.245.75.75 0 0 1-1.248-.832c.184-.264.42-.489.692-.661.103-.067.207-.132.313-.195l.007-.004c.1-.061.182-.11.258-.161a.969.969 0 0 0 .277-.245C8.96 6.514 9 6.427 9 6.25a.612.612 0 0 0-.262-.525A1.27 1.27 0 0 0 8 5.5c-.369 0-.595.09-.74.187a1.01 1.01 0 0 0-.34.398ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>');--md-admonition-icon--warning:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>');--md-admonition-icon--failure:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M2.344 2.343h-.001a8 8 0 0 1 11.314 11.314A8.002 8.002 0 0 1 .234 10.089a8 8 0 0 1 2.11-7.746Zm1.06 10.253a6.5 6.5 0 1 0 9.108-9.275 6.5 6.5 0 0 0-9.108 9.275ZM6.03 4.97 8 6.94l1.97-1.97a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l1.97 1.97a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-1.97 1.97a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734L6.94 8 4.97 6.03a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018Z"/></svg>');--md-admonition-icon--danger:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M9.504.43a1.516 1.516 0 0 1 2.437 1.713L10.415 5.5h2.123c1.57 0 2.346 1.909 1.22 3.004l-7.34 7.142a1.249 1.249 0 0 1-.871.354h-.302a1.25 1.25 0 0 1-1.157-1.723L5.633 10.5H3.462c-1.57 0-2.346-1.909-1.22-3.004L9.503.429Zm1.047 1.074L3.286 8.571A.25.25 0 0 0 3.462 9H6.75a.75.75 0 0 1 .694 1.034l-1.713 4.188 6.982-6.793A.25.25 0 0 0 12.538 7H9.25a.75.75 0 0 1-.683-1.06l2.008-4.418.003-.006a.036.036 0 0 0-.004-.009l-.006-.006-.008-.001c-.003 0-.006.002-.009.004Z"/></svg>');--md-admonition-icon--bug:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M4.72.22a.75.75 0 0 1 1.06 0l1 .999a3.488 3.488 0 0 1 2.441 0l.999-1a.748.748 0 0 1 1.265.332.75.75 0 0 1-.205.729l-.775.776c.616.63.995 1.493.995 2.444v.327c0 .1-.009.197-.025.292.408.14.764.392 1.029.722l1.968-.787a.75.75 0 0 1 .556 1.392L13 7.258V9h2.25a.75.75 0 0 1 0 1.5H13v.5c0 .409-.049.806-.141 1.186l2.17.868a.75.75 0 0 1-.557 1.392l-2.184-.873A4.997 4.997 0 0 1 8 16a4.997 4.997 0 0 1-4.288-2.427l-2.183.873a.75.75 0 0 1-.558-1.392l2.17-.868A5.036 5.036 0 0 1 3 11v-.5H.75a.75.75 0 0 1 0-1.5H3V7.258L.971 6.446a.75.75 0 0 1 .558-1.392l1.967.787c.265-.33.62-.583 1.03-.722a1.677 1.677 0 0 1-.026-.292V4.5c0-.951.38-1.814.995-2.444L4.72 1.28a.75.75 0 0 1 0-1.06Zm.53 6.28a.75.75 0 0 0-.75.75V11a3.5 3.5 0 1 0 7 0V7.25a.75.75 0 0 0-.75-.75ZM6.173 5h3.654A.172.172 0 0 0 10 4.827V4.5a2 2 0 1 0-4 0v.327c0 .096.077.173.173.173Z"/></svg>');--md-admonition-icon--example:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M5 5.782V2.5h-.25a.75.75 0 0 1 0-1.5h6.5a.75.75 0 0 1 0 1.5H11v3.282l3.666 5.76C15.619 13.04 14.543 15 12.767 15H3.233c-1.776 0-2.852-1.96-1.899-3.458Zm-2.4 6.565a.75.75 0 0 0 .633 1.153h9.534a.75.75 0 0 0 .633-1.153L12.225 10.5h-8.45ZM9.5 2.5h-3V6c0 .143-.04.283-.117.403L4.73 9h6.54L9.617 6.403A.746.746 0 0 1 9.5 6Z"/></svg>');--md-admonition-icon--quote:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M1.75 2.5h10.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5Zm4 5h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5Zm0 5h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5ZM2.5 7.75v6a.75.75 0 0 1-1.5 0v-6a.75.75 0 0 1 1.5 0Z"/></svg>');}</style>
+
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="grey" data-md-color-accent="red">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#creating-a-permanent-base" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="SparkFun RTK Product Manual" class="md-header__button md-logo" aria-label="SparkFun RTK Product Manual" data-md-component="logo">
+      
+  <img src="../img/Icons/sfe_logo_sm.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SparkFun RTK Product Manual
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Creating a Permanent Base
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    sparkfun/SparkFun_RTK_Firmware
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="SparkFun RTK Product Manual" class="md-nav__button md-logo" aria-label="SparkFun RTK Product Manual" data-md-component="logo">
+      
+  <img src="../img/Icons/sfe_logo_sm.png" alt="logo">
+
+    </a>
+    SparkFun RTK Product Manual
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    sparkfun/SparkFun_RTK_Firmware
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../intro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quick Start
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../connecting_bluetooth/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Connecting Bluetooth
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gis_software/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GIS Software
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Configuration Methods
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Configuration Methods
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configure_with_wifi/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configure with WiFi
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configure_with_bluetooth/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configure with Bluetooth
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configure_with_serial/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configure with Serial
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configure_with_settings_file/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configure with Settings File
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configure_with_ucenter/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configure with u-center
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Configuration Menus
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Configuration Menus
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_gnss/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GNSS Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_messages/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Messages Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_base/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Base Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_wifi/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    WiFi Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_ports/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Ports Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_data_logging/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data Logging Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_profiles/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Profiles Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_pointperfect/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PointPerfect Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_sensor/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sensor Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_radios/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Radios Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_system/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    System Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_ethernet/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Ethernet Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_ntp/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Network Time Protocol Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../menu_debug/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Debug Menu
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Hardware
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Hardware
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../firmware_update/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Updating RTK Firmware
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../displays/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Displays
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../embeddedsystem_connection/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Output to an Embedded System
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../repair/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Disassembly / Repair
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    RTK Corrections
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            RTK Corrections
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../correction_sources/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Correction Sources
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../correction_transport/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Correction Transport
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Creating a Permanent Base
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Creating a Permanent Base
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#temporary-vs-fixed-base" class="md-nav__link">
+    <span class="md-ellipsis">
+      Temporary vs. Fixed Base
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#affix-your-antenna" class="md-nav__link">
+    <span class="md-ellipsis">
+      Affix Your Antenna
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gather-raw-gnss-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Gather Raw GNSS Data
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#converting-ubx-to-rinex" class="md-nav__link">
+    <span class="md-ellipsis">
+      Converting UBX to RINEX
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setting-fixed-location" class="md-nav__link">
+    <span class="md-ellipsis">
+      Setting Fixed Location
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-ntrip-caster" class="md-nav__link">
+    <span class="md-ellipsis">
+      Creating NTRIP Caster
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../accuracy_verification/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Accuracy Verification
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contribute/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Fix That Typo!
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#temporary-vs-fixed-base" class="md-nav__link">
+    <span class="md-ellipsis">
+      Temporary vs. Fixed Base
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#affix-your-antenna" class="md-nav__link">
+    <span class="md-ellipsis">
+      Affix Your Antenna
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gather-raw-gnss-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Gather Raw GNSS Data
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#converting-ubx-to-rinex" class="md-nav__link">
+    <span class="md-ellipsis">
+      Converting UBX to RINEX
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setting-fixed-location" class="md-nav__link">
+    <span class="md-ellipsis">
+      Setting Fixed Location
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-ntrip-caster" class="md-nav__link">
+    <span class="md-ellipsis">
+      Creating NTRIP Caster
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+
+    <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/gh-pages/pdf/SparkFun_RTK_User_Manual.pdf?raw=true" title="Download Site" class="md-content__button md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m-9.5 8.5c0 .8-.7 1.5-1.5 1.5H7v2H5.5V9H8c.8 0 1.5.7 1.5 1.5v1m5 2c0 .8-.7 1.5-1.5 1.5h-2.5V9H13c.8 0 1.5.7 1.5 1.5v3m4-3H17v1h1.5V13H17v2h-1.5V9h3v1.5m-6.5 0h1v3h-1v-3m-5 0h1v1H7v-1Z"/></svg>
+    </a>
+
+
+
+                  
+
+  
+    <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware/edit/main/docs/permanent_base.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 12h8v2H8v-2m2 8H6V4h7v5h5v3.1l2-2V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4v-2m-2-2h4.1l.9-.9V16H8v2m12.2-5c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="creating-a-permanent-base">Creating a Permanent Base</h1>
+<p>Surveyor: <img alt="Feature Supported" src="../img/Icons/GreenDot.png" /> / Express: <img alt="Feature Supported" src="../img/Icons/GreenDot.png" /> / Express Plus: <img alt="Feature Not Supported" src="../img/Icons/RedDot.png" /> / Facet: <img alt="Feature Partially Supported" src="../img/Icons/YellowDot.png" /> / Facet L-Band: <img alt="Feature Partially Supported" src="../img/Icons/YellowDot.png" /> / Reference Station: <img alt="Feature Supported" src="../img/Icons/GreenDot.png" /></p>
+<p><img alt="SparkFun Base Station Enclosure" src="../img/Corrections/Roof_Enclosure.jpg" /></p>
+<p><em>The base station at SparkFun</em></p>
+<p>This section goes into depth on how to gather the data using an RTK product to create a permanent fixed base.</p>
+<p><strong>Note:</strong> The RTK Facet and RTK Facet L-Band are rated IP53 - Protected from limited dust ingress and water spray. As such it is not recommended for permanent outdoor deployment. Use the RTK Surveyor or Express placed inside (or protected from the elements) with a fully sealed <a href="https://www.sparkfun.com/products/21801">TOP106 antenna</a> placed outside with a clear view of the sky.</p>
+<p><strong>Note:</strong> The RTK Express Plus does not support Base mode.</p>
+<h2 id="temporary-vs-fixed-base">Temporary vs. Fixed Base</h2>
+<p>There are two types of bases: <em>Surveyed</em> and <em>Fixed</em>. A surveyed base is often a temporary base set up in the field. Called a 'Survey-In', this is less accurate but requires only 60 seconds to complete. The 'Fixed' base is much more accurate but the precise location at which the antenna is located must be known. A fixed base is often a structure with an antenna bolted to the side. Raw satellite signals are gathered for a few hours and then processed using Precision Point Position. </p>
+<p>In a separate tutorial, we described how to <a href="https://learn.sparkfun.com/tutorials/setting-up-a-rover-base-rtk-system">create a temporary base station</a> with the 1 to 10-minute survey-in method. The temporary base method is flexible, but it is not as accurate and can vary dramatically in the time required. The ZED-F9P has a much faster way to provide base corrections: if you know the location of your antenna, you can set the coordinates of the receiver and it will immediately start providing RTCM corrections. The problem is ‘what is the location of the antenna?’. It’s as if you need a soldering iron to assemble your <a href="https://www.sparkfun.com/products/retired/10624">soldering iron kit</a>. Where do we start?</p>
+<p><strong>Why don’t I just survey-in my fixed antenna to get its location?</strong> </p>
+<p>While a survey-in is easy to set up and fine for an in-the-field way to establish the location of a base, it’s not recommended for getting the fixed location of a static base station as it is less accurate. Instead, PPP or Precise Point Positioning is far more accurate and is recommended for obtaining your antenna’s position. It’s a similar process but involves bouncing frick’n lasers off of satellites!</p>
+<blockquote>
+<p>A major problem is that the predicted orbits are often off by one meter or more. Ground stations bounce lasers off the individual satellites as they pass overhead and use this new data to compute the actual orbits of the satellites. Using this new ephemeris data, when it becomes available, combined with the receiver’s raw data, better fixes can be computed. This is the basis of PPP.</p>
+</blockquote>
+<p><em>From Gary Miller’s <a href="https://gpsd.gitlab.io/gpsd/ppp-howto.html">PPP HOWTO</a></em></p>
+<p><a href="../img/Corrections/Antenna_Semi-Fixed_to_roof%20-%20Big.jpg"><img alt="L1/L2 antenna attached to the roof" src="../img/Corrections/Antenna_Semi-Fixed_to_roof.jpg" /></a></p>
+<p><em><a href="https://www.sparkfun.com/products/21801">L1/L2 antenna</a> semi-fixed to a flat roof</em></p>
+<p>The PPP process works like this:</p>
+<ul>
+<li>Install an antenna in a fixed location</li>
+<li>Gather 24 hours' worth of raw GNSS data from that antenna</li>
+<li>Pass the raw data to a processing center for PPP</li>
+<li>Obtain a highly accurate position of the antenna we use to set a ‘Fixed Mode’ on a receiver</li>
+</ul>
+<p>There are some great articles written about PPP. We’ll scrape the surface but for more information check out:</p>
+<ul>
+<li>Gary Miller’s great <a href="https://gpsd.gitlab.io/gpsd/ppp-howto.html">PPP HOWTO</a></li>
+<li>Emlid’s <a href="https://docs.emlid.com/reachm2/tutorials/post-processing-workflow/ppp-introduction/">PPP</a></li>
+<li>Suelynn Choy, <a href="https://www.unoosa.org/documents/pdf/icg/2018/ait-gnss/16_PPP.pdf">GNSS PPP</a></li>
+</ul>
+<h2 id="affix-your-antenna">Affix Your Antenna</h2>
+<p>You don’t want your antenna moving once you’ve determined its position. Consider investing in a <a href="https://www.sparkfun.com/products/21801">premium antenna</a> but we’ve used the classic <a href="https://www.sparkfun.com/products/15192">u-blox L1/L2 antenna</a> with good success. Mount the antenna to a proper ground plane on a fixed surface that has a very clear view of the sky. No nearby anything. </p>
+<p><a href="../img/Corrections/Base_Antenna_-_SparkFun_u-blox_Antenna1.jpg"><img alt="u-blox antenna on SparkFun parapet" src="../img/Corrections/Base_Antenna_-_SparkFun_u-blox_Antenna1.jpg" /></a></p>
+<p><em>The u-blox antenna attached to SparkFun’s parapet</em></p>
+<p>We mounted the <a href="https://www.sparkfun.com/products/15192">u-blox antenna</a> to the ferrous flashing around the top of the SparkFun building. While not completely permanent, the magnets on the u-blox antenna are tested to survive automobile strength winds so it should be fine in the 100+ MPH winds experienced in the front range of Colorado. The u-blox ANN-MB-00 antenna has a 5m cable attached but this was not long enough to get from the SparkFun roof to the receiver so we attached a 10m SMA extension. It’s true that most L1/L2 antennas have a built-in amplifier but every meter of extension and every connector will slightly degrade the GNSS signal. Limit the use of connector converters and use an extension as short as possible to get where you need.</p>
+<p>If you want to use a <a href="https://www.sparkfun.com/products/21801">higher-grade antenna</a> that doesn’t have a magnetic base we’ve come up with a great way to create a stable fix point without the need for poking holes in your roof!</p>
+<p><a href="../img/Corrections/Antenna_Semi-Fixed_to_roof.jpg"><img alt="An antenna on the roof attached to cinderblock" src="../img/Corrections/Antenna_Semi-Fixed_to_roof.jpg" /></a></p>
+<p><em>Yes, that’s a cinder block. Don’t laugh. It works!</em></p>
+<p>Most surveying grade antennas have a ⅝” 11-TPI (threads per inch) thread on the bottom of the antenna. Luckily, ⅝” 11-TPI is the thread found on wedge anchors in hardware stores in the US. Wedge anchors are designed to hold walls to foundations but luckily for us, we can use the same hardware to anchor an antenna. (We’ve also heard of concrete anchors that use epoxy so be sure to shop around.)</p>
+<p><img alt="Old Weather Station with concrete blocks" src="../img/Corrections/Old%20Weather%20Setup-4.jpg" /></p>
+<p>I needed to mount an antenna to my roof. Luckily, I had two, leftover cinder blocks from a weather station that, <a href="https://learn.sparkfun.com/tutorials/weather-station-wirelessly-connected-to-wunderground/all">based on the Electric Imp</a>, had long since been retired.</p>
+<p><img alt="Drilling a hole in the cinder block" src="../img/Corrections/Base_Antenna_-_Drill.jpg" /></p>
+<p>Step one is drilling the ⅝” hole into the cinder block. The masonry bit cost me $20 but cheaper, less fancy ones can be had for <a href="https://www.homedepot.com/p/Drill-America-5-8-in-x-4-in-Carbide-Tipped-Masonry-Drill-Bit-DAM4X5-8/305252434">less than $10</a>. The blue tape shows me the depth I’m trying to hit. The cinder block is 3.5” thick so I settled on ~2.5” deep. Once the hole is drilled, tip the block upside down to get most of the cement dust out. Then pound the anchor into place. </p>
+<p><img alt="A broken cinder block" src="../img/Corrections/Base_Antenna_-_Broken_Block.jpg" /></p>
+<p><em>Oops!</em></p>
+<p>Don’t get greedy! I pounded the anchor so far that it split the block. Luckily, I had a second block!</p>
+<p><img alt="Foundation anchor in place" src="../img/Corrections/Base_Antenna_-_Anchor_installed.jpg" /></p>
+<p>Once the anchor is ~2 inches into the hole tighten the bolt. This will draw the anchor back up compressing the collar into place. <strong>Note:</strong> I finger tightened the bolt and added a ½ turn with a wrench. If you really go after the bolt and tighten it too much you risk pushing the collar out further and breaking the cinder block in half (see Ooops! picture above). We are not anchoring a wall here, just a <a href="https://www.sparkfun.com/products/21801">400g antenna</a>.</p>
+<p><img alt="Antenna affixed to the anchor" src="../img/Corrections/Base_Antenna_-_Antenna_attached.jpg" /></p>
+<p>I used a 2nd bolt, tightened against the antenna base, to lock it into place and prevent rotation in either direction. Astute readers will notice my TNC to SMA adapter in the picture above. It’s the wrong gender. Originally, I used an <a href="https://www.sparkfun.com/products/17495">SMA extension</a> to connect my <a href="https://www.sparkfun.com/products/16481">GPS-RTK-SMA</a> to my u-blox L1/L2 antenna on my roof. The GPS-RTK-SMA expects a regular SMA connection so the end of the extension would not connect to this adapter. So before you get out the ladder, test connect everything! Luckily I have a set of adapters and found the right TNC to SMA converter to suit my needs.</p>
+<p><a href="../img/Corrections/Antenna_Semi-Fixed_to_roof.jpg"><img alt="An antenna on the roof with Boulder Flatirons" src="../img/Corrections/Antenna_Semi-Fixed_to_roof.jpg" /></a></p>
+<p><em>It’s a bit of work getting 35lbs of concrete onto a roof but the view is pretty spectacular!</em></p>
+<p>I wrapped the SMA extension once around the base. In case anything pulls on the SMA cable the tension will be transferred to the bolt rather than the TNC connection to the antenna.</p>
+<p><strong>Lightning Warning:</strong> My antenna profile is lower than the parapet so lightning strikes are unlikely. Your antenna may be the highest point around so consider lightning protection.</p>
+<h2 id="gather-raw-gnss-data">Gather Raw GNSS Data</h2>
+<p>Once you’ve got the antenna into a location where it <em>will not move or be moved</em> we need to establish its location. Power on your RTK unit and verify that you can get a lock and see 25+ satellites. Assuming you’ve got good reception, we now need to set the receiver to output raw data from the satellites. </p>
+<p>You will need a microSD card that is 1GB up to 32GB formatted for FAT16 or FAT32. </p>
+<p><img alt="The microSD slot on the bottom of the RTK Facet" src="../img/Corrections/SparkFun_RTK_Facet_-_Ports_-_microSD.jpg" /></p>
+<p><em>The microSD slot on the bottom of the RTK Facet</em></p>
+<p><strong>Enable RAWX and SFRBX</strong></p>
+<p>Power on the unit and using the <a href="../configure_with_serial/">serial</a> or <a href="../configure_with_wifi/">WiFi method</a>, connect to the device.</p>
+<p><strong>Configure via WiFi</strong></p>
+<p><img alt="Enable the RAWX message" src="../img/WiFi%20Config/RTK_Surveyor_-_WiFi_Config_-_GNSS_Config_Messages.jpg" /></p>
+<p>Expand the Message Rates sub-menu under the GNSS Config menu. Pressing the NMEAx5 + RXMx2 message button will turn off all messages and enable the following messages:</p>
+<ul>
+<li>NMEA-GGA, NMEA-SGA, NMEA-GST, NMEA-GSV, NMEA-RMC, RXM-RAWX, RXM-SFRBX</li>
+</ul>
+<p>These seven sentences are commonly used when logging and doing Precise Point Positioning (PPP) or Post Processed Kinematics (PPK). </p>
+<p>Press the 'Save and Exit' button. Upon reset, the unit should begin displaying a gradually increasing <a href="../displays/#rover-fix">logging icon</a> indicating successful logging.</p>
+<p><strong>Configure via Serial</strong></p>
+<p><img alt="Press 2 and then 8 to enable the PPP logging defaults" src="../img/Terminal/SparkFun_RTK_Express_-_Messages_Menu.jpg" /></p>
+<p><em>Press 2 and then 8 to enable the PPP logging defaults</em></p>
+<p>After enabling the NMEA and RXM messages, exit from the serial menu by pressing x repeatedly. The system will save and apply the settings.</p>
+<p>Once the RTK product is configured, power it up with microSD inserted, and leave the unit in <strong>Rover</strong> mode. This will record all the data (NMEA, UBX, and RAWX) from the receiver to a <em>.ubx file. We do not yet know the location of the antenna so we stay in Rover mode to allow it to compile a large amount of satellite data. Only after we have confirmed its location should you enter **Base*</em> mode.</p>
+<p><img alt="The logging icon will remain animated while the log file is increasing" src="../img/Displays/SparkFun_RTK_Facet_-_Main_Display_Icons.jpg" /></p>
+<p><em>The logging icon will remain animated while the log file is increasing</em></p>
+<p><strong>Confirm Recording</strong></p>
+<p>Before leaving the unit for 6 to 24 hours, it is recommended that you capture a few minutes of RAWX log data, with the antenna located with a clear view of the sky, and then inspect the log to confirm everything is working correctly. </p>
+<p><img alt="Getting UBX file from SD card" src="../img/Corrections/SparkFun%20RTK%20Facet%20SD%20RAWX%20Log%20Files.png" /></p>
+<p><em>Getting UBX file from SD card</em></p>
+<p>Remove the microSD from the RTK unit and open it on a computer. The latest log file is shown above. Note the file shown above is 492kB because it logged only ~60 seconds. Log files with RAWX and SFRBX and NMEA will grow in size to over 1GB across 24 hours.</p>
+<p>The quickest method to verify RAWX logging is to open the UBX file with a text editor.</p>
+<p><img alt="Viewing a RAWX log in a text editor" src="../img/Corrections/SparkFun%20RTK%20Facet%20Text%20Editor%20RAWX%20packets.png" /></p>
+<p><em>NMEA and UBX binary data viewed in Visual Studio Code</em></p>
+<p>Your editor may render the binary UBX RAWX data in unknown ways. If you see NMEA ASCII sentences combined with large chunks of binary data, the RTK product is correctly logging RAWX data.</p>
+<p>If you have u-center installed, you can more easily inspect for successful logging. Double click on a UBX file to open them in u-center.</p>
+<p><img alt="Viewing a RAWX log in u-center" src="../img/Corrections/SparkFun%20RTK%20Facet%20u-center%20view%20of%20Log%20Files.png" /></p>
+<p><em>Viewing a RAWX log in u-center</em></p>
+<p>Press the play button (shown above) and you should see satellites quickly come in and out of view as u-center 'plays' back the log file.</p>
+<p><img alt="RAWX packet within the Packet Console" src="../img/Corrections/SparkFun%20RTK%20Facet%20u-center%20RAWX%20packets.png" /></p>
+<p><em>RAWX packet within the Packet Console</em></p>
+<p>Open the Packet Console and verify the UBX RXM-RAWX and SFRBX packets are logged. You are now ready to do a long survey of the antenna's position. Allow this to run for 24 hours. Don’t worry if you go long but do realize that a 24-hour file will be ~1GB so don’t let it run for a month.</p>
+<p><img alt="Graph of record time vs position error" src="../img/Corrections/PPP_record_time_vs_error.jpg" /></p>
+<p><em>From Suelynn Choy's ‘<a href="https://www.unoosa.org/documents/pdf/icg/2018/ait-gnss/16_PPP.pdf">GNSS Precision Point Positioning</a>’ presentation 2018</em></p>
+<p>Capturing 6 hours is good, 24 is slightly better (note the logarithmic scale for position error in the graph above). Most PPP analysis services will accept more than 24 hours of data but they may truncate it to 24 hours. If you capture 30 hours of RAWX data, that’s ok, we will show you how to trim a file that is too long. </p>
+<h2 id="converting-ubx-to-rinex">Converting UBX to RINEX</h2>
+<p><img alt="RTKLIB conversion of ubx to obs" src="../img/Corrections/Convert_UBX_to_OBS_with_time_22_hour_window.jpg" /></p>
+<p>Once the 24-hour log file is obtained, the 1GB UBX file will need to be converted to RINEX (Receiver Independent Exchange Format). The popular <a href="http://www.rtklib.com/">RTKLIB</a> is here to help. We recommend the rtklibexplorer’s modified version of RTKLIB (available for download <a href="http://rtkexplorer.com/downloads/rtklib-code/">here</a>) but you can obtain the original RTKLIB <a href="http://www.rtklib.com/">here</a>. Open RTKCONV. Select your UBX file and hit ‘Convert’. Our 300MB file took ~30 seconds to convert. You should see a *.obs file once complete.</p>
+<p><img alt="Opening an OBS file to view the start and stop time" src="../img/Corrections/RTKCNV_-_OBS_Time_stamps1.jpg" /></p>
+<p><em>An OBS file with 14 hours of data</em></p>
+<p>If your data file is 25 hours or a little more, that’s fine. If you need to cut your RINEX file down because it’s too large (or 40 hours long) you can trim the time window. Convert the entire file then click on the notepad icon to open the OBS file. You’ll see the GPS start time and stop time for this capture. </p>
+<p><img alt="Limiting the time window of the conversion" src="../img/Corrections/Convert_UBX_to_OBS_with_time_22_hour_window2.jpg" /></p>
+<p>Using these times, you can limit the time window to whatever you need and re-convert the file.</p>
+<p><strong>Why don’t we crank up the fix rate? Moar is better!™</strong></p>
+<p>The RTK products can log fix rates up to 20Hz. Why not get RAWX data at greater than 1Hz? Because nature doesn’t move that fast. Most PPP analysis services will ignore anything greater than 1Hz. OPUS goes so far as to “decimate all recording rates to 30 seconds”. And, your OBS files will be monstrously large. If 24 hours is 1GB at 1Hz, it follows that 24 hours at 30Hz will be ~30 gigs. So no, keep it at 1Hz.</p>
+<p>We now need to pass the raw GNSS satellite data in RINEX format (<em>*.obs</em>) through a post-processing center to try to get the actual location of the antenna. There are a handful of services but we’ve had great luck using the Canadian <a href="https://webapp.geod.nrcan.gc.ca/geod/tools-outils/ppp.php?locale=en">CSRS-PPP service</a>. The US National Geodetic Service provides a service called <a href="https://www.ngs.noaa.gov/OPUS/">OPUS</a> but we found it to be frustratingly limited by file size and format issues. Your mileage may vary. </p>
+<p><img alt="Selecting ITRF upload on CSRS for PPP" src="../img/Corrections/Uploading_file_to_CSRS.jpg" /></p>
+<p>Zip your obs file then create an account with <a href="https://webapp.geod.nrcan.gc.ca/geod/tools-outils/ppp.php?locale=en">CSRS</a>. Select ITRF then upload your file. Twiddle your thumbs for a few hours and you should receive an email that looks like this:</p>
+<p><img alt="Email from CSRS Summary" src="../img/Corrections/Email_from_CSRS_Summary_.jpg" /></p>
+<p>Click the 'Summary' link to open a summary of results. This summary contains the coordinates of your antenna in Geodetic, UTM, and Cartesian formats. </p>
+<p><img alt="Output from CSRS" src="../img/Corrections/SparkFun_PPP_Results.png" /></p>
+<p><em>The SparkFun antenna with +/-2mm of accuracy! :O</em></p>
+<p>The email will also include a <a href="../img/Corrections/SparkFun-PPP.pdf">fancy PDF report</a> of your antenna’s location but does not include the Cartesian coordinates we will need later.</p>
+<p>If all goes well you should have a very precise location for your antenna. For SparkFun RTK products we are most interested in ECEF coordinates. <a href="https://en.wikipedia.org/wiki/ECEF">ECEF</a> is <em>fascinating</em>. Rather than lat and long, ECEF is the number of meters from the internationally agreed-upon reference frame of the center of mass of the Earth. Basically, your ECEF coordinates are the distance you are from the <em>center of the Earth</em>. Neat.</p>
+<h2 id="setting-fixed-location">Setting Fixed Location</h2>
+<p>Now that you’ve got the ECEF position of your antenna, let’s tell the RTK product where its antenna is located with a few millimeters of accuracy. </p>
+<p><strong>Configure via WiFi</strong></p>
+<p>Enter the WiFi AP config page or connect over Serial.</p>
+<p><img alt="Setting ECEF coordinates over WiFi" src="../img/WiFi%20Config/RTK_Surveyor_-_WiFi_Config_-_Base_Config1.jpg" /> </p>
+<p><em>Setting ECEF coordinates over WiFi</em></p>
+<p>Select <strong>Fixed</strong> and <strong>ECEF Coordinates</strong> then enter the coordinates obtained from the CSRS-PPP email. </p>
+<p><img alt="Configuring NTRIP Server settings via WiFi Config AP" src="../img/WiFi%20Config/RTK_Surveyor_-_WiFi_Config_-_Base_Config2.jpg" /> </p>
+<p><em>Configuring NTRIP Server settings via WiFi Config AP</em></p>
+<p>If your RTK product has access to a WiFi network, consider enabling the NTRIP Server. This will allow the RTK device to automatically begin transmitting its RTCM data to an NTRIP Caster once it has entered Fixed Base mode. See <a href="./#creating-ntrip-caster">Creating NTRIP Caster</a> for more information.</p>
+<p>Save the settings to the RTK unit and exit. </p>
+<p><strong>Configure via Serial</strong></p>
+<p><img alt="Base Menu Options" src="../img/Terminal/SparkFun_RTK_Express_-_Base_Menu.jpg" /> </p>
+<p><em>Base Menu Options</em></p>
+<p>To configure over serial, press 3 to open the Base menu, then 1 to toggle the Base Mode to Fixed/Static Position, then enter the three ECEF coordinates. </p>
+<p><img alt="Settings for the NTRIP Server" src="../img/Terminal/SparkFun_RTK_Express_-_Base_Menu_-_Fixed_NTRIP.jpg" /> </p>
+<p><em>Settings for the NTRIP Server</em></p>
+<p>If your RTK product has access to a WiFi network, consider enabling the NTRIP Server. This will allow the RTK device to automatically begin transmitting its RTCM data to an NTRIP Caster once it has entered Fixed Base mode. See <a href="./#creating-ntrip-caster">Creating NTRIP Caster</a> for more information.</p>
+<p>Press x multiple times to exit the serial menu.</p>
+<p><strong>Beginning Base Mode</strong></p>
+<p>Power cycle the unit to load the Fixed ECEF coordinates. After boot, use the <strong>Setup</strong> button to enter <strong>Base</strong> mode.</p>
+<p><img alt="RTK Facet in Fixed Transmit Mode" src="../img/Displays/SparkFun_RTK_Express_-_Display_-_FixedBase-Xmitting.jpg" /> </p>
+<p><em>RTK Facet in Fixed Transmit Mode</em></p>
+<p>Almost immediately after entering Base mode, the unit will begin outputting RTCM messages. These RTCM messages are sent to the <strong>RADIO</strong> port on the device. This is helpful for transmitting corrections via serial radio to any Rover units within a 10km baseline. </p>
+<p><img alt="RTK Facet in Transmit Mode with NTRIP Enabled" src="../img/Displays/SparkFun_RTK_Express_-_Display_-_FixedBase-Casting.jpg" /> </p>
+<p><em>RTK Facet in Transmit Mode with NTRIP Server Enabled</em></p>
+<p>If the NTRIP server is enabled the device will first attempt to connect over WiFi. The WiFi icon will blink until a WiFi connection is obtained. If the WiFi icon continually blinks be sure to check your SSID and PW for the local WiFi.</p>
+<p>Once WiFi connects the device will attempt to connect to the NTRIP mount point. Once successful the display will show 'Casting' along with a solid WiFi icon. The number of successful RTCM transmissions will increase every second.</p>
+<h2 id="creating-ntrip-caster">Creating NTRIP Caster</h2>
+<p>Your RTK device can both serve RTCM correction data (aka Server) to an NTRIP Caster and get RTCM correction data (aka Client) from an NTRIP Caster. But how does one get an NTRIP Caster?</p>
+<p>There are a variety of Windows applications out there that claim to be an NTRIP caster. We found them to be generally terrible. The easiest solutions we've found are <a href="http://rtk2go.com">RTK2GO</a> or <a href="https://emlid.com/ntrip-caster/">Emlid Caster</a>. Both are free and available to the public.</p>
+<p><strong>RTK2Go</strong></p>
+<p><a href="http://rtk2go.com/">RTK2Go</a> seems to be a pet project of SNIP. We recommend creating a mount point and a password through RTK2GO.com. Yes, the RTK2go website looks spammy but the service works well and is used widely. Please see <a href="http://rtk2go.com/">RTK2Go</a> for details about creating an account. It's free and takes only a few minutes. Once activated you will be provided with your Mount Point name and Mount Point PW. These two credentials are used in an NTRIP Server setup:</p>
+<p><strong>NTRIP Server:</strong></p>
+<ul>
+<li>Caster Host: rtk2go.com</li>
+<li>Caster Port: 2101</li>
+<li>Caster User Name: Not needed</li>
+<li>Caster User PW: Not needed</li>
+<li>Mount Point: Provided by RTK2Go</li>
+<li>Mount Point PW: Required and provided by RTK2Go</li>
+</ul>
+<p><strong>NTRIP Client:</strong></p>
+<ul>
+<li>Caster Host: rtk2go.com</li>
+<li>Caster Port: 2101</li>
+<li>Caster User Name: <strong>Your Valid Email Address</strong></li>
+<li>Caster User PW: Not needed</li>
+<li>Mount Point: Provided by RTK2Go</li>
+<li>Mount Point PW: <strong>Not Needed</strong></li>
+</ul>
+<p>The differences between Server and Client are small. The Server needs to know the mount point PW as it needs to be authorized to push data there. The Client needs to know which mount point but does not need a mount point password. </p>
+<p><strong>Note:</strong> You must provide a valid email address to RTK2Go. From RTK2Go:</p>
+<blockquote>
+<p>It is now REQUIRED that all data consumers (Rover devices) provide a valid email address in the NTRIP Client user account name field when accessing the Caster.</p>
+</blockquote>
+<p><img alt="The SparkFun Mount Point bldr_SparkFun1" src="../img/Corrections/SparkFun%20RTK%20RTK2Go%20SparkFun%20Mount%20Point.png" /></p>
+<p><em>The SparkFun Mount Point 'bldr_SparkFun1'</em></p>
+<p>To verify that your RTK product is correctly broadcasting RTCM data, you can access RTK2Go from a browser on Port 2101. This link <a href="http://www.rtk2go.com:2101/">RTK2Go.com:2101</a> will show a list of all current NTRIP Servers that are pushing data to the RTK2Go caster, and are available to be accessed, free of charge, by any NTRIP Client in the world.</p>
+<p><strong>Emlid Caster</strong></p>
+<p><a href="https://emlid.com/ntrip-caster/">Emlid Caster</a> is also very easy to set up and has a bit more user-friendly-looking website. Creating an account is very straightforward.</p>
+<p><img alt="Emlid Mount Points" src="../img/Corrections/SparkFun%20RTK%20Emlid%20Mount%20Points.png" /></p>
+<p><em>Emlid Mount Points with PWs removed</em></p>
+<p>Once your account is created, you'll be presented with Mount Points and Rovers.</p>
+<p><strong>NTRIP Server:</strong></p>
+<ul>
+<li>Caster Host: caster.emlid.com</li>
+<li>Caster Port: 2101</li>
+<li>Caster User Name: Not needed</li>
+<li>Caster User PW: Not needed</li>
+<li>Mount Point: Required. MP1979 for example. Shown in your mount point dashboard.</li>
+<li>Mount Point PW: Required. Shown in your mount point dashboard.</li>
+</ul>
+<p><strong>NTRIP Client:</strong></p>
+<ul>
+<li>Caster Host: caster.emlid.com</li>
+<li>Caster Port: 2101</li>
+<li>Caster User Name: Required. Shown in your rover dashboard.</li>
+<li>Caster User PW: Required. Shown in your rover dashboard.</li>
+<li>Mount Point: Required. Shown in your rover dashboard.</li>
+<li>Mount Point PW: Not Needed</li>
+</ul>
+<p><img alt="Emlid Mount Points" src="../img/Corrections/SparkFun%20RTK%20Emlid%20Mount%20Points.png" /></p>
+<p><em>'Online' Badge Illuminated</em></p>
+<p>To verify that your RTK product is correctly broadcasting RTCM data open the Emlid Caster dashboard. Once a device is successfully connected as a mount point or rover, the Emlid dashboard will turn green.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright 2023 - <a href="https://www.sparkfun.com/" target="_blank" rel="noopener">SparkFun Electronics&#174;<br> <a href="https://goo.gl/maps/vkstCpQZW6jZMjzYA" target="_blank" rel="noopener">6333 Dry Creek Parkway, Niwot, Colorado 80503</a>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.youtube.com/sparkfun" target="_blank" rel="noopener" title="www.youtube.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.instagram.com/sparkfun" target="_blank" rel="noopener" title="www.instagram.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.github.com/sparkfun" target="_blank" rel="noopener" title="www.github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.facebook.com/SparkFun" target="_blank" rel="noopener" title="www.facebook.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M512 256C512 114.6 397.4 0 256 0S0 114.6 0 256c0 120 82.7 220.8 194.2 248.5V334.2h-52.8V256h52.8v-33.7c0-87.1 39.4-127.5 125-127.5 16.2 0 44.2 3.2 55.7 6.4V172c-6-.6-16.5-1-29.6-1-42 0-58.2 15.9-58.2 57.2V256h83.6l-14.4 78.2H287v175.9C413.8 494.8 512 386.9 512 256z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://twitter.com/sparkfun" target="_blank" rel="noopener" title="twitter.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.code.annotate", "content.action.edit", "navigation.tracking", "navigation.tabs.sticky", "navigation.top", "navigation.path"], "search": "../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7c377c4.min.js"></script>
+      
+    
+  </body>
+</html>

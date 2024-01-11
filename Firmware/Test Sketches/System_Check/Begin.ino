@@ -1,37 +1,128 @@
-void beginBoard()
-{
-  //Use ADC to check 50% resistor divider
-  int pin_adc_rtk_facet = 35;
-  uint16_t idValue = analogReadMilliVolts(pin_adc_rtk_facet);
-  log_d("Board ADC ID: %d", idValue);
 
-  if (idValue > (3300 / 2 * 0.9) && idValue < (3300 / 2 * 1.1))
+#define MAX_ADC_VOLTAGE 3300 // Millivolts
+
+// Testing shows the combined ADC+resistors is under a 1% window
+#define TOLERANCE 5.20 // Percent:  94.8% - 105.2%
+
+//----------------------------------------
+// Hardware initialization functions
+//----------------------------------------
+// Determine if the measured value matches the product ID value
+// idWithAdc applies resistor tolerance using worst-case tolerances:
+// Upper threshold: R1 down by TOLERANCE, R2 up by TOLERANCE
+// Lower threshold: R1 up by TOLERANCE, R2 down by TOLERANCE
+bool idWithAdc(uint16_t mvMeasured, float r1, float r2)
+{
+  float lowerThreshold;
+  float upperThreshold;
+
+  //                                ADC input
+  //                       r1 KOhms     |     r2 KOhms
+  //  MAX_ADC_VOLTAGE -----/\/\/\/\-----+-----/\/\/\/\----- Ground
+
+  // Return true if the mvMeasured value is within the tolerance range
+  // of the mvProduct value
+  upperThreshold = ceil(MAX_ADC_VOLTAGE * (r2 * (1.0 + (TOLERANCE / 100.0))) /
+                        ((r1 * (1.0 - (TOLERANCE / 100.0))) + (r2 * (1.0 + (TOLERANCE / 100.0)))));
+  lowerThreshold = floor(MAX_ADC_VOLTAGE * (r2 * (1.0 - (TOLERANCE / 100.0))) /
+                         ((r1 * (1.0 + (TOLERANCE / 100.0))) + (r2 * (1.0 - (TOLERANCE / 100.0)))));
+
+  // Serial.printf("r1: %0.2f r2: %0.2f lowerThreshold: %0.0f mvMeasured: %d upperThreshold: %0.0f\r\n", r1, r2,
+  // lowerThreshold, mvMeasured, upperThreshold);
+
+  return (upperThreshold > mvMeasured) && (mvMeasured > lowerThreshold);
+}
+
+// Use a pair of resistors on pin 35 to ID the board type
+// If the ID resistors are not available then use a variety of other methods
+// (I2C, GPIO test, etc) to ID the board.
+// Assume no hardware interfaces have been started so we need to start/stop any hardware
+// used in tests accordingly.
+void identifyBoard()
+{
+  // Use ADC to check the resistor divider
+  int pin_deviceID = 35;
+  uint16_t idValue = analogReadMilliVolts(pin_deviceID);
+  Serial.printf("Board ADC ID (mV): %d\r\n", idValue);
+
+  // Order the following ID checks, by millivolt values high to low
+
+  // Facet L-Band Direct: 4.7/1  -->  534mV < 579mV < 626mV
+  if (idWithAdc(idValue, 4.7, 1))
   {
-    productVariant = RTK_FACET;
+    Serial.println("Found LBand Direct");
+    productVariant = RTK_FACET_LBAND_DIRECT;
   }
-  else if (idValue > (3300 * 2 / 3 * 0.9) && idValue < (3300 * 2 / 3 * 1.1))
+
+  // Express: 10/3.3  -->  761mV < 819mV < 879mV
+  else if (idWithAdc(idValue, 10, 3.3))
   {
-    productVariant = RTK_FACET_LBAND;
-  }
-  else if (idValue > (3300 * 3.3 / 13.3 * 0.9) && idValue < (3300 * 3.3 / 13.3 * 1.1))
-  {
+    Serial.println("Found Express");
     productVariant = RTK_EXPRESS;
   }
-  else if (idValue > (3300 * 10 / 13.3 * 0.9) && idValue < (3300 * 10 / 13.3 * 1.1))
+
+  // Reference Station: 20/10  -->  1031mV < 1100mV < 1171mV
+  else if (idWithAdc(idValue, 20, 10))
   {
+    productVariant = REFERENCE_STATION;
+    // We can't auto-detect the ZED version if the firmware is in configViaEthernet mode,
+    // so fake it here - otherwise messageSupported always returns false
+    zedFirmwareVersionInt = 112;
+  }
+  // Facet: 10/10  -->  1571mV < 1650mV < 1729mV
+  else if (idWithAdc(idValue, 10, 10))
+    productVariant = RTK_FACET;
+
+  // Facet L-Band: 10/20  -->  2129mV < 2200mV < 2269mV
+  else if (idWithAdc(idValue, 10, 20))
+    productVariant = RTK_FACET_LBAND;
+
+  // Express+: 3.3/10  -->  2421mV < 2481mV < 2539mV
+  else if (idWithAdc(idValue, 3.3, 10))
     productVariant = RTK_EXPRESS_PLUS;
-  }
-  else if (isConnected(0x19) == true) //Check for accelerometer
-  {
-    if (zedModuleType == PLATFORM_F9P) productVariant = RTK_EXPRESS;
-    else if (zedModuleType == PLATFORM_F9R) productVariant = RTK_EXPRESS_PLUS;
-  }
+
+  // ID resistors do not exist for the following:
+  //      Surveyor
+  //      Unknown
   else
   {
-    productVariant = RTK_SURVEYOR;
+    Serial.println("Out of band or nonexistent resistor IDs");
+    productVariant = RTK_UNKNOWN; // Need to wait until the GNSS and Accel have been initialized
+  }
+}
+
+void beginBoard()
+{
+  if (productVariant == RTK_UNKNOWN)
+  {
+    if (isConnected(0x19) == true) // Check for accelerometer
+    {
+      if (zedModuleType == PLATFORM_F9P)
+        productVariant = RTK_EXPRESS;
+      else if (zedModuleType == PLATFORM_F9R)
+        productVariant = RTK_EXPRESS_PLUS;
+    }
+    else
+    {
+      // Detect RTK Expresses (v1.3 and below) that do not have an accel or device ID resistors
+
+      // On a Surveyor, pin 34 is not connected. On Express, 34 is connected to ZED_TX_READY
+      const int pin_ZedTxReady = 34;
+      uint16_t pinValue = analogReadMilliVolts(pin_ZedTxReady);
+      log_d("Alternate ID pinValue (mV): %d\r\n", pinValue); // Surveyor = 142 to 152, //Express = 3129
+      if (pinValue > 3000)
+      {
+        if (zedModuleType == PLATFORM_F9P)
+          productVariant = RTK_EXPRESS;
+        else if (zedModuleType == PLATFORM_F9R)
+          productVariant = RTK_EXPRESS_PLUS;
+      }
+      else
+        productVariant = RTK_SURVEYOR;
+    }
   }
 
-  //Setup hardware pins
+  // Setup hardware pins
   if (productVariant == RTK_SURVEYOR)
   {
     pin_batteryLevelLED_Red = 32;
@@ -46,13 +137,10 @@ void beginBoard()
     pin_zed_tx_ready = 26;
     pin_zed_reset = 27;
     pin_batteryLevel_alert = 36;
-    //
-    //    //Bug in ZED-F9P v1.13 firmware causes RTK LED to not light when RTK Floating with SBAS on.
-    //    //The following changes the POR default but will be overwritten by settings in NVM or settings file
-    //    settings.ubxConstellations[1].enabled = false;
 
-    strcpy(platformFilePrefix, "SFE_Surveyor");
-    strcpy(platformPrefix, "Surveyor");
+    // Bug in ZED-F9P v1.13 firmware causes RTK LED to not light when RTK Floating with SBAS on.
+    // The following changes the POR default but will be overwritten by settings in NVM or settings file
+    settings.ubxConstellations[1].enabled = false;
   }
   else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
   {
@@ -67,30 +155,20 @@ void beginBoard()
 
     pinMode(pin_powerSenseAndControl, INPUT_PULLUP);
     pinMode(pin_powerFastOff, INPUT);
-    //
+
     //    if (esp_reset_reason() == ESP_RST_POWERON)
     //    {
-    //      powerOnCheck(); //Only do check if we POR start
+    //      powerOnCheck(); // Only do check if we POR start
     //    }
-    //
-    //    pinMode(pin_setupButton, INPUT_PULLUP);
-    //
-    //    setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
 
-    if (productVariant == RTK_EXPRESS)
-    {
-      strcpy(platformFilePrefix, "SFE_Express");
-      strcpy(platformPrefix, "Express");
-    }
-    else if (productVariant == RTK_EXPRESS_PLUS)
-    {
-      strcpy(platformFilePrefix, "SFE_Express_Plus");
-      strcpy(platformPrefix, "Express Plus");
-    }
+    pinMode(pin_setupButton, INPUT_PULLUP);
+
+    //setMuxport(settings.dataPortChannel); // Set mux to user's choice: NMEA, I2C, PPS, or DAC
   }
-  else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
+  else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND ||
+           productVariant == RTK_FACET_LBAND_DIRECT)
   {
-    //    //v11
+    // v11
     pin_muxA = 2;
     pin_muxB = 0;
     pin_powerSenseAndControl = 13;
@@ -105,81 +183,113 @@ void beginBoard()
     pin_radio_rst = 15;
     pin_radio_pwr = 4;
     pin_radio_cts = 5;
-    //pin_radio_rts = 255; //Not implemented
+    // pin_radio_rts = 255; //Not implemented
 
     pinMode(pin_powerSenseAndControl, INPUT_PULLUP);
     pinMode(pin_powerFastOff, INPUT);
 
     //    if (esp_reset_reason() == ESP_RST_POWERON)
     //    {
-    //      powerOnCheck(); //Only do check if we POR start
+    //      powerOnCheck(); // Only do check if we POR start
     //    }
-    //
-    //    pinMode(pin_peripheralPowerControl, OUTPUT);
-    //    digitalWrite(pin_peripheralPowerControl, HIGH); //Turn on SD, ZED, etc
-    //
-    //    setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
-    //
-    //    //CTS is active low. ESP32 pin 5 has pullup at POR. We must drive it low.
-    //    pinMode(pin_radio_cts, OUTPUT);
-    //    digitalWrite(pin_radio_cts, LOW);
 
-    if (productVariant == RTK_FACET)
+    pinMode(pin_peripheralPowerControl, OUTPUT);
+    digitalWrite(pin_peripheralPowerControl, HIGH); // Turn on SD, ZED, etc
+
+    //setMuxport(settings.dataPortChannel); // Set mux to user's choice: NMEA, I2C, PPS, or DAC
+
+    // CTS is active low. ESP32 pin 5 has pullup at POR. We must drive it low.
+    pinMode(pin_radio_cts, OUTPUT);
+    digitalWrite(pin_radio_cts, LOW);
+
+    if (productVariant == RTK_FACET_LBAND_DIRECT)
     {
-      strcpy(platformFilePrefix, "SFE_Facet");
-      strcpy(platformPrefix, "Facet");
-    }
-    else if (productVariant == RTK_FACET_LBAND)
-    {
-      strcpy(platformFilePrefix, "SFE_Facet_LBand");
-      strcpy(platformPrefix, "Facet L-Band");
+      // Override the default setting if a user has not explicitly configured the setting
+      //      if (settings.useI2cForLbandCorrectionsConfigured == false)
+      //        settings.useI2cForLbandCorrections = false;
     }
   }
+  else if (productVariant == REFERENCE_STATION)
+  {
+    // No powerOnCheck
 
-  //Get unit MAC address
-  esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
-  unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
+    //settings.enablePrintBatteryMessages = false; // No pesky battery messages
+  }
 
-  //  //For all boards, check reset reason. If reset was due to wdt or panic, append last log
-  //  if (esp_reset_reason() == ESP_RST_POWERON)
-  //  {
-  //    reuseLastLog = false; //Start new log
-  //
-  //    loadSettingsPartial();
-  //    if (settings.enableResetDisplay == true)
-  //    {
-  //      settings.resetCount = 0;
-  //      recordSystemSettings(); //Record to NVM
-  //    }
-  //  }
-  //  else
-  //  {
-  //    reuseLastLog = true; //Attempt to reuse previous log
-  //
-  //    loadSettingsPartial();
-  //    if (settings.enableResetDisplay == true)
-  //    {
-  //      settings.resetCount++;
-  //      Serial.printf("resetCount: %d\n\r", settings.resetCount);
-  //      recordSystemSettings(); //Record to NVM
-  //    }
-  //
-  //    Serial.print("Reset reason: ");
-  //    switch (esp_reset_reason())
-  //    {
-  //      case ESP_RST_UNKNOWN: Serial.println(F("ESP_RST_UNKNOWN")); break;
-  //      case ESP_RST_POWERON : Serial.println(F("ESP_RST_POWERON")); break;
-  //      case ESP_RST_SW : Serial.println(F("ESP_RST_SW")); break;
-  //      case ESP_RST_PANIC : Serial.println(F("ESP_RST_PANIC")); break;
-  //      case ESP_RST_INT_WDT : Serial.println(F("ESP_RST_INT_WDT")); break;
-  //      case ESP_RST_TASK_WDT : Serial.println(F("ESP_RST_TASK_WDT")); break;
-  //      case ESP_RST_WDT : Serial.println(F("ESP_RST_WDT")); break;
-  //      case ESP_RST_DEEPSLEEP : Serial.println(F("ESP_RST_DEEPSLEEP")); break;
-  //      case ESP_RST_BROWNOUT : Serial.println(F("ESP_RST_BROWNOUT")); break;
-  //      case ESP_RST_SDIO : Serial.println(F("ESP_RST_SDIO")); break;
-  //      default : Serial.println(F("Unknown"));
-  //    }
-  //  }
+  char versionString[21];
+  getFirmwareVersion(versionString, sizeof(versionString), true);
+  Serial.printf("SparkFun RTK %s %s\r\n", platformPrefix, versionString);
+
+  // Get unit MAC address
+  esp_read_mac(wifiMACAddress, ESP_MAC_WIFI_STA);
+  memcpy(btMACAddress, wifiMACAddress, sizeof(wifiMACAddress));
+  btMACAddress[5] +=
+    2; // Convert MAC address to Bluetooth MAC (add 2):
+  // https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
+  memcpy(ethernetMACAddress, wifiMACAddress, sizeof(wifiMACAddress));
+  ethernetMACAddress[5] += 3; // Convert MAC address to Ethernet MAC (add 3)
+
+  // For all boards, check reset reason. If reset was due to wdt or panic, append last log
+  //loadSettingsPartial(); // Loads settings from LFS
+  if ((esp_reset_reason() == ESP_RST_POWERON) || (esp_reset_reason() == ESP_RST_SW))
+  {
+    //reuseLastLog = false; // Start new log
+
+    if (settings.enableResetDisplay == true)
+    {
+      settings.resetCount = 0;
+      //      recordSystemSettingsToFileLFS(settingsFileName); // Avoid overwriting LittleFS settings onto SD
+    }
+    settings.resetCount = 0;
+  }
+  else
+  {
+    //reuseLastLog = true; // Attempt to reuse previous log
+
+    if (settings.enableResetDisplay == true)
+    {
+      settings.resetCount++;
+      Serial.printf("resetCount: %d\r\n", settings.resetCount);
+      //recordSystemSettingsToFileLFS(settingsFileName); // Avoid overwriting LittleFS settings onto SD
+    }
+
+    Serial.print("Reset reason: ");
+    switch (esp_reset_reason())
+    {
+      case ESP_RST_UNKNOWN:
+        Serial.println("ESP_RST_UNKNOWN");
+        break;
+      case ESP_RST_POWERON:
+        Serial.println("ESP_RST_POWERON");
+        break;
+      case ESP_RST_SW:
+        Serial.println("ESP_RST_SW");
+        break;
+      case ESP_RST_PANIC:
+        Serial.println("ESP_RST_PANIC");
+        break;
+      case ESP_RST_INT_WDT:
+        Serial.println("ESP_RST_INT_WDT");
+        break;
+      case ESP_RST_TASK_WDT:
+        Serial.println("ESP_RST_TASK_WDT");
+        break;
+      case ESP_RST_WDT:
+        Serial.println("ESP_RST_WDT");
+        break;
+      case ESP_RST_DEEPSLEEP:
+        Serial.println("ESP_RST_DEEPSLEEP");
+        break;
+      case ESP_RST_BROWNOUT:
+        Serial.println("ESP_RST_BROWNOUT");
+        break;
+      case ESP_RST_SDIO:
+        Serial.println("ESP_RST_SDIO");
+        break;
+      default:
+        Serial.println("Unknown");
+    }
+  }
 }
 
 

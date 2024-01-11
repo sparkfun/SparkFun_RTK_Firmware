@@ -5,36 +5,6 @@ void menuSystem()
 
   while (1)
   {
-    Serial.println();
-    Serial.println(F("SparkFun RTK System Check Tool"));
-
-    //Use ADC to check resistor divider
-    int pin_adc_rtk_facet = 35;
-    uint16_t idValue = analogReadMilliVolts(pin_adc_rtk_facet);
-
-    Serial.print("Board ID: ");
-    if (idValue > (3300 / 2 * 0.9) && idValue < (3300 / 2 * 1.1))
-      Serial.print("I think this is a RTK Facet because resistor divider ID matches.");
-    else if (idValue > (3300 * 2 / 3 * 0.9) && idValue < (3300 * 2 / 3 * 1.1))
-      Serial.print("I think this is a RTK Facet L-Band because resistor divider ID matches.");
-    else if (idValue > (3300 * 3.3 / 13.3 * 0.9) && idValue < (3300 * 3.3 / 13.3 * 1.1))
-      Serial.print("I think this is a RTK Express because resistor divider ID matches.");
-    else if (idValue > (3300 * 10 / 13.3 * 0.9) && idValue < (3300 * 10 / 13.3 * 1.1))
-      Serial.print("I think this is a RTK Express Plus because resistor divider ID matches.");
-    else if (isConnected(0x19) == true) //Check for accelerometer
-    {
-      if (zedModuleType == PLATFORM_F9P)
-        Serial.print("I think this is a RTK Express because the accelerometer is present and the ZED is F9P.");
-      else if (zedModuleType == PLATFORM_F9R)
-        Serial.print("I think this is a RTK Express Plus because the accelerometer is present and the ZED is F9R.");
-    }
-    else
-    {
-      Serial.print("I don't know what board this is. No ADC value matches.");
-    }
-    Serial.println();
-    Serial.printf("Board ADC ID: %d\r\n", idValue);
-
     if (online.i2c == false)
     {
       Serial.println("I2C: Offline - Something is causing bus problems");

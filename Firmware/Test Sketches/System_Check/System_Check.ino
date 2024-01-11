@@ -101,25 +101,25 @@ uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported an
 
 class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
 {
-public:
-  volatile bool _iAmLocked = false;
-  bool lock(void)
-  {
-    if (_iAmLocked)
+  public:
+    volatile bool _iAmLocked = false;
+    bool lock(void)
     {
-      unsigned long startTime = millis();
-      while (_iAmLocked && (millis() < (startTime + 2100)))
-        delay(1); //YIELD
       if (_iAmLocked)
-        return false;
+      {
+        unsigned long startTime = millis();
+        while (_iAmLocked && (millis() < (startTime + 2100)))
+          delay(1); //YIELD
+        if (_iAmLocked)
+          return false;
+      }
+      _iAmLocked = true;
+      return true;
     }
-    _iAmLocked = true;
-    return true;
-  }
-  void unlock(void)
-  {
-    _iAmLocked = false;  
-  }
+    void unlock(void)
+    {
+      _iAmLocked = false;
+    }
 };
 SFE_UBLOX_GNSS_SUPER_DERIVED theGNSS;
 
@@ -227,7 +227,12 @@ char deviceName[30]; //The serial string that is broadcast. Ex: 'Surveyor Base-B
 const byte menuTimeout = 250; //Menus will exit/timeout after this number of seconds
 unsigned long splashStart = 0; //Controls how long the splash is displayed for. Currently min of 2s.
 
-char platformPrefix[40] = "Surveyor"; //Sets the prefix for broadcast names
+uint8_t wifiMACAddress[6];     // Display this address in the system menu
+uint8_t btMACAddress[6];       // Display this address when Bluetooth is enabled, otherwise display wifiMACAddress
+uint8_t ethernetMACAddress[6]; // Display this address when Ethernet is enabled, otherwise display wifiMACAddress
+
+#define platformPrefix      platformPrefixTable[productVariant] // Sets the prefix for broadcast names
+
 bool zedUartPassed = false; //Goes true during testing if ESP can communicate with ZED over UART
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -235,6 +240,8 @@ void setup()
 {
   Serial.begin(115200);
   delay(250);
+  Serial.println();
+  Serial.println(F("SparkFun RTK System Check Tool"));
 
   //  int pinNumber1 = 21;
   //  int pinNumber2 = 22;
@@ -280,11 +287,13 @@ void setup()
   unsigned long startTime = millis();
   Wire.beginTransmission(0x15); //Dummy address
   int endValue = Wire.endTransmission();
-  Serial.printf("Response time: %d endValue: %d\n\r", millis() - startTime, endValue);
+  Serial.printf("Response time: %ld endValue: %d\n\r", millis() - startTime, endValue);
   if (endValue == 2)
     online.i2c = true;
   else if (endValue == 5)
     Serial.println("It appears something is shorting the I2C lines.");
+
+  identifyBoard(); // Determine what hardware platform we are running on
 
   beginBoard(); //Determine what hardware platform we are running on and check on button
 
@@ -337,12 +346,12 @@ void setup()
   }
 
   //Select port 0 on MUX so UART1 is connected to ZED if bootloading is needed
-  if(pin_muxA >= 0)
+  if (pin_muxA >= 0)
   {
     pinMode(pin_muxA, OUTPUT);
     digitalWrite(pin_muxA, LOW);
   }
-  if(pin_muxB >= 0)
+  if (pin_muxB >= 0)
   {
     pinMode(pin_muxB, OUTPUT);
     digitalWrite(pin_muxB, LOW);
@@ -356,13 +365,13 @@ void loop()
 {
   delay(10);
 
-  if(pin_powerSenseAndControl >= 0)
+  if (pin_powerSenseAndControl >= 0)
   {
-    if(digitalRead(pin_powerSenseAndControl) == LOW)
+    if (digitalRead(pin_powerSenseAndControl) == LOW)
     {
       Serial.println("Power button pressed");
       ESP.restart(); //Use the power button as a reset
     }
-    
+
   }
 }

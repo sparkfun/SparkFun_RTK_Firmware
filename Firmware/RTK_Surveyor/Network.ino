@@ -536,7 +536,8 @@ NETWORK_DATA * networkGetUserNetwork(NETWORK_USER user)
     for (networkType = 0; networkType < NETWORK_TYPE_MAX; networkType++)
     {
         network = networkGet(networkType, false);
-        if (network && (network->activeUsers & userMask))
+        if (network && ((network->activeUsers & userMask)
+                        || (network->userOpens & userMask)))
             return network;
     }
 

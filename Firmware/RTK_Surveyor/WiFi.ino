@@ -426,7 +426,7 @@ void wifiStop()
         dnsServer.stop();
 
     // Stop the other network clients and then WiFi
-    networkStop(NETWORK_TYPE_WIFI);
+    NETWORK_STOP(NETWORK_TYPE_WIFI);
 }
 
 // Stop WiFi and release all resources

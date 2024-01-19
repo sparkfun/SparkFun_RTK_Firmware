@@ -208,6 +208,13 @@ char logFileName[sizeof("SFE_Reference_Station_230101_120101.ubx_plusExtraSpace"
 
 #include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
 
+#define NETWORK_STOP(type)                                                                                                    \
+    {                                                                                                                  \
+        if (settings.debugNetworkLayer)                                                                                   \
+            systemPrintf("networkStop called by %s %d\r\n", __FILE__, __LINE__);                                          \
+        networkStop(type);                                                                                                    \
+    }
+
 #ifdef COMPILE_WIFI
 #include "ESP32OTAPull.h" //http://librarymanager/All#ESP-OTA-Pull Used for getting
 

@@ -4,6 +4,9 @@
 # Builds the RTK support programs
 ######################################################################
 
+.ONESHELL:
+SHELL=/bin/bash
+
 ##########
 # Source files
 ##########
@@ -195,6 +198,14 @@ libraries:
 
 	echo ----------------------------------
 	~/Arduino/arduino-cli lib list
+
+partition:	../app3M_fat9M_16MB.csv
+	ESP_PATH=/home/$$USER/.arduino15/packages/esp32/hardware/esp32/*
+	for file in $$ESP_PATH; do \
+		ESP_VERSION_PATH=$${file}; \
+	done
+	ESP_VERSION=$$(basename $$ESP_VERSION_PATH)
+	cp --verbose  $< ~/.arduino15/packages/esp32/hardware/esp32/$$ESP_VERSION/tools/partitions/app3M_fat9M_16MB.csv
 
 RTK:	../RTK_Surveyor/RTK_Surveyor.ino ../RTK_Surveyor/*.h
 	~/Arduino/arduino-cli compile --fqbn "esp32:esp32:esp32":DebugLevel=$(DEBUG_LEVEL) ../RTK_Surveyor/RTK_Surveyor.ino  --build-property build.partitions=app3M_fat9M_16MB  --build-property upload.maximum_size=3145728 --build-property "compiler.cpp.extra_flags=\"-DPOINTPERFECT_TOKEN=$(POINTPERFECT_TOKEN)\" \"-DFIRMWARE_VERSION_MAJOR=$(FIRMWARE_VERSION_MAJOR)\" \"-DFIRMWARE_VERSION_MINOR=$(FIRMWARE_VERSION_MINOR)\" \"-DENABLE_DEVELOPER=$(ENABLE_DEVELOPER)\"" --export-binaries

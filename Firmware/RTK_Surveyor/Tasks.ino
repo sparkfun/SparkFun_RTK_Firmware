@@ -722,7 +722,7 @@ void handleGnssDataTask(void *e)
                 if ((btRingBufferTail + bytesToSend) > settings.gnssHandlerBufferSize)
                     bytesToSend = settings.gnssHandlerBufferSize - btRingBufferTail;
 
-                // If we are in the config menu, supress data flowing from ZED to cell phone
+                // If we are in the config menu, suppress data flowing from ZED to cell phone
                 if (btPrintEcho == false)
                     // Push new data to BT SPP
                     bytesToSend = bluetoothWrite(&ringBuffer[btRingBufferTail], bytesToSend);

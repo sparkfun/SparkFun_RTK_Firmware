@@ -267,12 +267,12 @@ typedef struct _NETWORK_DATA
 // either WiFi or ESP-Now are active
 enum WiFiState
 {
-    WIFI_OFF = 0,
-    WIFI_START,
-    WIFI_CONNECTING,
-    WIFI_CONNECTED,
+    WIFI_STATE_OFF = 0,
+    WIFI_STATE_START,
+    WIFI_STATE_CONNECTING,
+    WIFI_STATE_CONNECTED,
 };
-volatile byte wifiState = WIFI_OFF;
+volatile byte wifiState = WIFI_STATE_OFF;
 
 typedef enum
 {

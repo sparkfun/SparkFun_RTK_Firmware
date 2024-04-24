@@ -752,7 +752,7 @@ uint32_t setRadioIcons()
 
         // Count the number of radios in use
         uint8_t numberOfRadios = 1; // Bluetooth always indicated. TODO don't count if BT radio type is OFF.
-        if (wifiState > WIFI_OFF)
+        if (wifiState > WIFI_STATE_OFF)
             numberOfRadios++;
         if (espnowState > ESPNOW_OFF)
             numberOfRadios++;
@@ -770,7 +770,7 @@ uint32_t setRadioIcons()
             icons |= setBluetoothIcon_TwoRadios();
 
             // Do we have WiFi or ESP
-            if (wifiState > WIFI_OFF)
+            if (wifiState > WIFI_STATE_OFF)
                 icons |= setWiFiIcon_TwoRadios();
             else if (espnowState > ESPNOW_OFF)
                 icons |= setESPNowIcon_TwoRadios();
@@ -968,7 +968,7 @@ uint32_t setWiFiIcon_TwoRadios()
 {
     uint32_t icons = 0;
 
-    if (wifiState == WIFI_CONNECTED)
+    if (wifiState == WIFI_STATE_CONNECTED)
     {
         // Limit how often we update this spot
         if (millis() - firstRadioSpotTimer > 2000)
@@ -1055,7 +1055,7 @@ uint32_t setWiFiIcon_ThreeRadios()
 {
     uint32_t icons = 0;
 
-    if (wifiState == WIFI_CONNECTED)
+    if (wifiState == WIFI_STATE_CONNECTED)
     {
         // Limit how often we update this spot
         if (millis() - thirdRadioSpotTimer > 2000)
@@ -1144,7 +1144,7 @@ uint32_t setWiFiIcon()
 
     if (online.display == true)
     {
-        if (wifiState == WIFI_CONNECTED)
+        if (wifiState == WIFI_STATE_CONNECTED)
         {
             icons |= ICON_WIFI_SYMBOL_3_RIGHT;
         }
@@ -3384,7 +3384,7 @@ const uint8_t *getMacAddress()
         return btMACAddress;
 #endif // COMPILE_BT
 #ifdef COMPILE_WIFI
-    if (wifiState != WIFI_OFF)
+    if (wifiState != WIFI_STATE_OFF)
         return wifiMACAddress;
 #endif // COMPILE_WIFI
 #ifdef COMPILE_ETHERNET

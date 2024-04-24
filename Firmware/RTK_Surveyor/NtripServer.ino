@@ -82,7 +82,7 @@ NtripServer.ino
 /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   NTRIP Server States:
     NTRIP_SERVER_OFF: Network off or using NTRIP Client
-    NTRIP_SERVER_ON: WIFI_START state
+    NTRIP_SERVER_ON: WIFI_STATE_START state
     NTRIP_SERVER_NETWORK_STARTED: Connecting to the network
     NTRIP_SERVER_NETWORK_CONNECTED: Connected to the network
     NTRIP_SERVER_WAIT_GNSS_DATA: Waiting for correction data from GNSS
@@ -145,7 +145,7 @@ static const int NTRIP_SERVER_CONNECTION_TIME = 5 * 60 * 1000;
 enum NTRIPServerState
 {
     NTRIP_SERVER_OFF = 0,           // Using Bluetooth or NTRIP client
-    NTRIP_SERVER_ON,                // WIFI_START state
+    NTRIP_SERVER_ON,                // WIFI_STATE_START state
     NTRIP_SERVER_NETWORK_STARTED,   // Connecting to WiFi access point
     NTRIP_SERVER_NETWORK_CONNECTED, // WiFi connected to an access point
     NTRIP_SERVER_WAIT_GNSS_DATA,    // Waiting for correction data from GNSS

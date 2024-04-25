@@ -60,6 +60,8 @@
 //    the minor firmware version
 #define RTK_IDENTIFIER (FIRMWARE_VERSION_MAJOR * 0x10 + FIRMWARE_VERSION_MINOR)
 
+#define NTRIP_SERVER_MAX            1
+
 #ifdef COMPILE_ETHERNET
 #include <Ethernet.h> // http://librarymanager/All#Arduino_Ethernet
 #include "SparkFun_WebServer_ESP32_W5500.h" //http://librarymanager/All#SparkFun_WebServer_ESP32_W5500 v1.5.5

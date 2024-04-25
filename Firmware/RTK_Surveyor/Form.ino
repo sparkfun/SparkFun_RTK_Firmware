@@ -60,7 +60,8 @@ bool startWebServer(bool startWiFi = true, int httpPort = 80)
     do
     {
         ntripClientStop(true); // Do not allocate new wifiClient
-        ntripServerStop(true); // Do not allocate new wifiClient
+        for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+            ntripServerStop(serverIndex, true); // Do not allocate new wifiClient
 
         if (startWiFi)
             if (wifiStartAP() == false) // Exits calling wifiConnect()

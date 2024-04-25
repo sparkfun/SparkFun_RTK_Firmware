@@ -60,6 +60,28 @@
 //    the minor firmware version
 #define RTK_IDENTIFIER (FIRMWARE_VERSION_MAJOR * 0x10 + FIRMWARE_VERSION_MINOR)
 
+#ifdef COMPILE_ETHERNET
+#include <Ethernet.h> // http://librarymanager/All#Arduino_Ethernet
+#include "SparkFun_WebServer_ESP32_W5500.h" //http://librarymanager/All#SparkFun_WebServer_ESP32_W5500 v1.5.5
+#endif // COMPILE_ETHERNET
+
+#ifdef COMPILE_WIFI
+#include "ESP32OTAPull.h" //http://librarymanager/All#ESP-OTA-Pull Used for getting
+#include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
+#include <DNSServer.h>        //Built-in.
+#include <ESPmDNS.h>      //Built-in.
+#include <HTTPClient.h>   //Built-in. Needed for ThingStream API for ZTP
+#include <PubSubClient.h> //http://librarymanager/All#PubSubClient_MQTT_Lightweight by Nick O'Leary v2.8.0 Used for MQTT obtaining of keys
+#include <WiFi.h>             //Built-in.
+#include <WiFiClientSecure.h> //Built-in.
+#include <WiFiMulti.h>        //Built-in.
+#endif // COMPILE_WIFI
+
+#if COMPILE_NETWORK
+#include <SSLClientESP32.h> // http://librarymanager/All#SSLClientESP32
+#include "X509_Certificate_Bundle.h" // Root certificates
+#endif // COMPILE_NETWORK
+
 #include "settings.h"
 
 #define MAX_CPU_CORES 2
@@ -200,10 +222,6 @@ char logFileName[sizeof("SFE_Reference_Station_230101_120101.ubx_plusExtraSpace"
 // Over-the-Air (OTA) update support
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-#if COMPILE_NETWORK
-#include <SSLClientESP32.h> // http://librarymanager/All#SSLClientESP32
-#include "X509_Certificate_Bundle.h" // Root certificates
-#endif // COMPILE_NETWORK
 #include <ArduinoJson.h>  //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
 
 #include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
@@ -216,7 +234,6 @@ char logFileName[sizeof("SFE_Reference_Station_230101_120101.ubx_plusExtraSpace"
     }
 
 #ifdef COMPILE_WIFI
-#include "ESP32OTAPull.h" //http://librarymanager/All#ESP-OTA-Pull Used for getting
 
 #define WIFI_STOP()                                                         \
 {                                                                           \
@@ -237,19 +254,6 @@ unsigned int binBytesSent = 0;         // Tracks firmware bytes sent over WiFi O
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 // Connection settings to NTRIP Caster
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#ifdef COMPILE_WIFI
-#include <ESPmDNS.h>      //Built-in.
-#include <HTTPClient.h>   //Built-in. Needed for ThingStream API for ZTP
-#include <PubSubClient.h> //http://librarymanager/All#PubSubClient_MQTT_Lightweight by Nick O'Leary v2.8.0 Used for MQTT obtaining of keys
-#include <WiFi.h>             //Built-in.
-#include <WiFiClientSecure.h> //Built-in.
-#include <WiFiMulti.h>        //Built-in.
-#include <DNSServer.h>        //Built-in.
-
-#include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
-
-#endif  // COMPILE_WIFI
-
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
 bool enableRCFirmware = false;                // Goes true from AP config page
@@ -574,7 +578,6 @@ const uint8_t ESPNOW_MAX_PEERS = 5; // Maximum of 5 rovers
 // Ethernet
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_ETHERNET
-#include <Ethernet.h> // http://librarymanager/All#Arduino_Ethernet
 IPAddress ethernetIPAddress;
 IPAddress ethernetDNS;
 IPAddress ethernetGateway;
@@ -591,14 +594,10 @@ class derivedEthernetUDP : public EthernetUDP
 volatile struct timeval ethernetNtpTv; // This will hold the time the Ethernet NTP packet arrived
 bool ntpLogIncreasing;
 
-#include "SparkFun_WebServer_ESP32_W5500.h" //http://librarymanager/All#SparkFun_WebServer_ESP32_W5500 v1.5.5
 #endif  // COMPILE_ETHERNET
 
 unsigned long lastEthernetCheck = 0; // Prevents cable checking from continually happening
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-#include "NetworkClient.h" //Supports both WiFiClient and EthernetClient
-#include "NetworkUDP.h" //Supports both WiFiUdp and EthernetUdp
 
 // Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

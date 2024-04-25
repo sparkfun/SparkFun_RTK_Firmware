@@ -1,3 +1,6 @@
+#ifndef __SETTINGS_H__
+#define __SETTINGS_H__
+
 // System can enter a variety of states
 // See statemachine diagram at:
 // https://lucid.app/lucidchart/53519501-9fa5-4352-aa40-673f88ca0c9b/edit?invitationId=inv_ebd4b988-513d-4169-93fd-c291851108f8
@@ -273,6 +276,35 @@ enum WiFiState
     WIFI_STATE_CONNECTED,
 };
 volatile byte wifiState = WIFI_STATE_OFF;
+
+#include "NetworkClient.h" // Built-in - Supports both WiFiClient and EthernetClient
+#include "NetworkUDP.h"    //Built-in - Supports both WiFiUdp and EthernetUdp
+
+// NTRIP Server data
+typedef struct _NTRIP_SERVER_DATA
+{
+    // Network connection used to push RTCM to NTRIP caster
+    NetworkClient *networkClient;
+    volatile uint8_t state;
+
+    // Count of bytes sent by the NTRIP server to the NTRIP caster
+    uint32_t bytesSent;
+
+    // Throttle the time between connection attempts
+    // ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
+    uint32_t connectionAttemptTimeout;
+    uint32_t lastConnectionAttempt;
+    int connectionAttempts; // Count the number of connection attempts between restarts
+
+    // NTRIP server timer usage:
+    //  * Reconnection delay
+    //  * Measure the connection response time
+    //  * Receive RTCM correction data timeout
+    //  * Monitor last RTCM byte received for frame counting
+    uint32_t timer;
+    uint32_t startTime;
+    int connectionAttemptsTotal; // Count the number of connection attempts absolutely
+} NTRIP_SERVER_DATA;
 
 typedef enum
 {
@@ -1177,3 +1209,4 @@ rqXRfboQnoZsG4q5WTP468SQvvG5
 )=====";
 #endif // COMPILE_L_BAND
 #endif // COMPILE_WIFI
+#endif // __SETTINGS_H__

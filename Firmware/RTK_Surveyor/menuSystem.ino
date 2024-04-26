@@ -136,7 +136,8 @@ void menuSystem()
         ntripClientPrintStatus();
 
         // Display NTRIP Server status and uptime
-        ntripServerPrintStatus();
+        for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+            ntripServerPrintStatus(serverIndex);
 
         systemPrintf("Filtered by parser: %d NMEA / %d RTCM / %d UBX\r\n", failedParserMessages_NMEA,
                      failedParserMessages_RTCM, failedParserMessages_UBX);

@@ -1726,7 +1726,13 @@ void printTextwithKerning(const char *newText, uint8_t xPos, uint8_t yPos, uint8
 void paintRTCM()
 {
     int yPos = 17;
-    if (online.ntripServer)
+
+    // Determine if the NTRIP Server is casting
+    bool casting = false;
+    for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+        casting |= online.ntripServer[serverIndex];
+
+    if (casting)
         printTextCenter("Casting", yPos, QW_FONT_8X16, 1, false); // text, y, font type, kerning, inverted
     else
         printTextCenter("Xmitting", yPos, QW_FONT_8X16, 1, false); // text, y, font type, kerning, inverted

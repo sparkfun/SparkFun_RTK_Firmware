@@ -148,6 +148,10 @@ Be sure to flip up the arm on the overlay connector before trying to insert the 
 
 Using tweezers, and holding the FPC by the cable stiffener, insert the overlay FPC into the display board. 
 
+![Modern display board with 6-pin friction connector](img/Repair/RTK-Facet-Repair-3.jpg)
+
+Shown above, the modern display boards use a 6-pin friction fit connector. There is no backflip arm that needs to be raised. Hold the FPC by the cable stiffener and push it down into the black connector on the display board.
+
 ## Closing The Backflip Connector
 
 ![Closing the arm on an FPC](img/Repair/SparkFun-RTK-Repair-21.jpg)
@@ -160,7 +164,7 @@ If you haven't already done so, move the brown FPC from the original display boa
 
 ## Reinstalling Main Board
 
-![Alt text](img/Repair/SparkFun-RTK-Repair-23.jpg)
+![Reinstalling Main board](img/Repair/SparkFun-RTK-Repair-23.jpg)
 
 Slide the main board and connector boards back into place along with the battery. We find it easier to partially insert the connector board, then the main board, and then adjust them down together.
 

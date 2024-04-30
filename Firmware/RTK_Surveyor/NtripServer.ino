@@ -757,7 +757,7 @@ void ntripServerUpdate()
             systemPrintln("Connection to NTRIP Caster was lost");
             ntripServerRestart();
         }
-        else if ((millis() - ntripServerTimer) > (3 * 1000))
+        else if ((millis() - ntripServerTimer) > (15 * 1000))
         {
             // GNSS stopped sending RTCM correction data
             systemPrintln("NTRIP Server breaking connection to caster due to lack of RTCM data!");

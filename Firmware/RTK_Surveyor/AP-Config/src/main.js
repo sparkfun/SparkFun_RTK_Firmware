@@ -553,6 +553,12 @@ function validateFields() {
             checkElementString("ntripServerUserPW_0", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
             checkElementString("ntripServerMountPoint_0", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
             checkElementString("ntripServerMountPointPW_0", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServerCasterHost_1", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementValue("ntripServerCasterPort_1", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
+            checkElementString("ntripServerUser_1", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServerUserPW_1", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServerMountPoint_1", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServerMountPointPW_1", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
         }
         else {
             clearElement("ntripServerCasterHost_0", "rtk2go.com");
@@ -561,6 +567,12 @@ function validateFields() {
             clearElement("ntripServerCasterUserPW_0", "");
             clearElement("ntripServerMountPoint_0", "bldr_dwntwn2");
             clearElement("ntripServerMountPointPW_0", "WR5wRo4H");
+            clearElement("ntripServerCasterHost_1", "");
+            clearElement("ntripServerCasterPort_1", 0);
+            clearElement("ntripServerCasterUser_1", "");
+            clearElement("ntripServerCasterUserPW_1", "");
+            clearElement("ntripServerMountPoint_1", "");
+            clearElement("ntripServerMountPointPW_1", "");
         }
     }
 

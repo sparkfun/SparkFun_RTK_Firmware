@@ -188,6 +188,7 @@ const char * const networkUser[] =
     "PVT Server",
     "PVT UDP Server",
     "NTRIP Server 0",
+    "NTRIP Server 1",
 };
 const int networkUserEntries = sizeof(networkUser) / sizeof(networkUser[0]);
 

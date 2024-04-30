@@ -1118,26 +1118,32 @@ typedef struct
     char ntripServer_CasterHost[NTRIP_SERVER_MAX][50] = // It's free...
     {
         "rtk2go.com",
+        "",
     };
     uint16_t ntripServer_CasterPort[NTRIP_SERVER_MAX] =
     {
         2101,
+        0,
     };
     char ntripServer_CasterUser[NTRIP_SERVER_MAX][50] =
     {
         "test@test.com" // Some free casters require auth. User must provide their own email address to use RTK2Go
+        "",
     };
     char ntripServer_CasterUserPW[NTRIP_SERVER_MAX][50] =
     {
+        "",
         "",
     };
     char ntripServer_MountPoint[NTRIP_SERVER_MAX][50] =
     {
         "bldr_dwntwn2", // NTRIP Server
+        "",
     };
     char ntripServer_MountPointPW[NTRIP_SERVER_MAX][50] =
     {
         "WR5wRo4H",
+        "",
     };
 
     // TCP Client
@@ -1189,7 +1195,7 @@ struct struct_online
     bool battery = false;
     bool accelerometer = false;
     bool ntripClient = false;
-    bool ntripServer[NTRIP_SERVER_MAX] = {false};
+    bool ntripServer[NTRIP_SERVER_MAX] = {false, false};
     bool lband = false;
     bool lbandCorrections = false;
     bool i2c = false;

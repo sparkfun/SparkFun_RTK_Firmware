@@ -896,6 +896,13 @@ void setup()
     DMW_c("beginDisplay");
     beginDisplay(); // Start display to be able to display any errors
 
+    DMW_c("findSpiffsPartition");
+    if (!findSpiffsPartition())
+    {
+        printPartitionTable(); // Print the partition tables
+        reportFatalError("spiffs partition not found!");
+    }
+
     DMW_c("beginFS");
     beginFS(); // Start LittleFS file system for settings
 

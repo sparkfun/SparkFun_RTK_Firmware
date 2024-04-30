@@ -647,6 +647,8 @@ void menuDebugSoftware()
             systemPrintf("%d (%d days %d:%02d:%02d)\r\n", settings.rebootSeconds, days, hours, minutes, seconds);
         }
 
+        systemPrintf("34) Print partition table\r\n");
+
         // Tasks
         systemPrint("50) Task Highwater Reporting: ");
         if (settings.enableTaskReports == true)
@@ -716,6 +718,8 @@ void menuDebugSoftware()
                 }
             }
         }
+        else if (incoming == 34)
+            printPartitionTable();
         else if (incoming == 50)
             settings.enableTaskReports ^= 1;
         else if (incoming == 60)

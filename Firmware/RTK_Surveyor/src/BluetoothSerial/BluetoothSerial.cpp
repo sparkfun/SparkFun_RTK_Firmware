@@ -327,7 +327,7 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
         } else if (_spp_rx_queue != NULL){
             for (int i = 0; i < param->data_ind.len; i++){
                 if(xQueueSend(_spp_rx_queue, param->data_ind.data + i, (TickType_t)0) != pdTRUE){
-                    log_e("RX Full! Discarding %u bytes", param->data_ind.len - i);
+                    Serial.printf("Bluetooth RX buffer full! Discarding %u bytes. Consider increasing SPP RX buffer size.\r\n", param->data_ind.len - i);
                     break;
                 }
             }

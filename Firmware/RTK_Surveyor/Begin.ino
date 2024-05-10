@@ -363,6 +363,9 @@ void beginBoard()
 
 void beginSD()
 {
+    if(sdCardForcedOffline == true)
+        return;
+
     bool gotSemaphore;
 
     online.microSD = false;
@@ -446,6 +449,8 @@ void beginSD()
                 {
                     systemPrintln("SD init failed - using SPI and SdFat. Is card formatted?");
                     digitalWrite(pin_microSD_CS, HIGH); // Be sure SD is deselected
+
+                    sdCardForcedOffline = true; //Prevent future scans for SD cards
 
                     // Check reset count and prevent rolling reboot
                     if (settings.resetCount < 5)

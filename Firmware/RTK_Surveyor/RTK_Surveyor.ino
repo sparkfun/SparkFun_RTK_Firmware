@@ -720,6 +720,9 @@ unsigned long shutdownNoChargeTimer = 0;
 
 RtkMode_t rtkMode; // Mode of operation
 
+bool sdCardForcedOffline = false; //Goes true if a isPresent() test passes, but then sdFat fails to mount SD card.
+//See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/758
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 #define DEAD_MAN_WALKING_ENABLED    0

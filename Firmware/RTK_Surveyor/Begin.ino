@@ -283,6 +283,8 @@ void beginBoard()
         settings.enablePrintBatteryMessages = false; // No pesky battery messages
     }
 
+    displaySfeFlame();
+
     char versionString[21];
     getFirmwareVersion(versionString, sizeof(versionString), true);
     systemPrintf("SparkFun RTK %s %s\r\n", platformPrefix, versionString);

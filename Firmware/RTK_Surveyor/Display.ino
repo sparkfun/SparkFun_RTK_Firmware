@@ -116,11 +116,7 @@ void beginDisplay()
 
             systemPrintln("Display started");
 
-            // Display the SparkFun LOGO
             oled.erase();
-            displayBitmap(0, 0, logoSparkFun_Width, logoSparkFun_Height, logoSparkFun);
-            oled.display();
-            splashStart = millis();
             return;
         }
 
@@ -128,6 +124,18 @@ void beginDisplay()
     }
 
     systemPrintln("Display not detected");
+}
+
+// Display the SparkFun logo
+void displaySfeFlame()
+{
+    if (online.display == true)
+    {
+        oled.erase();
+        displayBitmap(0, 0, logoSparkFun_Width, logoSparkFun_Height, logoSparkFun);
+        oled.display();
+        splashStart = millis();
+    }
 }
 
 // Avoid code repetition
@@ -1885,17 +1893,17 @@ void displayNoWiFi(uint16_t displayTime)
 
 void displayNoSSIDs(uint16_t displayTime)
 {
-  displayMessage("No SSIDs", displayTime);
+    displayMessage("No SSIDs", displayTime);
 }
 
 void displayAccountExpired(uint16_t displayTime)
 {
-  displayMessage("Account Expired", displayTime);
+    displayMessage("Account Expired", displayTime);
 }
 
 void displayNotListed(uint16_t displayTime)
 {
-  displayMessage("Not Listed", displayTime);
+    displayMessage("Not Listed", displayTime);
 }
 
 void displayRoverStart(uint16_t displayTime)
@@ -2042,11 +2050,11 @@ void displayWiFiConfig()
         snprintf(mySSID, sizeof(mySSID), "%s", "RTK Config");
     else
     {
-        if(WiFi.getMode() == WIFI_STA)
+        if (WiFi.getMode() == WIFI_STA)
             snprintf(mySSID, sizeof(mySSID), "%s", WiFi.SSID().c_str());
 
-        //If we failed to connect to a friendly WiFi, and then fell back to AP mode, still display RTK Config
-        else if(WiFi.getMode() == WIFI_AP)
+        // If we failed to connect to a friendly WiFi, and then fell back to AP mode, still display RTK Config
+        else if (WiFi.getMode() == WIFI_AP)
             snprintf(mySSID, sizeof(mySSID), "%s", "RTK Config");
 
         else
@@ -2444,7 +2452,7 @@ void paintSystemTest()
                 else
                     oled.print("FAIL");
             } // End display 0
-        }     // End Facet L-Band testing
+        } // End Facet L-Band testing
     }
 }
 

@@ -1163,6 +1163,7 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
     else if (strcmp(settingName, "fixedLongText") == 0)
     {
         // Lat defines the settings.coordinateInputType. Don't update it here
+        // TODO: We need to check that the lat and long types are the same... But where...?
         double newCoordinate = 0.0;
         if (coordinateIdentifyInputType((char *)settingValueStr, &newCoordinate) ==
             COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)

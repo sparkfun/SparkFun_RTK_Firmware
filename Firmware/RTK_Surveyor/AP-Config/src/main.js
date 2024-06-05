@@ -1368,25 +1368,41 @@ function loadGeodetic() {
     var val = ge("StationCoordinatesGeodetic").value;
     if (val > "") {
         var parts = recordsGeodetic[val].split(' ');
-        ge("nicknameGeodetic").value = parts[0];
-        ge("fixedLatText").value = parts[1];
-        ge("fixedLongText").value = parts[2];
-        ge("antennaHeight").value = parts[4];
-        ge("antennaReferencePoint").value = parts[5];
+        var numParts = parts.length;
+        if (numParts >= 6) {
+            var latParts = (numParts - 4) / 2;
+            ge("nicknameGeodetic").value = parts[0];
+            ge("fixedLatText").value = parts[1];
+            if (latParts > 1) {
+                for (let moreParts = 1; moreParts < latParts; moreParts++) {
+                    ge("fixedLatText").value += ' ' + parts[moreParts + 1];
+                }
+            }
+            ge("fixedLongText").value = parts[1 + latParts];
+            if (latParts > 1) {
+                for (let moreParts = 1; moreParts < latParts; moreParts++) {
+                    ge("fixedLongText").value += ' ' + parts[moreParts + 1 + latParts];
+                }
+            }
+            ge("fixedAltitude").value = parts[numParts - 3];
+            ge("antennaHeight").value = parts[numParts - 2];
+            ge("antennaReferencePoint").value = parts[numParts - 1];
 
-        ge("fixedAltitude").value = parts[3];
+            $("input[name=markRadio][value=1]").prop('checked', false);
+            $("input[name=markRadio][value=2]").prop('checked', true);
 
-        $("input[name=markRadio][value=1]").prop('checked', false);
-        $("input[name=markRadio][value=2]").prop('checked', true);
+            adjustHAE();
 
-        adjustHAE();
-
-        clearError("nicknameGeodetic");
-        clearError("fixedLatText");
-        clearError("fixedLongText");
-        clearError("fixedAltitude");
-        clearError("antennaHeight");
-        clearError("antennaReferencePoint");
+            clearError("nicknameGeodetic");
+            clearError("fixedLatText");
+            clearError("fixedLongText");
+            clearError("fixedAltitude");
+            clearError("antennaHeight");
+            clearError("antennaReferencePoint");
+        }
+        else {
+            console.log("stationGeodetic split error");
+        }
     }
 }
 

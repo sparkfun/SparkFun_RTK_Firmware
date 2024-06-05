@@ -961,7 +961,7 @@ typedef struct
     bool autoKeyRenewal = true; // Attempt to get keys if we get under 28 days from the expiration date
     char pointPerfectClientID[50] = "";
     char pointPerfectBrokerHost[50] = ""; // pp.services.u-blox.com
-    char pointPerfectLBandTopic[20] = ""; // /pp/key/Lb
+    char pointPerfectLBandTopic[20] = ""; // /pp/ubx/0236/Lb
 
     char pointPerfectCurrentKey[33] = ""; // 32 hexadecimal digits = 128 bits = 16 Bytes
     uint64_t pointPerfectCurrentKeyDuration = 0;

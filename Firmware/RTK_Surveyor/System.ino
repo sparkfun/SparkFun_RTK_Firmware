@@ -884,7 +884,7 @@ void printPosition()
 }
 
 // Given a user's string, try to identify the type and return the coordinate in DD.ddddddddd format
-CoordinateInputType coordinateIdentifyInputType(char *userEntryOriginal, double *coordinate)
+CoordinateInputType coordinateIdentifyInputType(const char *userEntryOriginal, double *coordinate)
 {
     char userEntry[50];
     strncpy(userEntry, userEntryOriginal,

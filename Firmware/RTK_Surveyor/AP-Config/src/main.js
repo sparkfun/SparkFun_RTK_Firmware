@@ -1768,7 +1768,7 @@ function identifyInputType(userEntry) {
 
     var negativeSign = false;
     if (userEntry[0] == '-') {
-        userEntry = setCharAt(userEntry, 0, ''); //Remove leading space
+        userEntry = setCharAt(userEntry, 0, ''); //Remove leading minus
         negativeSign = true;
         dashCount--; //Use dashCount as the internal dashes only, not the leading negative sign
     }

@@ -1431,6 +1431,28 @@ void printCurrentConditions()
     }
 }
 
+void printCurrentRTKState()
+{
+    if (online.gnss == true)
+    {
+        systemPrint("RTK solution: ");
+
+        if (carrSoln == 0) // No RTK
+            systemPrint("NONE");
+
+        else if (carrSoln == 1) // RTK Float
+            systemPrint("FLOAT");
+
+        else if (carrSoln == 2) // RTK Fix
+            systemPrint("FIX");
+
+        else
+            systemPrint("UNKNOWN!");
+
+        systemPrintln();
+    }
+}
+
 void printCurrentConditionsNMEA()
 {
     if (online.gnss == true)

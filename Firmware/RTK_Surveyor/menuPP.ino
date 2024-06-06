@@ -398,7 +398,17 @@ bool pointperfectProvisionDevice()
 
                     strcpy(settings.pointPerfectClientID, (const char *)((*jsonZtp)["clientId"]));
                     strcpy(settings.pointPerfectBrokerHost, (const char *)((*jsonZtp)["brokerHost"]));
-                    strcpy(settings.pointPerfectLBandTopic, (const char *)((*jsonZtp)["subscriptions"][0]["path"]));
+
+                    // Note: from the ZTP documentation:
+                    // ["subscriptions"][0] will contain the key distribution topic
+                    // But, assuming the key distribution topic is always ["subscriptions"][0] is potentially brittle
+                    // It is safer to check the "description" contains "key distribution topic"
+                    int subscription =
+                        findZtpJSONEntry("subscriptions", "description", "key distribution topic", jsonZtp);
+                    if (subscription >= 0)
+                        strncpy(settings.pointPerfectLBandTopic,
+                                (const char *)((*jsonZtp)["subscriptions"][subscription]["path"]),
+                                sizeof(settings.pointPerfectLBandTopic));
 
                     strcpy(settings.pointPerfectCurrentKey,
                            (const char *)((*jsonZtp)["dynamickeys"]["current"]["value"]));
@@ -449,6 +459,26 @@ bool pointperfectProvisionDevice()
 #else  // COMPILE_WIFI
     return (false);
 #endif // COMPILE_WIFI
+}
+
+// Find thing3 in (*jsonZtp)[thing1][n][thing2]. Return n on success. Return -1 on error / not found.
+int findZtpJSONEntry(const char *thing1, const char *thing2, const char *thing3, DynamicJsonDocument *jsonZtp)
+{
+    if (!jsonZtp)
+        return (-1);
+
+    int i = (*jsonZtp)[thing1].size();
+
+    if (i == 0)
+        return (-1);
+
+    for (int j = 0; j < i; j++)
+        if (strstr((const char *)(*jsonZtp)[thing1][j][thing2], thing3) != nullptr)
+        {
+            return j;
+        }
+
+    return (-1);
 }
 
 // Check certificate and privatekey for valid formatting
@@ -618,8 +648,6 @@ bool pointperfectUpdateKeys()
             // Successful connection
             systemPrintln("MQTT connected");
 
-            // Originally the provisioning process reported the '/pp/key/Lb' channel which fails to respond with
-            // keys. Looks like they fixed it to /pp/ubx/0236/Lb.
             mqttClient.subscribe(settings.pointPerfectLBandTopic);
         }
         else
@@ -1148,44 +1176,47 @@ void beginLBand()
         theGNSS.checkCallbacks(); // Process any callbacks: ie, eventTriggerReceived
     }
 
+    uint32_t LBandFreq;
     // If we have a fix, check which frequency to use
     if (fixType == 2 || fixType == 3 || fixType == 4 || fixType == 5) // 2D, 3D, 3D+DR, or Time
     {
-        if ((longitude > -125 && longitude < -67) && (latitude > -90 && latitude < 90))
+        int r = 0; // Step through each geographic region
+        for (; r < numRegionalAreas; r++)
         {
-            if (settings.debugLBand == true)
-                systemPrintln("Setting L-Band to US");
-            settings.LBandFreq = 1556290000; // We are in US band
+            if ((longitude >= Regional_Information_Table[r].area.lonWest)
+                && (longitude <= Regional_Information_Table[r].area.lonEast)
+                && (latitude >= Regional_Information_Table[r].area.latSouth)
+                && (latitude <= Regional_Information_Table[r].area.latNorth))
+            {
+                LBandFreq = Regional_Information_Table[r].frequency;
+                if (settings.debugLBand == true)
+                    systemPrintf("Setting L-Band frequency to %s (%dHz)\r\n", Regional_Information_Table[r].name, LBandFreq);
+                break;
+            }
         }
-        else if ((longitude > -25 && longitude < 70) && (latitude > -90 && latitude < 90))
+        if (r == numRegionalAreas) // Geographic region not found
         {
-            if (settings.debugLBand == true)
-                systemPrintln("Setting L-Band to EU");
-            settings.LBandFreq = 1545260000; // We are in EU band
+            LBandFreq = Regional_Information_Table[settings.geographicRegion].frequency;
+            systemPrintf("Error: Unknown L-Band geographic region. Using %s (%dHz)\r\n", Regional_Information_Table[settings.geographicRegion].name, LBandFreq);
         }
-        else
-        {
-            systemPrintln("Error: Unknown band area. Defaulting to US band.");
-            settings.LBandFreq = 1556290000; // Default to US
-        }
-        recordSystemSettings();
     }
     else
     {
+        LBandFreq = Regional_Information_Table[settings.geographicRegion].frequency;
         if (settings.debugLBand == true)
-            systemPrintln("No fix available for L-Band frequency determination");
+            systemPrintf("No fix available for L-Band geographic region determination. Using %s (%dHz)\r\n", Regional_Information_Table[settings.geographicRegion].name, LBandFreq);
     }
 
     bool response = true;
     response &= i2cLBand.newCfgValset();
-    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_CENTER_FREQUENCY, settings.LBandFreq); // Default 1539812500 Hz
-    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_SEARCH_WINDOW, 2200);                  // Default 2200 Hz
-    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_SERVICE_ID, 0);                    // Default 1
-    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_SERVICE_ID, 21845);                    // Default 50821
-    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_DATA_RATE, 2400);                      // Default 2400 bps
-    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_DESCRAMBLER, 1);                   // Default 1
-    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_DESCRAMBLER_INIT, 26969);              // Default 23560
-    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_PRESCRAMBLING, 0);                 // Default 0
+    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_CENTER_FREQUENCY, LBandFreq); // Default 1539812500 Hz
+    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_SEARCH_WINDOW, 2200);         // Default 2200 Hz
+    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_SERVICE_ID, 0);           // Default 1
+    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_SERVICE_ID, 21845);           // Default 50821
+    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_DATA_RATE, 2400);             // Default 2400 bps
+    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_DESCRAMBLER, 1);          // Default 1
+    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_DESCRAMBLER_INIT, 26969);     // Default 23560
+    response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_PRESCRAMBLING, 0);        // Default 0
     response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_UNIQUE_WORD, 16238547128276412563ull);
     response &=
         i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1, 0); // Diasable UBX-RXM-PMP on UART1. Not used.
@@ -1268,6 +1299,9 @@ void menuPointPerfect()
 
         systemPrintln("k) Manual Key Entry");
 
+        systemPrint("g) Geographic Region: ");
+        systemPrintln(Regional_Information_Table[settings.geographicRegion].name);
+
         systemPrintln("x) Exit");
 
         byte incoming = getCharacterNumber();
@@ -1345,6 +1379,12 @@ void menuPointPerfect()
         else if (incoming == 'k')
         {
             menuPointPerfectKeys();
+        }
+        else if (incoming == 'g')
+        {
+            settings.geographicRegion++;
+            if (settings.geographicRegion >= numRegionalAreas)
+                settings.geographicRegion = 0;
         }
         else if (incoming == 'x')
             break;

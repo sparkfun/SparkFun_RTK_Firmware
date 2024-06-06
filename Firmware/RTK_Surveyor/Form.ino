@@ -813,6 +813,7 @@ void createSettingsString(char *newSettings)
     stringRecord(newSettings, "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
     stringRecord(newSettings, "enablePointPerfectCorrections", settings.enablePointPerfectCorrections);
     stringRecord(newSettings, "autoKeyRenewal", settings.autoKeyRenewal);
+    stringRecord(newSettings, "geographicRegion", settings.geographicRegion);
 
     // External PPS/Triggers
     stringRecord(newSettings, "enableExternalPulse", settings.enableExternalPulse);
@@ -1172,6 +1173,7 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
     }
     else if (strcmp(settingName, "fixedLongText") == 0)
     {
+        // Lat defines the settings.coordinateInputType. Don't update it here
         double newCoordinate = 0.0;
         if (coordinateIdentifyInputType((char *)settingValueStr, &newCoordinate) ==
             COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
@@ -1383,6 +1385,9 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         settings.enableAutoFirmwareUpdate = settingValueBool;
     else if (strcmp(settingName, "autoFirmwareCheckMinutes") == 0)
         settings.autoFirmwareCheckMinutes = settingValueBool;
+
+    else if (strcmp(settingName, "geographicRegion") == 0)
+        settings.geographicRegion = settingValue;
 
     // Unused variables - read to avoid errors
     else if (strcmp(settingName, "measurementRateSec") == 0)

@@ -280,7 +280,6 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "debugPpCertificate", settings.debugPpCertificate);
 
     settingsFile->printf("%s=%d\r\n", "updateZEDSettings", settings.updateZEDSettings);
-    settingsFile->printf("%s=%d\r\n", "LBandFreq", settings.LBandFreq);
     settingsFile->printf("%s=%d\r\n", "enableLogging", settings.enableLogging);
     settingsFile->printf("%s=%d\r\n", "enableARPLogging", settings.enableARPLogging);
     settingsFile->printf("%s=%d\r\n", "ARPLoggingInterval_s", settings.ARPLoggingInterval_s);
@@ -453,6 +452,8 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "enableCaptivePortal", settings.enableCaptivePortal);
     settingsFile->printf("%s=%d\r\n", "enableZedUsb", settings.enableZedUsb);
     settingsFile->printf("%s=%d\r\n", "debugWiFiConfig", settings.debugWiFiConfig);
+
+    settingsFile->printf("%s=%d\r\n", "geographicRegion", settings.geographicRegion);
 
     // Add new settings above <------------------------------------------------------------>
 }
@@ -1080,8 +1081,6 @@ bool parseLine(char *str, Settings *settings)
         if (settings->updateZEDSettings != d)
             settings->updateZEDSettings = true; // If there is a discrepancy, push ZED reconfig
     }
-    else if (strcmp(settingName, "LBandFreq") == 0)
-        settings->LBandFreq = d;
     else if (strcmp(settingName, "timeZoneHours") == 0)
         settings->timeZoneHours = d;
     else if (strcmp(settingName, "timeZoneMinutes") == 0)
@@ -1367,6 +1366,9 @@ bool parseLine(char *str, Settings *settings)
         settings->enableZedUsb = d;
     else if (strcmp(settingName, "debugWiFiConfig") == 0)
         settings->debugWiFiConfig = d;
+
+    else if (strcmp(settingName, "geographicRegion") == 0)
+        settings->geographicRegion = d;
 
     // Add new settings above
     //<------------------------------------------------------------>

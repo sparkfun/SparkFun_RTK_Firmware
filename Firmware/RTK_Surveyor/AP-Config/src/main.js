@@ -1382,25 +1382,41 @@ function loadGeodetic() {
     var val = ge("StationCoordinatesGeodetic").value;
     if (val > "") {
         var parts = recordsGeodetic[val].split(' ');
-        ge("nicknameGeodetic").value = parts[0];
-        ge("fixedLatText").value = parts[1];
-        ge("fixedLongText").value = parts[2];
-        ge("antennaHeight").value = parts[4];
-        ge("antennaReferencePoint").value = parts[5];
+        var numParts = parts.length;
+        if (numParts >= 6) {
+            var latParts = (numParts - 4) / 2;
+            ge("nicknameGeodetic").value = parts[0];
+            ge("fixedLatText").value = parts[1];
+            if (latParts > 1) {
+                for (let moreParts = 1; moreParts < latParts; moreParts++) {
+                    ge("fixedLatText").value += ' ' + parts[moreParts + 1];
+                }
+            }
+            ge("fixedLongText").value = parts[1 + latParts];
+            if (latParts > 1) {
+                for (let moreParts = 1; moreParts < latParts; moreParts++) {
+                    ge("fixedLongText").value += ' ' + parts[moreParts + 1 + latParts];
+                }
+            }
+            ge("fixedAltitude").value = parts[numParts - 3];
+            ge("antennaHeight").value = parts[numParts - 2];
+            ge("antennaReferencePoint").value = parts[numParts - 1];
 
-        ge("fixedAltitude").value = parts[3];
+            $("input[name=markRadio][value=1]").prop('checked', false);
+            $("input[name=markRadio][value=2]").prop('checked', true);
 
-        $("input[name=markRadio][value=1]").prop('checked', false);
-        $("input[name=markRadio][value=2]").prop('checked', true);
+            adjustHAE();
 
-        adjustHAE();
-
-        clearError("nicknameGeodetic");
-        clearError("fixedLatText");
-        clearError("fixedLongText");
-        clearError("fixedAltitude");
-        clearError("antennaHeight");
-        clearError("antennaReferencePoint");
+            clearError("nicknameGeodetic");
+            clearError("fixedLatText");
+            clearError("fixedLongText");
+            clearError("fixedAltitude");
+            clearError("antennaHeight");
+            clearError("antennaReferencePoint");
+        }
+        else {
+            console.log("stationGeodetic split error");
+        }
     }
 }
 
@@ -1780,9 +1796,15 @@ function identifyInputType(userEntry) {
     if (dashCount > 3) return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 0, 1, 2, or 3 allowed. -105-11-05.1629 is valid.
     if (lengthOfLeadingNumber > 7) return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 7 or fewer. -1051105.188992 (DDDMMSS or DDMMSS) is valid
 
+    //console.log("userEntry: " + userEntry);
+    //console.log("decimalCount: " + decimalCount);
+    //console.log("spaceCount: " + spaceCount);
+    //console.log("dashCount: " + dashCount);
+    //console.log("lengthOfLeadingNumber: " + lengthOfLeadingNumber);
+
     var negativeSign = false;
     if (userEntry[0] == '-') {
-        userEntry = setCharAt(userEntry, 0, ''); //Remove leading space
+        userEntry = setCharAt(userEntry, 0, ''); //Remove leading minus
         negativeSign = true;
         dashCount--; //Use dashCount as the internal dashes only, not the leading negative sign
     }
@@ -1804,7 +1826,7 @@ function identifyInputType(userEntry) {
         seconds -= (decimal * 10000); //Remove DDD
         seconds -= (minutes * 100); //Remove MM
         convertedCoordinate = decimal + (minutes / 60.0) + (seconds / 3600.0);
-        if (convertedCoordinate) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1;
     }
     else if (spaceCount == 0 && dashCount == 0 && (lengthOfLeadingNumber == 5 || lengthOfLeadingNumber == 4)) //DDMM.mmmmmmm
     {
@@ -1816,7 +1838,7 @@ function identifyInputType(userEntry) {
         var minutes = userEntry; //Get DDDMM.mmmmmmm
         minutes -= (decimal * 100); //Remove DDD
         convertedCoordinate = decimal + (minutes / 60.0);
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
 
     else if (dashCount == 1) //DD-MM.mmmmmmm
@@ -1827,7 +1849,7 @@ function identifyInputType(userEntry) {
         var decimal = Number(data[0]); //Get DD
         var minutes = Number(data[1]); //Get MM.mmmmmmm
         convertedCoordinate = decimal + (minutes / 60.0);
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
     else if (dashCount == 2) //DD-MM-SS.ssss
     {
@@ -1843,13 +1865,13 @@ function identifyInputType(userEntry) {
 
         var seconds = Number(data[2]); //Get SS.ssssss
         convertedCoordinate = decimal + (minutes / 60.0) + (seconds / 3600.0);
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
     else if (spaceCount == 0) //DD.ddddddddd
     {
         coordinateInputType = CoordinateTypes.COORDINATE_INPUT_TYPE_DD;
         convertedCoordinate = userEntry;
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
     else if (spaceCount == 1) //DD MM.mmmmmmm
     {
@@ -1859,7 +1881,7 @@ function identifyInputType(userEntry) {
         var decimal = Number(data[0]); //Get DD
         var minutes = Number(data[1]); //Get MM.mmmmmmm
         convertedCoordinate = decimal + (minutes / 60.0);
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
     else if (spaceCount == 2) //DD MM SS.ssssss
     {
@@ -1875,10 +1897,11 @@ function identifyInputType(userEntry) {
 
         var seconds = Number(data[2]); //Get SS.ssssss
         convertedCoordinate = decimal + (minutes / 60.0) + (seconds / 3600.0);
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
 
-    //console.log("convertedCoordinate: " + convertedCoordinate.toFixed(9));
+    //console.log("convertedCoordinate: " + Number(convertedCoordinate).toFixed(9));
+    //console.log("Detected type: " + printableInputType(coordinateInputType));
     return (coordinateInputType);
 }
 
@@ -1982,6 +2005,9 @@ function printableInputType(coordinateInputType) {
             break;
         case (CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS):
             return ("DD MM SS.ssssss");
+            break;
+        case (CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_DASH):
+            return ("DD-MM-SS.ssssss");
             break;
         case (CoordinateTypes.COORDINATE_INPUT_TYPE_DDMMSS_NO_DECIMAL):
             return ("DDMMSS");

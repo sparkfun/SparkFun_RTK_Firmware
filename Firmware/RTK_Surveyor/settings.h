@@ -887,6 +887,38 @@ const ubxCmd ubxCommands[] = {
 
 #define MAX_UBX_CMD (sizeof(ubxCommands) / sizeof(ubxCmd))
 
+// Regional Support
+// Do we want the user to be able to specify which region they are in?
+// Or do we want to figure it out based on position?
+// If we define a simple 'square' area for each region, we can do both.
+// Note: the best way to obtain the L-Band frequencies would be from the MQTT /pp/frequencies/Lb topic.
+//       But it is easier to record them here, in case we don't have access to MQTT...
+// Note: the key distribution topic is provided during ZTP. We don't need to record it here.
+
+typedef struct
+{
+    const double latNorth; // Degrees
+    const double latSouth; // Degrees
+    const double lonEast; // Degrees
+    const double lonWest; // Degrees
+} Regional_Area;
+
+typedef struct
+{
+    const char *name; // As defined in the ZTP subscriptions description: EU, US, KR, AU, Japan
+    const char *topicRegion; // As used in the corrections topic path
+    const Regional_Area area;
+    const uint32_t frequency; // L-Band frequency, Hz, if supported. 0 if not supported
+} Regional_Information;
+
+const Regional_Information Regional_Information_Table[] =
+{
+    { "US", "us", { 50.0,  25.0, -60.0, -125.0}, 1556290000 },
+    { "EU", "eu", { 72.0,  36.0,  32.0,  -11.0}, 1545260000 },
+    // Note: we only include regions with L-Band coverage. AU, KR and Japan are not included here.
+};
+const int numRegionalAreas = sizeof(Regional_Information_Table) / sizeof(Regional_Information_Table[0]);
+
 // This is all the settings that can be set on RTK Surveyor. It's recorded to NVM and the config file.
 typedef struct
 {
@@ -963,7 +995,7 @@ typedef struct
     bool autoKeyRenewal = true; // Attempt to get keys if we get under 28 days from the expiration date
     char pointPerfectClientID[50] = "";
     char pointPerfectBrokerHost[50] = ""; // pp.services.u-blox.com
-    char pointPerfectLBandTopic[20] = ""; // /pp/key/Lb
+    char pointPerfectLBandTopic[20] = ""; // /pp/ubx/0236/Lb
 
     char pointPerfectCurrentKey[33] = ""; // 32 hexadecimal digits = 128 bits = 16 Bytes
     uint64_t pointPerfectCurrentKeyDuration = 0;
@@ -975,7 +1007,6 @@ typedef struct
 
     uint64_t lastKeyAttempt = 0;     // Epoch time of last attempt at obtaining keys
     bool updateZEDSettings = true;   // When in doubt, update the ZED with current settings
-    uint32_t LBandFreq = 1556290000; // Default to US band
 
     bool debugPpCertificate = false; // Debug Point Perfect certificate management
 
@@ -1176,6 +1207,8 @@ typedef struct
     bool enableZedUsb = true; //Can be used to disable ZED USB config
 
     bool debugWiFiConfig = false;
+
+    int geographicRegion = 0; // Default to US - first entry in Regional_Information_Table
 
     // Add new settings above <------------------------------------------------------------>
 

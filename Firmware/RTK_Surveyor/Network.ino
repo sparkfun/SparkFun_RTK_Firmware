@@ -183,11 +183,12 @@ const char * const networkUser[] =
 {
     "NTP Server",
     "NTRIP Client",
-    "NTRIP Server",
     "OTA Firmware Update",
     "PVT Client",
     "PVT Server",
     "PVT UDP Server",
+    "NTRIP Server 0",
+    "NTRIP Server 1",
 };
 const int networkUserEntries = sizeof(networkUser) / sizeof(networkUser[0]);
 
@@ -838,6 +839,7 @@ void networkStop(uint8_t networkType)
 {
     NETWORK_DATA * network;
     bool restart;
+    int serverIndex;
     bool shutdown;
     int user;
 
@@ -877,6 +879,17 @@ void networkStop(uint8_t networkType)
                 // Stop the network client
                 switch(user)
                 {
+                default:
+                    if ((user >= NETWORK_USER_NTRIP_SERVER)
+                        && (user < (NETWORK_USER_NTRIP_SERVER + NTRIP_SERVER_MAX)))
+                    {
+                        serverIndex = user - NETWORK_USER_NTRIP_SERVER;
+                        if (settings.debugNetworkLayer)
+                            systemPrintln("Network layer stopping NTRIP server");
+                        ntripServerRestart(serverIndex);
+                    }
+                    break;
+
                 case NETWORK_USER_NTP_SERVER:
                     if (settings.debugNetworkLayer)
                         systemPrintln("Network layer stopping NTP server");
@@ -887,12 +900,6 @@ void networkStop(uint8_t networkType)
                     if (settings.debugNetworkLayer)
                         systemPrintln("Network layer stopping NTRIP client");
                     ntripClientRestart();
-                    break;
-
-                case NETWORK_USER_NTRIP_SERVER:
-                    if (settings.debugNetworkLayer)
-                        systemPrintln("Network layer stopping NTRIP server");
-                    ntripServerRestart();
                     break;
 
                 case NETWORK_USER_OTA_FIRMWARE_UPDATE:

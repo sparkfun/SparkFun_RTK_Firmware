@@ -547,18 +547,32 @@ function validateFields() {
         }
 
         if (ge("enableNtripServer").checked == true) {
-            checkElementString("ntripServer_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-            checkElementValue("ntripServer_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
-            checkElementString("ntripServer_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-            checkElementString("ntripServer_MountPointPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+            checkElementString("ntripServerCasterHost_0", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementValue("ntripServerCasterPort_0", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
+            checkElementString("ntripServerUser_0", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServerUserPW_0", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServerMountPoint_0", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServerMountPointPW_0", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServerCasterHost_1", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementValue("ntripServerCasterPort_1", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
+            checkElementString("ntripServerUser_1", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServerUserPW_1", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServerMountPoint_1", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServerMountPointPW_1", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
         }
         else {
-            clearElement("ntripServer_CasterHost", "rtk2go.com");
-            clearElement("ntripServer_CasterPort", 2101);
-            clearElement("ntripServer_CasterUser", "");
-            clearElement("ntripServer_CasterUserPW", "");
-            clearElement("ntripServer_MountPoint", "bldr_dwntwn2");
-            clearElement("ntripServer_MountPointPW", "WR5wRo4H");
+            clearElement("ntripServerCasterHost_0", "rtk2go.com");
+            clearElement("ntripServerCasterPort_0", 2101);
+            clearElement("ntripServerCasterUser_0", "test@test.com");
+            clearElement("ntripServerCasterUserPW_0", "");
+            clearElement("ntripServerMountPoint_0", "bldr_dwntwn2");
+            clearElement("ntripServerMountPointPW_0", "WR5wRo4H");
+            clearElement("ntripServerCasterHost_1", "");
+            clearElement("ntripServerCasterPort_1", 0);
+            clearElement("ntripServerCasterUser_1", "");
+            clearElement("ntripServerCasterUserPW_1", "");
+            clearElement("ntripServerMountPoint_1", "");
+            clearElement("ntripServerMountPointPW_1", "");
         }
     }
 

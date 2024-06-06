@@ -80,7 +80,7 @@ void menuSystem()
         systemPrint("WiFi MAC Address: ");
         systemPrintf("%02X:%02X:%02X:%02X:%02X:%02X\r\n", wifiMACAddress[0], wifiMACAddress[1], wifiMACAddress[2],
                      wifiMACAddress[3], wifiMACAddress[4], wifiMACAddress[5]);
-        if (wifiState == WIFI_CONNECTED)
+        if (wifiState == WIFI_STATE_CONNECTED)
             wifiDisplayIpAddress();
 #endif // COMPILE_WIFI
 
@@ -136,7 +136,8 @@ void menuSystem()
         ntripClientPrintStatus();
 
         // Display NTRIP Server status and uptime
-        ntripServerPrintStatus();
+        for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+            ntripServerPrintStatus(serverIndex);
 
         systemPrintf("Filtered by parser: %d NMEA / %d RTCM / %d UBX\r\n", failedParserMessages_NMEA,
                      failedParserMessages_RTCM, failedParserMessages_UBX);

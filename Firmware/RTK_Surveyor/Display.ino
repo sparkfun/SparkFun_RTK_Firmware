@@ -760,7 +760,7 @@ uint32_t setRadioIcons()
 
         // Count the number of radios in use
         uint8_t numberOfRadios = 1; // Bluetooth always indicated. TODO don't count if BT radio type is OFF.
-        if (wifiState > WIFI_OFF)
+        if (wifiState > WIFI_STATE_OFF)
             numberOfRadios++;
         if (espnowState > ESPNOW_OFF)
             numberOfRadios++;
@@ -778,7 +778,7 @@ uint32_t setRadioIcons()
             icons |= setBluetoothIcon_TwoRadios();
 
             // Do we have WiFi or ESP
-            if (wifiState > WIFI_OFF)
+            if (wifiState > WIFI_STATE_OFF)
                 icons |= setWiFiIcon_TwoRadios();
             else if (espnowState > ESPNOW_OFF)
                 icons |= setESPNowIcon_TwoRadios();
@@ -976,7 +976,7 @@ uint32_t setWiFiIcon_TwoRadios()
 {
     uint32_t icons = 0;
 
-    if (wifiState == WIFI_CONNECTED)
+    if (wifiState == WIFI_STATE_CONNECTED)
     {
         // Limit how often we update this spot
         if (millis() - firstRadioSpotTimer > 2000)
@@ -1063,7 +1063,7 @@ uint32_t setWiFiIcon_ThreeRadios()
 {
     uint32_t icons = 0;
 
-    if (wifiState == WIFI_CONNECTED)
+    if (wifiState == WIFI_STATE_CONNECTED)
     {
         // Limit how often we update this spot
         if (millis() - thirdRadioSpotTimer > 2000)
@@ -1152,7 +1152,7 @@ uint32_t setWiFiIcon()
 
     if (online.display == true)
     {
-        if (wifiState == WIFI_CONNECTED)
+        if (wifiState == WIFI_STATE_CONNECTED)
         {
             icons |= ICON_WIFI_SYMBOL_3_RIGHT;
         }
@@ -1734,7 +1734,13 @@ void printTextwithKerning(const char *newText, uint8_t xPos, uint8_t yPos, uint8
 void paintRTCM()
 {
     int yPos = 17;
-    if (ntripServerIsCasting())
+
+    // Determine if the NTRIP Server is casting
+    bool casting = false;
+    for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+        casting |= online.ntripServer[serverIndex];
+
+    if (casting)
         printTextCenter("Casting", yPos, QW_FONT_8X16, 1, false); // text, y, font type, kerning, inverted
     else
         printTextCenter("Xmitting", yPos, QW_FONT_8X16, 1, false); // text, y, font type, kerning, inverted
@@ -3392,7 +3398,7 @@ const uint8_t *getMacAddress()
         return btMACAddress;
 #endif // COMPILE_BT
 #ifdef COMPILE_WIFI
-    if (wifiState != WIFI_OFF)
+    if (wifiState != WIFI_STATE_OFF)
         return wifiMACAddress;
 #endif // COMPILE_WIFI
 #ifdef COMPILE_ETHERNET

@@ -699,7 +699,7 @@ void createSettingsString(char *newSettings)
     stringRecord(newSettings, "enableNtripServer", settings.enableNtripServer);
     for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
     {
-        char name[40];
+        char name[50];
         sprintf(name, "ntripServer_%s_%d", "CasterHost", serverIndex);
         stringRecord(newSettings, name, &settings.ntripServer_CasterHost[serverIndex][0]);
         sprintf(name, "ntripServer_%s_%d", "CasterPort", serverIndex);

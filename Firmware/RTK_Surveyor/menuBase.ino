@@ -191,11 +191,11 @@ void menuBase()
                 if (getString(userEntry, sizeof(userEntry)) == INPUT_RESPONSE_VALID)
                 {
                     double fixedLat = 0.0;
-                    // Identify which type of method they used
-                    if (coordinateIdentifyInputType(userEntry, &fixedLat) != COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
-                    {
-                        settings.fixedLat = fixedLat;
 
+                    // Identify which type of method they used
+                    CoordinateInputType latCoordinateInputType = coordinateIdentifyInputType(userEntry, &fixedLat);
+                    if (latCoordinateInputType != COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
+                    {
                         // Progress with additional prompts only if the user enters valid data
                         systemPrint("\r\nLongitude in degrees (ex: -105.184774720, -105 11.0864832, -105-11.0864832, "
                                     "-105 11 05.188992, etc): ");
@@ -204,17 +204,25 @@ void menuBase()
                             double fixedLong = 0.0;
 
                             // Identify which type of method they used
-                            if (coordinateIdentifyInputType(userEntry, &fixedLong) !=
-                                COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
+                            CoordinateInputType longCoordinateInputType = coordinateIdentifyInputType(userEntry, &fixedLong);
+                            if (longCoordinateInputType != COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
                             {
-                                settings.fixedLong = fixedLong;
-                                settings.coordinateInputType = coordinateIdentifyInputType(userEntry, &fixedLong);
+                                if (latCoordinateInputType == longCoordinateInputType)
+                                {
+                                    settings.fixedLat = fixedLat;
+                                    settings.fixedLong = fixedLong;
+                                    settings.coordinateInputType = latCoordinateInputType;
 
-                                systemPrint("\nAltitude in meters (ex: 1560.2284): ");
-                                double fixedAltitude = getDouble();
-                                if (fixedAltitude != INPUT_RESPONSE_GETNUMBER_TIMEOUT &&
-                                    fixedAltitude != INPUT_RESPONSE_GETNUMBER_EXIT)
-                                    settings.fixedAltitude = fixedAltitude;
+                                    systemPrint("\r\nAltitude in meters (ex: 1560.2284): ");
+                                    double fixedAltitude = getDouble();
+                                    if (fixedAltitude != INPUT_RESPONSE_GETNUMBER_TIMEOUT &&
+                                        fixedAltitude != INPUT_RESPONSE_GETNUMBER_EXIT)
+                                        settings.fixedAltitude = fixedAltitude;
+                                }
+                                else
+                                {
+                                    systemPrintln("\r\nCoordinate types must match!");
+                                }
                             } // idInput on fixedLong
                         }     // getString for fixedLong
                     }         // idInput on fixedLat

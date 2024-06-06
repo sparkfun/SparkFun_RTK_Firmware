@@ -700,17 +700,17 @@ void createSettingsString(char *newSettings)
     for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
     {
         char name[40];
-        sprintf(name, "ntripServer%s_%d", "CasterHost", serverIndex);
+        sprintf(name, "ntripServer_%s_%d", "CasterHost", serverIndex);
         stringRecord(newSettings, name, settings.ntripServer_CasterHost[serverIndex][0]);
-        sprintf(name, "ntripServer%s_%d", "CasterPort", serverIndex);
+        sprintf(name, "ntripServer_%s_%d", "CasterPort", serverIndex);
         stringRecord(newSettings, name, settings.ntripServer_CasterPort[serverIndex]);
-        sprintf(name, "ntripServer%s_%d", "CasterUser", serverIndex);
+        sprintf(name, "ntripServer_%s_%d", "CasterUser", serverIndex);
         stringRecord(newSettings, name, settings.ntripServer_CasterUser[serverIndex][0]);
-        sprintf(name, "ntripServer%s_%d", "CasterUserPW", serverIndex);
+        sprintf(name, "ntripServer_%s_%d", "CasterUserPW", serverIndex);
         stringRecord(newSettings, name, settings.ntripServer_CasterUserPW[serverIndex][0]);
-        sprintf(name, "ntripServer%s_%d", "MountPoint", serverIndex);
+        sprintf(name, "ntripServer_%s_%d", "MountPoint", serverIndex);
         stringRecord(newSettings, name, settings.ntripServer_MountPoint[serverIndex][0]);
-        sprintf(name, "ntripServer%s_%d", "MountPointPW", serverIndex);
+        sprintf(name, "ntripServer_%s_%d", "MountPointPW", serverIndex);
         stringRecord(newSettings, name, settings.ntripServer_MountPointPW[serverIndex][0]);
     }
 
@@ -1681,7 +1681,7 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
             {
                 char tempString[50];
-                snprintf(tempString, sizeof(tempString), "ntripServerCasterHost_%d", serverIndex);
+                snprintf(tempString, sizeof(tempString), "ntripServer_CasterHost_%d", serverIndex);
                 if (strcmp(settingName, tempString) == 0)
                 {
                     strcpy(&settings.ntripServer_CasterHost[serverIndex][0], settingValueStr);
@@ -1697,7 +1697,7 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
             {
                 char tempString[50];
-                snprintf(tempString, sizeof(tempString), "ntripServerCasterPort_%d", serverIndex);
+                snprintf(tempString, sizeof(tempString), "ntripServer_CasterPort_%d", serverIndex);
                 if (strcmp(settingName, tempString) == 0)
                 {
                     settings.ntripServer_CasterPort[serverIndex] = settingValue;
@@ -1713,7 +1713,7 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
             {
                 char tempString[50];
-                snprintf(tempString, sizeof(tempString), "ntripServerCasterUser_%d", serverIndex);
+                snprintf(tempString, sizeof(tempString), "ntripServer_CasterUser_%d", serverIndex);
                 if (strcmp(settingName, tempString) == 0)
                 {
                     strcpy(&settings.ntripServer_CasterUser[serverIndex][0], settingValueStr);
@@ -1729,7 +1729,7 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
             {
                 char tempString[50];
-                snprintf(tempString, sizeof(tempString), "ntripServerCasterUserPW_%d", serverIndex);
+                snprintf(tempString, sizeof(tempString), "ntripServer_CasterUserPW_%d", serverIndex);
                 if (strcmp(settingName, tempString) == 0)
                 {
                     strcpy(&settings.ntripServer_CasterUserPW[serverIndex][0], settingValueStr);
@@ -1745,7 +1745,7 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
             {
                 char tempString[50];
-                snprintf(tempString, sizeof(tempString), "ntripServerMountPoint_%d", serverIndex);
+                snprintf(tempString, sizeof(tempString), "ntripServer_MountPoint_%d", serverIndex);
                 if (strcmp(settingName, tempString) == 0)
                 {
                     strcpy(&settings.ntripServer_MountPoint[serverIndex][0], settingValueStr);
@@ -1761,7 +1761,7 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
             {
                 char tempString[50];
-                snprintf(tempString, sizeof(tempString), "ntripServerMountPointPW_%d", serverIndex);
+                snprintf(tempString, sizeof(tempString), "ntripServer_MountPointPW_%d", serverIndex);
                 if (strcmp(settingName, tempString) == 0)
                 {
                     strcpy(&settings.ntripServer_MountPointPW[serverIndex][0], settingValueStr);

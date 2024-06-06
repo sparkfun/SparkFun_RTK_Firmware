@@ -1782,11 +1782,11 @@ function identifyInputType(userEntry) {
     if (dashCount > 3) return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 0, 1, 2, or 3 allowed. -105-11-05.1629 is valid.
     if (lengthOfLeadingNumber > 7) return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 7 or fewer. -1051105.188992 (DDDMMSS or DDMMSS) is valid
 
-    console.log("userEntry: " + userEntry);
-    console.log("decimalCount: " + decimalCount);
-    console.log("spaceCount: " + spaceCount);
-    console.log("dashCount: " + dashCount);
-    console.log("lengthOfLeadingNumber: " + lengthOfLeadingNumber);
+    //console.log("userEntry: " + userEntry);
+    //console.log("decimalCount: " + decimalCount);
+    //console.log("spaceCount: " + spaceCount);
+    //console.log("dashCount: " + dashCount);
+    //console.log("lengthOfLeadingNumber: " + lengthOfLeadingNumber);
 
     var negativeSign = false;
     if (userEntry[0] == '-') {
@@ -1886,8 +1886,8 @@ function identifyInputType(userEntry) {
         if (negativeSign) convertedCoordinate *= -1.0;
     }
 
-    console.log("convertedCoordinate: " + Number(convertedCoordinate).toFixed(9));
-    console.log("Detected type: " + printableInputType(coordinateInputType));
+    //console.log("convertedCoordinate: " + Number(convertedCoordinate).toFixed(9));
+    //console.log("Detected type: " + printableInputType(coordinateInputType));
     return (coordinateInputType);
 }
 

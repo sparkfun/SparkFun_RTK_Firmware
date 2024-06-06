@@ -631,6 +631,7 @@ uint32_t lastRTCAttempt = 0;      // Wait 1000ms between checking GNSS for curre
 uint32_t lastRTCSync = 0;         // Time in millis when the RTC was last sync'd
 bool rtcSyncd = false;            // Set to true when the RTC has been sync'd via TP pulse
 uint32_t lastPrintPosition = 0;   // For periodic display of the position
+uint32_t lastPrintState = 0;      // For periodic display of the RTK state (solution)
 
 uint32_t lastBaseIconUpdate = 0;
 bool baseIconDisplayed = false;   // Toggles as lastBaseIconUpdate goes above 1000ms
@@ -1032,6 +1033,9 @@ void loop()
 
     DMW_c("printPosition");
     printPosition(); // Periodically print GNSS coordinates if enabled
+
+    DMW_c("printRTKState");
+    printRTKState(); // Periodically print RTK state (solution) if enabled
 
     // A small delay prevents panic if no other I2C or functions are called
     delay(10);

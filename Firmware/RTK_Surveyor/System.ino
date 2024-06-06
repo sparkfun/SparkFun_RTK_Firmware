@@ -883,6 +883,17 @@ void printPosition()
     }
 }
 
+// Periodically print RTK state if enabled
+void printRTKState()
+{
+    // Periodically print the RTK state
+    if (settings.enablePrintState && ((millis() - lastPrintState) > 15000))
+    {
+        printCurrentRTKState();
+        lastPrintState = millis();
+    }
+}
+
 // Given a user's string, try to identify the type and return the coordinate in DD.ddddddddd format
 CoordinateInputType coordinateIdentifyInputType(const char *userEntryOriginal, double *coordinate)
 {

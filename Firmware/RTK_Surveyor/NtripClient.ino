@@ -82,7 +82,7 @@ NtripClient.ino
 /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   NTRIP Client States:
     NTRIP_CLIENT_OFF: Network off or using NTRIP server
-    NTRIP_CLIENT_ON: WIFI_START state
+    NTRIP_CLIENT_ON: WIFI_STATE_START state
     NTRIP_CLIENT_NETWORK_STARTED: Connecting to the network
     NTRIP_CLIENT_NETWORK_CONNECTED: Connected to the network
     NTRIP_CLIENT_CONNECTING: Attempting a connection to the NTRIP caster
@@ -152,7 +152,7 @@ static const int NTRIP_CLIENT_CONNECTION_TIME = 5 * 60 * 1000;
 enum NTRIPClientState
 {
     NTRIP_CLIENT_OFF = 0,           // Using Bluetooth or NTRIP server
-    NTRIP_CLIENT_ON,                // WIFI_START state
+    NTRIP_CLIENT_ON,                // WIFI_STATE_START state
     NTRIP_CLIENT_NETWORK_STARTED,   // Connecting to WiFi access point or Ethernet
     NTRIP_CLIENT_NETWORK_CONNECTED, // Connected to an access point or Ethernet
     NTRIP_CLIENT_CONNECTING,        // Attempting a connection to the NTRIP caster

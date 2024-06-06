@@ -108,25 +108,31 @@ void menuBase()
 
         if (settings.enableNtripServer == true)
         {
-            systemPrintf("8) Select NTRIP server index: %d\r\n", serverIndex);
+            systemPrintf("8) Select NTRIP server index: %d\r\n", serverIndex + 1);
 
-            systemPrint("9) Set Caster Address: ");
+            systemPrintf("9) Set Caster Host / Address %d: ", serverIndex + 1);
             systemPrintln(&settings.ntripServer_CasterHost[serverIndex][0]);
 
-            systemPrint("10) Set Caster Port: ");
+            systemPrintf("10) Set Caster Port %d: ", serverIndex + 1);
             systemPrintln(settings.ntripServer_CasterPort[serverIndex]);
 
-            systemPrint("11) Set Mountpoint: ");
+            systemPrintf("11) Set Caster User %d: ", serverIndex + 1);
+            systemPrintln(&settings.ntripServer_CasterUser[serverIndex][0]);
+
+            systemPrintf("12) Set Caster User PW %d: ", serverIndex + 1);
+            systemPrintln(settings.ntripServer_CasterUserPW[serverIndex]);
+
+            systemPrintf("13) Set Mountpoint %d: ", serverIndex + 1);
             systemPrintln(&settings.ntripServer_MountPoint[serverIndex][0]);
 
-            systemPrint("12) Set Mountpoint PW: ");
+            systemPrintf("14) Set Mountpoint PW %d: ", serverIndex + 1);
             systemPrintln(&settings.ntripServer_MountPointPW[serverIndex][0]);
 
-            systemPrint("13) Set RTCM Message Rates\r\n");
+            systemPrint("15) Set RTCM Message Rates\r\n");
 
             if (settings.fixedBase == false) // Survey-in
             {
-                systemPrint("14) Select survey-in radio: ");
+                systemPrint("16) Select survey-in radio: ");
                 systemPrintf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? "WiFi" : "Bluetooth");
             }
         }
@@ -307,22 +313,13 @@ void menuBase()
 
         else if ((incoming == 8) && settings.enableNtripServer == true)
         {
-            systemPrint("Enter NTRIP server index: ");
-
-            int value = getNumber(); // Returns EXIT, TIMEOUT, or long
-            // Get the index into the NTRIP server array
-            if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) &&
-                (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
-            {
-                if ((value < 0) || (value >= NTRIP_SERVER_MAX))
-                    systemPrintf("Error: NTRIP Server index out of range (0 - %d)\r\n", NTRIP_SERVER_MAX - 1);
-                else
-                    serverIndex = value;
-            }
+            serverIndex++;
+            if (serverIndex >= NTRIP_SERVER_MAX)
+                serverIndex = 0;
         }
         else if ((incoming == 9) && settings.enableNtripServer == true)
         {
-            systemPrint("Enter new Caster Address: ");
+            systemPrint("Enter new Caster Host / Address: ");
             if (getString(&settings.ntripServer_CasterHost[serverIndex][0],
                           sizeof(settings.ntripServer_CasterHost[serverIndex])
                 == INPUT_RESPONSE_VALID))
@@ -346,26 +343,42 @@ void menuBase()
         }
         else if ((incoming == 11) && settings.enableNtripServer == true)
         {
+            systemPrint("Enter new Caster Username: ");
+            if (getString(&settings.ntripServer_CasterUser[serverIndex][0],
+                          sizeof(settings.ntripServer_CasterUser[serverIndex]))
+                == INPUT_RESPONSE_VALID)
+                restartBase = true;
+        }
+        else if ((incoming == 12) && settings.enableNtripServer == true)
+        {
+            systemPrintf("Enter password for Caster User %s: ", settings.ntripServer_CasterUser[serverIndex]);
+            if (getString(&settings.ntripServer_CasterUserPW[serverIndex][0],
+                          sizeof(settings.ntripServer_CasterUserPW[serverIndex]))
+                == INPUT_RESPONSE_VALID)
+                restartBase = true;
+        }
+        else if ((incoming == 13) && settings.enableNtripServer == true)
+        {
             systemPrint("Enter new Mount Point: ");
             if (getString(&settings.ntripServer_MountPoint[serverIndex][0],
                           sizeof(settings.ntripServer_MountPoint[serverIndex]))
                 == INPUT_RESPONSE_VALID)
                 restartBase = true;
         }
-        else if ((incoming == 12) && settings.enableNtripServer == true)
+        else if ((incoming == 14) && settings.enableNtripServer == true)
         {
-            systemPrintf("Enter password for Mount Point %s: ", settings.ntripServer_MountPoint);
+            systemPrintf("Enter password for Mount Point %s: ", settings.ntripServer_MountPoint[serverIndex]);
             if (getString(&settings.ntripServer_MountPointPW[serverIndex][0],
                           sizeof(settings.ntripServer_MountPointPW[serverIndex]))
                 == INPUT_RESPONSE_VALID)
                 restartBase = true;
         }
-        else if (((settings.enableNtripServer == true) && ((incoming == 13))) ||
+        else if (((settings.enableNtripServer == true) && ((incoming == 15))) ||
                  ((settings.enableNtripServer == false) && (incoming == 8)))
         {
             menuMessagesBaseRTCM(); // Set rates for RTCM during Base mode
         }
-        else if (((settings.enableNtripServer == true) && (settings.fixedBase == false) && ((incoming == 14))) ||
+        else if (((settings.enableNtripServer == true) && (settings.fixedBase == false) && ((incoming == 16))) ||
                  ((settings.enableNtripServer == false) && (settings.fixedBase == false) && (incoming == 9)))
         {
             settings.ntripServer_StartAtSurveyIn ^= 1;

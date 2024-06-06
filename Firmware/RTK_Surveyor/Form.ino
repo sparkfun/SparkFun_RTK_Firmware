@@ -701,17 +701,17 @@ void createSettingsString(char *newSettings)
     {
         char name[40];
         sprintf(name, "ntripServer_%s_%d", "CasterHost", serverIndex);
-        stringRecord(newSettings, name, settings.ntripServer_CasterHost[serverIndex][0]);
+        stringRecord(newSettings, name, &settings.ntripServer_CasterHost[serverIndex][0]);
         sprintf(name, "ntripServer_%s_%d", "CasterPort", serverIndex);
         stringRecord(newSettings, name, settings.ntripServer_CasterPort[serverIndex]);
         sprintf(name, "ntripServer_%s_%d", "CasterUser", serverIndex);
-        stringRecord(newSettings, name, settings.ntripServer_CasterUser[serverIndex][0]);
+        stringRecord(newSettings, name, &settings.ntripServer_CasterUser[serverIndex][0]);
         sprintf(name, "ntripServer_%s_%d", "CasterUserPW", serverIndex);
-        stringRecord(newSettings, name, settings.ntripServer_CasterUserPW[serverIndex][0]);
+        stringRecord(newSettings, name, &settings.ntripServer_CasterUserPW[serverIndex][0]);
         sprintf(name, "ntripServer_%s_%d", "MountPoint", serverIndex);
-        stringRecord(newSettings, name, settings.ntripServer_MountPoint[serverIndex][0]);
+        stringRecord(newSettings, name, &settings.ntripServer_MountPoint[serverIndex][0]);
         sprintf(name, "ntripServer_%s_%d", "MountPointPW", serverIndex);
-        stringRecord(newSettings, name, settings.ntripServer_MountPointPW[serverIndex][0]);
+        stringRecord(newSettings, name, &settings.ntripServer_MountPointPW[serverIndex][0]);
     }
 
     stringRecord(newSettings, "enableNtripClient", settings.enableNtripClient);

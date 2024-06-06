@@ -1020,7 +1020,7 @@ CoordinateInputType coordinateIdentifyInputType(const char *userEntryOriginal, d
         token = strtok(nullptr, "-");
 
         // Find '.'
-        char *decimalPtr = strchr(userEntry, '.');
+        char *decimalPtr = strchr(token, '.'); // Use token, not userEntry, as the dashes are now NULL
         if (decimalPtr == nullptr)
             coordinateInputType = COORDINATE_INPUT_TYPE_DD_MM_SS_DASH_NO_DECIMAL;
 

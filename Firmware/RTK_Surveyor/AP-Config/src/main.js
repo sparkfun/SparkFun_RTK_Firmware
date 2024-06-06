@@ -1812,7 +1812,7 @@ function identifyInputType(userEntry) {
         seconds -= (decimal * 10000); //Remove DDD
         seconds -= (minutes * 100); //Remove MM
         convertedCoordinate = decimal + (minutes / 60.0) + (seconds / 3600.0);
-        if (convertedCoordinate) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1;
     }
     else if (spaceCount == 0 && dashCount == 0 && (lengthOfLeadingNumber == 5 || lengthOfLeadingNumber == 4)) //DDMM.mmmmmmm
     {
@@ -1824,7 +1824,7 @@ function identifyInputType(userEntry) {
         var minutes = userEntry; //Get DDDMM.mmmmmmm
         minutes -= (decimal * 100); //Remove DDD
         convertedCoordinate = decimal + (minutes / 60.0);
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
 
     else if (dashCount == 1) //DD-MM.mmmmmmm
@@ -1835,7 +1835,7 @@ function identifyInputType(userEntry) {
         var decimal = Number(data[0]); //Get DD
         var minutes = Number(data[1]); //Get MM.mmmmmmm
         convertedCoordinate = decimal + (minutes / 60.0);
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
     else if (dashCount == 2) //DD-MM-SS.ssss
     {
@@ -1851,13 +1851,13 @@ function identifyInputType(userEntry) {
 
         var seconds = Number(data[2]); //Get SS.ssssss
         convertedCoordinate = decimal + (minutes / 60.0) + (seconds / 3600.0);
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
     else if (spaceCount == 0) //DD.ddddddddd
     {
         coordinateInputType = CoordinateTypes.COORDINATE_INPUT_TYPE_DD;
         convertedCoordinate = userEntry;
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
     else if (spaceCount == 1) //DD MM.mmmmmmm
     {
@@ -1867,7 +1867,7 @@ function identifyInputType(userEntry) {
         var decimal = Number(data[0]); //Get DD
         var minutes = Number(data[1]); //Get MM.mmmmmmm
         convertedCoordinate = decimal + (minutes / 60.0);
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
     else if (spaceCount == 2) //DD MM SS.ssssss
     {
@@ -1883,7 +1883,7 @@ function identifyInputType(userEntry) {
 
         var seconds = Number(data[2]); //Get SS.ssssss
         convertedCoordinate = decimal + (minutes / 60.0) + (seconds / 3600.0);
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
 
     console.log("convertedCoordinate: " + Number(convertedCoordinate).toFixed(9));

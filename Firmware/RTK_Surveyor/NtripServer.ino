@@ -485,7 +485,7 @@ void ntripServerSetState(NTRIP_SERVER_DATA * ntripServer, uint8_t newState)
 // Shutdown the NTRIP server
 void ntripServerShutdown(int serverIndex)
 {
-    ntripServerStop(serverIndex, true, "ntripServerShutdown");
+    ntripServerStop(serverIndex, true);
 }
 
 // Start the NTRIP server
@@ -496,7 +496,7 @@ void ntripServerStart(int serverIndex)
 
     // Start the NTRIP server
     systemPrintf("NTRIP Server %d start\r\n", serverIndex);
-    ntripServerStop(serverIndex, false, "ntripServerStart");
+    ntripServerStop(serverIndex, false);
 }
 
 // Shutdown or restart the NTRIP server

@@ -886,7 +886,7 @@ void networkStop(uint8_t networkType)
                         serverIndex = user - NETWORK_USER_NTRIP_SERVER;
                         if (settings.debugNetworkLayer)
                             systemPrintln("Network layer stopping NTRIP server");
-                        ntripServerRestart(serverIndex);
+                        ntripServerStop(serverIndex, true); // Note: was ntripServerRestart(serverIndex);
                     }
                     break;
 
@@ -899,7 +899,7 @@ void networkStop(uint8_t networkType)
                 case NETWORK_USER_NTRIP_CLIENT:
                     if (settings.debugNetworkLayer)
                         systemPrintln("Network layer stopping NTRIP client");
-                    ntripClientRestart();
+                    ntripClientStop(true); // Note: was ntripClientRestart();
                     break;
 
                 case NETWORK_USER_OTA_FIRMWARE_UPDATE:

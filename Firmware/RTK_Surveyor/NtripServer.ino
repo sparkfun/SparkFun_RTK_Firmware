@@ -561,7 +561,11 @@ void ntripServerStop(int serverIndex, bool shutdown)
                 enabled = true;
                 break;
             }
-        settings.enableNtripServer = enabled;
+        //settings.enableNtripServer = enabled;
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Why? Setting settings.enableNtripServer to false means
+        // the server connections cannot be (re)started without setting settings.enableNtripServer back
+        // to true via the menu / web config... Was the intent to close the network connection when all
+        // servers have disconnected?
     }
     else
     {

@@ -128,7 +128,9 @@ nav:
   - Introduction: index.md
   - intro.md
   - connecting_bluetooth.md
-  - gis_software.md
+  - GIS Software:
+      - gis_software_android.md
+      - gis_software_ios.md
   - Configuration Methods:
       - configure_with_wifi.md
       - configure_with_bluetooth.md

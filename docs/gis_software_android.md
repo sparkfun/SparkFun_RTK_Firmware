@@ -1,4 +1,4 @@
-# Anrdoid
+# Android
 
 Torch: ![Feature Supported](img/Icons/GreenDot.png)
 

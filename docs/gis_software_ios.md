@@ -95,7 +95,7 @@ Returning to the map view, we can now begin gathering point information with mil
 
 ![Opening page of QField](<img/QField/SparkFun RTK QField - Opening Page.png>)
 
-[QField](https://docs.qfield.org/get-started/) is a free iOS app that runs QGIS.
+[QField](https://apps.apple.com/us/app/qfield-for-qgis/id1531726814) is a free iOS app that runs QGIS.
 
 ![Modified NMEA messages on RTK Torch](<img/QField/SparkFun RTK QField - NMEA Messages.png>)
 

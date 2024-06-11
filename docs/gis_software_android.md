@@ -2,7 +2,7 @@
 
 Torch: ![Feature Supported](img/Icons/GreenDot.png)
 
-While we recommend SW Maps for Android, there are a variety of 3rd party apps available for GIS and surveying. We will cover a few examples below that should give you an idea of how to get the incoming NMEA data into the software of your choice.
+While we recommend [SW Maps for Android](https://docs.sparkfun.com/SparkFun_RTK_Firmware/gis_software_android/#sw-maps), there are a variety of 3rd party apps available for GIS and surveying. We will cover a few examples below that should give you an idea of how to get the incoming NMEA data into the software of your choice.
 
 ## Field Genius
 

@@ -673,8 +673,6 @@ bool lbandCorrectionsReceived = false; // Used to display L-Band SIV icon when c
 unsigned long lastLBandDecryption = 0; // Timestamp of last successfully decrypted PMP message
 volatile bool mqttMessageReceived = false; // Goes true when the subscribed MQTT channel reports back
 uint8_t leapSeconds = 0;                   // Gets set if GNSS is online
-unsigned long systemTestDisplayTime = 0;   // Timestamp for swapping the graphic during testing
-uint8_t systemTestDisplayNumber = 0;       // Tracks which test screen we're looking at
 unsigned long rtcWaitTime = 0; // At poweron, we give the RTC a few seconds to update during PointPerfect Key checking
 
 TaskHandle_t idleTaskHandle[MAX_CPU_CORES];

@@ -953,7 +953,7 @@ void handleGnssDataTask(void *e)
                     slowConsumer = "SD card";
                 }
             } // bytesToSend
-        }     // End connected
+        } // End connected
 
         //----------------------------------------------------------------------
         // Update the available space in the ring buffer
@@ -1292,8 +1292,9 @@ void ButtonCheckTask(void *e)
                     powerDown(true); // State machine is not updated while in menu system so go straight to power down
                                      // as needed
             }
-            else if (powerBtn != nullptr && systemState == STATE_ROVER_NOT_STARTED && firstRoverStart == true &&
-                     powerBtn->pressedFor(500))
+            else if (powerBtn != nullptr &&
+                     (systemState == STATE_ROVER_NOT_STARTED || systemState == STATE_KEYS_STARTED) &&
+                     firstRoverStart == true && powerBtn->pressedFor(500))
             {
                 forceSystemStateUpdate = true;
                 requestChangeState(STATE_TEST);
@@ -1426,7 +1427,7 @@ void ButtonCheckTask(void *e)
                     }
                 } // End disableSetupButton check
             }
-        }                                             // End Platform = RTK Facet
+        } // End Platform = RTK Facet
         else if (productVariant == REFERENCE_STATION) // Check one momentary button
         {
             if (setupBtn != nullptr)

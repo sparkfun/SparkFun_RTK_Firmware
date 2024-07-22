@@ -2289,18 +2289,13 @@ void paintProfile(uint8_t profileUnit)
 //  External connections: Loop back test on DATA
 void paintSystemTest()
 {
+    static uint8_t systemTestDisplayNumber = 0; // Tracks which test screen we're looking at. 
+    static unsigned long systemTestDisplayTime = millis();   // Timestamp for swapping the graphic during testing
+
     if (online.display == true)
     {
-        // Toggle between two displays
-        if (millis() - systemTestDisplayTime > 3000)
-        {
-            systemTestDisplayTime = millis();
-            systemTestDisplayNumber++;
-            systemTestDisplayNumber %= 2;
-        }
-
         // Main info display
-        if (systemTestDisplayNumber == 1)
+        if (systemTestDisplayNumber == 0)
         {
             int xOffset = 2;
             int yOffset = 2;
@@ -2312,13 +2307,27 @@ void paintSystemTest()
             // Test SD, accel, batt, GNSS, mux
             oled.setFont(QW_FONT_5X7); // Set font to smallest
 
-            oled.setCursor(xOffset, yOffset); // x, y
+            oled.setCursor(xOffset, yOffset + (0 * charHeight)); // x, y
             oled.print("ZV:");
             oled.print(zedFirmwareVersionInt);
-            if (zedFirmwareVersionInt < 150)
-                oled.print("-FAIL");
-            else
-                oled.print("-OK");
+
+            // ZED-F9P goes to 150
+            if (zedModuleType == PLATFORM_F9P)
+            {
+                if (zedFirmwareVersionInt < 150)
+                    oled.print("-FAI");
+                else
+                    oled.print("-OK");
+            }
+
+            // ZED-F9R goes to 130
+            else if (zedModuleType == PLATFORM_F9R)
+            {
+                if (zedFirmwareVersionInt < 130)
+                    oled.print("-FAI");
+                else
+                    oled.print("-OK");
+            }
 
             oled.setCursor(xOffset, yOffset + (1 * charHeight)); // x, y
             oled.print("SD:");
@@ -2339,8 +2348,9 @@ void paintSystemTest()
                     oled.print("FAIL");
             }
 
+            //Check for satellites in view
             oled.setCursor(xOffset, yOffset + (3 * charHeight)); // x, y
-            oled.print("GNSS:");
+            oled.print("SIV:");
             if (online.gnss == true)
             {
                 theGNSS.checkUblox();     // Regularly poll to get latest data and any RTCM
@@ -2421,30 +2431,38 @@ void paintSystemTest()
             }
             else
                 oled.print("OK");
-        } // End display 1
+        } // End display 0
 
         // Display LBand Info
-        if (productVariant == RTK_FACET_LBAND)
+        if (systemTestDisplayNumber == 1)
         {
-            if (systemTestDisplayNumber == 0)
+            int xOffset = 2;
+            int yOffset = 2;
+
+            int charHeight = 7;
+
+            drawFrame(); // Outside edge
+
+            // Test L-Band
+            oled.setFont(QW_FONT_5X7); // Set font to smallest
+
+            oled.setCursor(xOffset, yOffset + (0 * charHeight)); // x, y
+            oled.print("LBand:");
+            if (online.lband == true)
+                oled.print("OK");
+            else
+                oled.print("FAIL");
+        } // End display 1
+
+        if (productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT)
+        {
+            // Toggle between two displays
+            if (millis() - systemTestDisplayTime > 3000)
             {
-                int xOffset = 2;
-                int yOffset = 2;
-
-                int charHeight = 7;
-
-                drawFrame(); // Outside edge
-
-                // Test L-Band
-                oled.setFont(QW_FONT_5X7); // Set font to smallest
-
-                oled.setCursor(xOffset, yOffset + (1 * charHeight)); // x, y
-                oled.print("LBand:");
-                if (online.lband == true)
-                    oled.print("OK");
-                else
-                    oled.print("FAIL");
-            } // End display 0
+                systemTestDisplayTime = millis();
+                systemTestDisplayNumber++;
+                systemTestDisplayNumber %= 2;
+            }
         }
     }
 }

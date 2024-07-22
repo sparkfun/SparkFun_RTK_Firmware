@@ -2299,7 +2299,8 @@ void paintSystemTest()
             systemTestDisplayNumber %= 2;
         }
 
-        if (systemTestDisplayNumber == 1 || productVariant != RTK_FACET_LBAND)
+        // Main info display
+        if (systemTestDisplayNumber == 1)
         {
             int xOffset = 2;
             int yOffset = 2;
@@ -2309,27 +2310,24 @@ void paintSystemTest()
             drawFrame(); // Outside edge
 
             // Test SD, accel, batt, GNSS, mux
-            oled.setFont(QW_FONT_5X7);        // Set font to smallest
-            oled.setCursor(xOffset, yOffset); // x, y
-            oled.print("SD:");
+            oled.setFont(QW_FONT_5X7); // Set font to smallest
 
+            oled.setCursor(xOffset, yOffset); // x, y
+            oled.print("ZV:");
+            oled.print(zedFirmwareVersionInt);
+            if (zedFirmwareVersionInt < 150)
+                oled.print("-FAIL");
+            else
+                oled.print("-OK");
+
+            oled.setCursor(xOffset, yOffset + (1 * charHeight)); // x, y
+            oled.print("SD:");
             if (online.microSD == false)
                 beginSD(); // Test if SD is present
             if (online.microSD == true)
                 oled.print("OK");
             else
                 oled.print("FAIL");
-
-            if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET ||
-                productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT)
-            {
-                oled.setCursor(xOffset, yOffset + (1 * charHeight)); // x, y
-                oled.print("Accel:");
-                if (online.accelerometer == true)
-                    oled.print("OK");
-                else
-                    oled.print("FAIL");
-            }
 
             if (productVariant != REFERENCE_STATION)
             {
@@ -2425,7 +2423,8 @@ void paintSystemTest()
                 oled.print("OK");
         } // End display 1
 
-        if (productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT)
+        // Display LBand Info
+        if (productVariant == RTK_FACET_LBAND)
         {
             if (systemTestDisplayNumber == 0)
             {
@@ -2436,29 +2435,17 @@ void paintSystemTest()
 
                 drawFrame(); // Outside edge
 
-                // Test ZED Firmware, L-Band
-
+                // Test L-Band
                 oled.setFont(QW_FONT_5X7); // Set font to smallest
 
-                oled.setCursor(xOffset, yOffset); // x, y
-                oled.print("ZED Firm:");
                 oled.setCursor(xOffset, yOffset + (1 * charHeight)); // x, y
-                oled.print("  ");
-                oled.print(zedFirmwareVersionInt);
-                oled.print("-");
-                if (zedFirmwareVersionInt < 130)
-                    oled.print("FAIL");
-                else
-                    oled.print("OK");
-
-                oled.setCursor(xOffset, yOffset + (2 * charHeight)); // x, y
                 oled.print("LBand:");
                 if (online.lband == true)
                     oled.print("OK");
                 else
                     oled.print("FAIL");
             } // End display 0
-        } // End Facet L-Band testing
+        }
     }
 }
 

@@ -352,9 +352,9 @@ function parseIncoming(msg) {
 
         updateECEFList();
         updateGeodeticList();
-        tcpBoxes();
+        tcpClientBoxes();
+        tcpServerBoxes();
         udpBoxes();
-        tcpBoxesEthernet();
         dhcpEthernet();
         updateLatLong();
     }
@@ -462,6 +462,8 @@ function validateFields() {
     collapseSection("collapseSensorConfig", "sensorCaret");
     collapseSection("collapsePPConfig", "pointPerfectCaret");
     collapseSection("collapsePortsConfig", "portsCaret");
+    collapseSection("collapseWiFiConfig", "wifiCaret");
+    collapseSection("collapseTCPUDPConfig", "tcpUdpCaret");
     collapseSection("collapseRadioConfig", "radioCaret");
     collapseSection("collapseSystemConfig", "systemCaret");
     collapseSection("collapseEthernetConfig", "ethernetCaret");
@@ -483,18 +485,18 @@ function validateFields() {
         checkElementString("ntripClient_CasterHost", 1, 45, "Must be 1 to 45 characters", "collapseGNSSConfig");
         checkElementValue("ntripClient_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseGNSSConfig");
         checkElementString("ntripClient_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
-        checkElementCasterUser("ntripClient_CasterUser", "rtk2go.com", "User must use their email address", "collapseGNSSConfig");
-        checkElementCasterUser("ntripClient_CasterUser", "www.rtk2go.com", "User must use their email address", "collapseGNSSConfig");
+        checkElementCasterUser("ntripClient_CasterHost", "ntripClient_CasterUser", "rtk2go.com", "@", "Must be an email address", "collapseGNSSConfig");
     }
-    else {
-        clearElement("ntripClient_CasterHost", "rtk2go.com");
-        clearElement("ntripClient_CasterPort", 2101);
-        clearElement("ntripClient_MountPoint", "bldr_SparkFun1");
-        clearElement("ntripClient_MountPointPW");
-        clearElement("ntripClient_CasterUser", "test@test.com");
-        clearElement("ntripClient_CasterUserPW", "");
-        ge("ntripClient_TransmitGGA").checked = true;
-    }
+    // Don't overwrite with the defaults here. User may want to disable NTRIP but not lose the existing settings.
+    // else {
+    //     clearElement("ntripClient_CasterHost", "rtk2go.com");
+    //     clearElement("ntripClient_CasterPort", 2101);
+    //     clearElement("ntripClient_MountPoint", "bldr_SparkFun1");
+    //     clearElement("ntripClient_MountPointPW");
+    //     clearElement("ntripClient_CasterUser", "test@test.com");
+    //     clearElement("ntripClient_CasterUserPW", "");
+    //     ge("ntripClient_TransmitGGA").checked = true;
+    // }
 
     //Check all UBX message boxes
     var ubxMessages = document.querySelectorAll('input[id^=UBX_]'); //match all ids starting with UBX_
@@ -547,19 +549,34 @@ function validateFields() {
         }
 
         if (ge("enableNtripServer").checked == true) {
-            checkElementString("ntripServer_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-            checkElementValue("ntripServer_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
-            checkElementString("ntripServer_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-            checkElementString("ntripServer_MountPointPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+            checkElementString("ntripServer_CasterHost_0", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementValue("ntripServer_CasterPort_0", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
+            checkElementString("ntripServer_CasterUser_0", 0, 49, "Must be 0 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServer_CasterUserPW_0", 0, 49, "Must be 0 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServer_MountPoint_0", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServer_MountPointPW_0", 0, 49, "Must be 0 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServer_CasterHost_1", 0, 49, "Must be 0 to 49 characters", "collapseBaseConfig");
+            checkElementValue("ntripServer_CasterPort_1", 0, 99999, "Must be 0 to 99999", "collapseBaseConfig");
+            checkElementString("ntripServer_CasterUser_1", 0, 49, "Must be 0 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServer_CasterUserPW_1", 0, 49, "Must be 0 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServer_MountPoint_1", 0, 49, "Must be 0 to 49 characters", "collapseBaseConfig");
+            checkElementString("ntripServer_MountPointPW_1", 0, 49, "Must be 0 to 49 characters", "collapseBaseConfig");
         }
-        else {
-            clearElement("ntripServer_CasterHost", "rtk2go.com");
-            clearElement("ntripServer_CasterPort", 2101);
-            clearElement("ntripServer_CasterUser", "");
-            clearElement("ntripServer_CasterUserPW", "");
-            clearElement("ntripServer_MountPoint", "bldr_dwntwn2");
-            clearElement("ntripServer_MountPointPW", "WR5wRo4H");
-        }
+        // Don't overwrite with the defaults here. User may want to disable NTRIP but not lose the existing settings.
+        // else {
+        //     clearElement("ntripServer_CasterHost_0", "rtk2go.com");
+        //     clearElement("ntripServer_CasterPort_0", 2101);
+        //     clearElement("ntripServer_CasterUser_0", "test@test.com");
+        //     clearElement("ntripServer_CasterUserPW_0", "");
+        //     clearElement("ntripServer_MountPoint_0", "bldr_dwntwn2");
+        //     clearElement("ntripServer_MountPointPW_0", "WR5wRo4H");
+        //     clearElement("ntripServer_CasterHost_1", "");
+        //     clearElement("ntripServer_CasterPort_1", 0);
+        //     clearElement("ntripServer_CasterUser_1", "");
+        //     clearElement("ntripServer_CasterUserPW_1", "");
+        //     clearElement("ntripServer_MountPoint_1", "");
+        //     clearElement("ntripServer_MountPointPW_1", "");
+        // }
     }
 
     //PointPerfect Config
@@ -593,13 +610,19 @@ function validateFields() {
     checkElementString("wifiNetwork2Password", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
     checkElementString("wifiNetwork3SSID", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
     checkElementString("wifiNetwork3Password", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
-    if (ge("enablePvtClient").checked || ge("enablePvtServer").checked) {
-        checkElementString("pvtServerPort", 1, 65535, "Must be 1 to 65535", "collapseWiFiConfig");
+
+    //TCP/UDP Config
+    if (ge("enablePvtClient").checked) {
+        checkElementValue("pvtClientPort", 1, 65535, "Must be 1 to 65535", "collapseTCPUDPConfig");
+        checkElementString("pvtClientHost", 1, 49, "Must be 1 to 49 characters", "collapseTCPUDPConfig");
+    }
+    if (ge("enablePvtServer").checked) {
+        checkElementValue("pvtServerPort", 1, 65535, "Must be 1 to 65535", "collapseTCPUDPConfig");
     }
     if (ge("enablePvtUdpServer").checked) {
-        checkElementString("pvtUdpServerPort", 1, 65535, "Must be 1 to 65535", "collapseWiFiConfig");
+        checkElementValue("pvtUdpServerPort", 1, 65535, "Must be 1 to 65535", "collapseTCPUDPConfig");
     }
-    checkCheckboxMutex("enablePvtClient", "enablePvtServer", "TCP Client and Server can not be enabled at the same time", "collapseWiFiConfig");
+    checkCheckboxMutex("enablePvtClient", "enablePvtServer", "TCP Client and Server can not be enabled at the same time", "collapseTCPUDPConfig");
 
     //System Config
     if (ge("enableLogging").checked) {
@@ -620,26 +643,13 @@ function validateFields() {
 
     //Ethernet
     if (platformPrefix == "Reference Station") {
-        //if (ge("ethernetDHCP").checked == false) {
-        checkElementIPAddress("ethernetIP", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
-        checkElementIPAddress("ethernetDNS", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
-        checkElementIPAddress("ethernetGateway", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
-        checkElementIPAddress("ethernetSubnet", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
-        checkElementValue("ethernetHttpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
-        checkElementValue("ethernetNtpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
-        if (ge("enableTcpClientEthernet").checked) {
-            checkElementString("ethernetTcpPort", 1, 65535, "Must be 1 to 65535", "collapseEthernetConfig");
-            checkElementString("hostForTCPClient", 0, 50, "Must be 0 to 50 characters", "collapseEthernetConfig");
+        if (ge("ethernetDHCP").checked == false) {
+            checkElementIPAddress("ethernetIP", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
+            checkElementIPAddress("ethernetDNS", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
+            checkElementIPAddress("ethernetGateway", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
+            checkElementIPAddress("ethernetSubnet", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
         }
-        //}
-        //else {
-        //    clearElement("ethernetIP", "192.168.0.123");
-        //    clearElement("ethernetDNS", "192.168.4.100");
-        //    clearElement("ethernetGateway", "192.168.0.1");
-        //    clearElement("ethernetSubnet", "255.255.255.0");
-        //    clearElement("ethernetHttpPort", 80);
-        //    clearElement("ethernetNtpPort", 123);
-        //}
+        checkElementValue("ethernetNtpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
     }
 
     //NTP
@@ -698,6 +708,9 @@ function changeProfile() {
         collapseSection("collapseSensorConfig", "sensorCaret");
         collapseSection("collapsePPConfig", "pointPerfectCaret");
         collapseSection("collapsePortsConfig", "portsCaret");
+        collapseSection("collapseWiFiConfig", "wifiCaret");
+        collapseSection("collapseTCPUDPConfig", "tcpUdpCaret");
+        collapseSection("collapseRadioConfig", "radioCaret");
         collapseSection("collapseSystemConfig", "systemCaret");
         collapseSection("collapseEthernetConfig", "ethernetCaret");
         collapseSection("collapseNTPConfig", "ntpCaret");
@@ -846,12 +859,19 @@ function checkElementIPAddress(id, errorText, collapseID) {
         clearError(id);
 }
 
-function checkElementCasterUser(id, badUserName, errorText, collapseID) {
-    if (ge("ntripClient_CasterHost").value.toLowerCase() == "rtk2go.com") {
-        checkElementString(id, 1, 50, errorText, collapseID);
+function checkElementCasterUser(host, user, url, needs, errorText, collapseID) {
+    if (ge(host).value.toLowerCase().includes(url)) {
+        value = ge(user).value;
+        if ((value.length < 1) || (value.length > 49) || (value.includes(needs) == false)) {
+            ge(user + 'Error').innerHTML = 'Error: ' + errorText;
+            ge(collapseID).classList.add('show');
+            errorCount++;
+        }
+        else
+            clearError(user);
     }
     else
-        clearError(id);
+        clearError(user);
 }
 
 function checkCheckboxMutex(id1, id2, errorText, collapseID) {
@@ -1368,25 +1388,41 @@ function loadGeodetic() {
     var val = ge("StationCoordinatesGeodetic").value;
     if (val > "") {
         var parts = recordsGeodetic[val].split(' ');
-        ge("nicknameGeodetic").value = parts[0];
-        ge("fixedLatText").value = parts[1];
-        ge("fixedLongText").value = parts[2];
-        ge("antennaHeight").value = parts[4];
-        ge("antennaReferencePoint").value = parts[5];
+        var numParts = parts.length;
+        if (numParts >= 6) {
+            var latParts = (numParts - 4) / 2;
+            ge("nicknameGeodetic").value = parts[0];
+            ge("fixedLatText").value = parts[1];
+            if (latParts > 1) {
+                for (let moreParts = 1; moreParts < latParts; moreParts++) {
+                    ge("fixedLatText").value += ' ' + parts[moreParts + 1];
+                }
+            }
+            ge("fixedLongText").value = parts[1 + latParts];
+            if (latParts > 1) {
+                for (let moreParts = 1; moreParts < latParts; moreParts++) {
+                    ge("fixedLongText").value += ' ' + parts[moreParts + 1 + latParts];
+                }
+            }
+            ge("fixedAltitude").value = parts[numParts - 3];
+            ge("antennaHeight").value = parts[numParts - 2];
+            ge("antennaReferencePoint").value = parts[numParts - 1];
 
-        ge("fixedAltitude").value = parts[3];
+            $("input[name=markRadio][value=1]").prop('checked', false);
+            $("input[name=markRadio][value=2]").prop('checked', true);
 
-        $("input[name=markRadio][value=1]").prop('checked', false);
-        $("input[name=markRadio][value=2]").prop('checked', true);
+            adjustHAE();
 
-        adjustHAE();
-
-        clearError("nicknameGeodetic");
-        clearError("fixedLatText");
-        clearError("fixedLongText");
-        clearError("fixedAltitude");
-        clearError("antennaHeight");
-        clearError("antennaReferencePoint");
+            clearError("nicknameGeodetic");
+            clearError("fixedLatText");
+            clearError("fixedLongText");
+            clearError("fixedAltitude");
+            clearError("antennaHeight");
+            clearError("antennaReferencePoint");
+        }
+        else {
+            console.log("stationGeodetic split error");
+        }
     }
 }
 
@@ -1570,13 +1606,23 @@ function abortHandler(event) {
     ge("uploadStatus").innerHTML = "Upload Aborted";
 }
 
-function tcpBoxes() {
-    if (ge("enablePvtServer").checked || ge("enablePvtClient").checked) {
-        show("tcpSettingsConfig");
+function tcpClientBoxes() {
+    if (ge("enablePvtClient").checked) {
+        show("tcpClientSettingsConfig");
     }
     else {
-        hide("tcpSettingsConfig");
-        ge("pvtServerPort").value = 2947;
+        hide("tcpClientSettingsConfig");
+        //ge("pvtClientPort").value = 2947;
+    }
+}
+
+function tcpServerBoxes() {
+    if (ge("enablePvtServer").checked) {
+        show("tcpServerSettingsConfig");
+    }
+    else {
+        hide("tcpServerSettingsConfig");
+        //ge("pvtServerPort").value = 2947;
     }
 }
 
@@ -1586,17 +1632,7 @@ function udpBoxes() {
     }
     else {
         hide("udpSettingsConfig");
-        ge("pvtUdpServerPort").value = 10110;
-    }
-}
-
-function tcpBoxesEthernet() {
-    if (ge("enableTcpClientEthernet").checked) {
-        show("tcpSettingsConfigEthernet");
-    }
-    else {
-        hide("tcpSettingsConfigEthernet");
-        //ge("ethernetTcpPort").value = 2947;
+        //ge("pvtUdpServerPort").value = 10110;
     }
 }
 
@@ -1766,9 +1802,15 @@ function identifyInputType(userEntry) {
     if (dashCount > 3) return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 0, 1, 2, or 3 allowed. -105-11-05.1629 is valid.
     if (lengthOfLeadingNumber > 7) return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 7 or fewer. -1051105.188992 (DDDMMSS or DDMMSS) is valid
 
+    //console.log("userEntry: " + userEntry);
+    //console.log("decimalCount: " + decimalCount);
+    //console.log("spaceCount: " + spaceCount);
+    //console.log("dashCount: " + dashCount);
+    //console.log("lengthOfLeadingNumber: " + lengthOfLeadingNumber);
+
     var negativeSign = false;
     if (userEntry[0] == '-') {
-        userEntry = setCharAt(userEntry, 0, ''); //Remove leading space
+        userEntry = setCharAt(userEntry, 0, ''); //Remove leading minus
         negativeSign = true;
         dashCount--; //Use dashCount as the internal dashes only, not the leading negative sign
     }
@@ -1790,7 +1832,7 @@ function identifyInputType(userEntry) {
         seconds -= (decimal * 10000); //Remove DDD
         seconds -= (minutes * 100); //Remove MM
         convertedCoordinate = decimal + (minutes / 60.0) + (seconds / 3600.0);
-        if (convertedCoordinate) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1;
     }
     else if (spaceCount == 0 && dashCount == 0 && (lengthOfLeadingNumber == 5 || lengthOfLeadingNumber == 4)) //DDMM.mmmmmmm
     {
@@ -1802,7 +1844,7 @@ function identifyInputType(userEntry) {
         var minutes = userEntry; //Get DDDMM.mmmmmmm
         minutes -= (decimal * 100); //Remove DDD
         convertedCoordinate = decimal + (minutes / 60.0);
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
 
     else if (dashCount == 1) //DD-MM.mmmmmmm
@@ -1813,7 +1855,7 @@ function identifyInputType(userEntry) {
         var decimal = Number(data[0]); //Get DD
         var minutes = Number(data[1]); //Get MM.mmmmmmm
         convertedCoordinate = decimal + (minutes / 60.0);
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
     else if (dashCount == 2) //DD-MM-SS.ssss
     {
@@ -1829,13 +1871,13 @@ function identifyInputType(userEntry) {
 
         var seconds = Number(data[2]); //Get SS.ssssss
         convertedCoordinate = decimal + (minutes / 60.0) + (seconds / 3600.0);
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
     else if (spaceCount == 0) //DD.ddddddddd
     {
         coordinateInputType = CoordinateTypes.COORDINATE_INPUT_TYPE_DD;
         convertedCoordinate = userEntry;
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
     else if (spaceCount == 1) //DD MM.mmmmmmm
     {
@@ -1845,7 +1887,7 @@ function identifyInputType(userEntry) {
         var decimal = Number(data[0]); //Get DD
         var minutes = Number(data[1]); //Get MM.mmmmmmm
         convertedCoordinate = decimal + (minutes / 60.0);
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
     else if (spaceCount == 2) //DD MM SS.ssssss
     {
@@ -1861,10 +1903,11 @@ function identifyInputType(userEntry) {
 
         var seconds = Number(data[2]); //Get SS.ssssss
         convertedCoordinate = decimal + (minutes / 60.0) + (seconds / 3600.0);
-        if (negativeSign) convertedCoordinate *= -1;
+        if (negativeSign) convertedCoordinate *= -1.0;
     }
 
-    //console.log("convertedCoordinate: " + convertedCoordinate.toFixed(9));
+    //console.log("convertedCoordinate: " + Number(convertedCoordinate).toFixed(9));
+    //console.log("Detected type: " + printableInputType(coordinateInputType));
     return (coordinateInputType);
 }
 
@@ -1968,6 +2011,9 @@ function printableInputType(coordinateInputType) {
             break;
         case (CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS):
             return ("DD MM SS.ssssss");
+            break;
+        case (CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_DASH):
+            return ("DD-MM-SS.ssssss");
             break;
         case (CoordinateTypes.COORDINATE_INPUT_TYPE_DDMMSS_NO_DECIMAL):
             return ("DDMMSS");

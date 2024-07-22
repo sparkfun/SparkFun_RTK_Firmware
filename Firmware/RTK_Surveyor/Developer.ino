@@ -59,10 +59,10 @@ void ntripClientValidateTables() {}
 // NTRIP server
 //----------------------------------------
 
-bool ntripServerIsCasting() {return false;}
-void ntripServerPrintStatus() {systemPrint("NTRIP Server not compiled");}
-void ntripServerProcessRTCM(uint8_t incoming) {}
-void ntripServerStop(bool clientAllocated) {online.ntripServer = false;}
+bool ntripServerIsCasting(int serverIndex) {return false;}
+void ntripServerPrintStatus(int serverIndex) {systemPrintf("**NTRIP Server %d not compiled**\r\n", serverIndex);}
+void ntripServerProcessRTCM(int serverIndex, uint8_t incoming) {}
+void ntripServerStop(int serverIndex, bool clientAllocated) {online.ntripServer[serverIndex] = false;}
 void ntripServerUpdate() {}
 void ntripServerValidateTables() {}
 

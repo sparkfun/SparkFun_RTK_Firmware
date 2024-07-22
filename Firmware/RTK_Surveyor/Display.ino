@@ -116,11 +116,7 @@ void beginDisplay()
 
             systemPrintln("Display started");
 
-            // Display the SparkFun LOGO
             oled.erase();
-            displayBitmap(0, 0, logoSparkFun_Width, logoSparkFun_Height, logoSparkFun);
-            oled.display();
-            splashStart = millis();
             return;
         }
 
@@ -128,6 +124,18 @@ void beginDisplay()
     }
 
     systemPrintln("Display not detected");
+}
+
+// Display the SparkFun logo
+void displaySfeFlame()
+{
+    if (online.display == true)
+    {
+        oled.erase();
+        displayBitmap(0, 0, logoSparkFun_Width, logoSparkFun_Height, logoSparkFun);
+        oled.display();
+        splashStart = millis();
+    }
 }
 
 // Avoid code repetition
@@ -752,7 +760,7 @@ uint32_t setRadioIcons()
 
         // Count the number of radios in use
         uint8_t numberOfRadios = 1; // Bluetooth always indicated. TODO don't count if BT radio type is OFF.
-        if (wifiState > WIFI_OFF)
+        if (wifiState > WIFI_STATE_OFF)
             numberOfRadios++;
         if (espnowState > ESPNOW_OFF)
             numberOfRadios++;
@@ -770,7 +778,7 @@ uint32_t setRadioIcons()
             icons |= setBluetoothIcon_TwoRadios();
 
             // Do we have WiFi or ESP
-            if (wifiState > WIFI_OFF)
+            if (wifiState > WIFI_STATE_OFF)
                 icons |= setWiFiIcon_TwoRadios();
             else if (espnowState > ESPNOW_OFF)
                 icons |= setESPNowIcon_TwoRadios();
@@ -968,7 +976,7 @@ uint32_t setWiFiIcon_TwoRadios()
 {
     uint32_t icons = 0;
 
-    if (wifiState == WIFI_CONNECTED)
+    if (wifiState == WIFI_STATE_CONNECTED)
     {
         // Limit how often we update this spot
         if (millis() - firstRadioSpotTimer > 2000)
@@ -1055,7 +1063,7 @@ uint32_t setWiFiIcon_ThreeRadios()
 {
     uint32_t icons = 0;
 
-    if (wifiState == WIFI_CONNECTED)
+    if (wifiState == WIFI_STATE_CONNECTED)
     {
         // Limit how often we update this spot
         if (millis() - thirdRadioSpotTimer > 2000)
@@ -1144,7 +1152,7 @@ uint32_t setWiFiIcon()
 
     if (online.display == true)
     {
-        if (wifiState == WIFI_CONNECTED)
+        if (wifiState == WIFI_STATE_CONNECTED)
         {
             icons |= ICON_WIFI_SYMBOL_3_RIGHT;
         }
@@ -1726,7 +1734,13 @@ void printTextwithKerning(const char *newText, uint8_t xPos, uint8_t yPos, uint8
 void paintRTCM()
 {
     int yPos = 17;
-    if (ntripServerIsCasting())
+
+    // Determine if the NTRIP Server is casting
+    bool casting = false;
+    for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+        casting |= online.ntripServer[serverIndex];
+
+    if (casting)
         printTextCenter("Casting", yPos, QW_FONT_8X16, 1, false); // text, y, font type, kerning, inverted
     else
         printTextCenter("Xmitting", yPos, QW_FONT_8X16, 1, false); // text, y, font type, kerning, inverted
@@ -1885,17 +1899,17 @@ void displayNoWiFi(uint16_t displayTime)
 
 void displayNoSSIDs(uint16_t displayTime)
 {
-  displayMessage("No SSIDs", displayTime);
+    displayMessage("No SSIDs", displayTime);
 }
 
 void displayAccountExpired(uint16_t displayTime)
 {
-  displayMessage("Account Expired", displayTime);
+    displayMessage("Account Expired", displayTime);
 }
 
 void displayNotListed(uint16_t displayTime)
 {
-  displayMessage("Not Listed", displayTime);
+    displayMessage("Not Listed", displayTime);
 }
 
 void displayRoverStart(uint16_t displayTime)
@@ -2042,11 +2056,11 @@ void displayWiFiConfig()
         snprintf(mySSID, sizeof(mySSID), "%s", "RTK Config");
     else
     {
-        if(WiFi.getMode() == WIFI_STA)
+        if (WiFi.getMode() == WIFI_STA)
             snprintf(mySSID, sizeof(mySSID), "%s", WiFi.SSID().c_str());
 
-        //If we failed to connect to a friendly WiFi, and then fell back to AP mode, still display RTK Config
-        else if(WiFi.getMode() == WIFI_AP)
+        // If we failed to connect to a friendly WiFi, and then fell back to AP mode, still display RTK Config
+        else if (WiFi.getMode() == WIFI_AP)
             snprintf(mySSID, sizeof(mySSID), "%s", "RTK Config");
 
         else
@@ -2275,17 +2289,13 @@ void paintProfile(uint8_t profileUnit)
 //  External connections: Loop back test on DATA
 void paintSystemTest()
 {
+    static uint8_t systemTestDisplayNumber = 0; // Tracks which test screen we're looking at. 
+    static unsigned long systemTestDisplayTime = millis();   // Timestamp for swapping the graphic during testing
+
     if (online.display == true)
     {
-        // Toggle between two displays
-        if (millis() - systemTestDisplayTime > 3000)
-        {
-            systemTestDisplayTime = millis();
-            systemTestDisplayNumber++;
-            systemTestDisplayNumber %= 2;
-        }
-
-        if (systemTestDisplayNumber == 1 || productVariant != RTK_FACET_LBAND)
+        // Main info display
+        if (systemTestDisplayNumber == 0)
         {
             int xOffset = 2;
             int yOffset = 2;
@@ -2295,27 +2305,38 @@ void paintSystemTest()
             drawFrame(); // Outside edge
 
             // Test SD, accel, batt, GNSS, mux
-            oled.setFont(QW_FONT_5X7);        // Set font to smallest
-            oled.setCursor(xOffset, yOffset); // x, y
-            oled.print("SD:");
+            oled.setFont(QW_FONT_5X7); // Set font to smallest
 
+            oled.setCursor(xOffset, yOffset + (0 * charHeight)); // x, y
+            oled.print("ZV:");
+            oled.print(zedFirmwareVersionInt);
+
+            // ZED-F9P goes to 150
+            if (zedModuleType == PLATFORM_F9P)
+            {
+                if (zedFirmwareVersionInt < 150)
+                    oled.print("-FAI");
+                else
+                    oled.print("-OK");
+            }
+
+            // ZED-F9R goes to 130
+            else if (zedModuleType == PLATFORM_F9R)
+            {
+                if (zedFirmwareVersionInt < 130)
+                    oled.print("-FAI");
+                else
+                    oled.print("-OK");
+            }
+
+            oled.setCursor(xOffset, yOffset + (1 * charHeight)); // x, y
+            oled.print("SD:");
             if (online.microSD == false)
                 beginSD(); // Test if SD is present
             if (online.microSD == true)
                 oled.print("OK");
             else
                 oled.print("FAIL");
-
-            if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET ||
-                productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT)
-            {
-                oled.setCursor(xOffset, yOffset + (1 * charHeight)); // x, y
-                oled.print("Accel:");
-                if (online.accelerometer == true)
-                    oled.print("OK");
-                else
-                    oled.print("FAIL");
-            }
 
             if (productVariant != REFERENCE_STATION)
             {
@@ -2327,8 +2348,9 @@ void paintSystemTest()
                     oled.print("FAIL");
             }
 
+            //Check for satellites in view
             oled.setCursor(xOffset, yOffset + (3 * charHeight)); // x, y
-            oled.print("GNSS:");
+            oled.print("SIV:");
             if (online.gnss == true)
             {
                 theGNSS.checkUblox();     // Regularly poll to get latest data and any RTCM
@@ -2409,42 +2431,39 @@ void paintSystemTest()
             }
             else
                 oled.print("OK");
+        } // End display 0
+
+        // Display LBand Info
+        if (systemTestDisplayNumber == 1)
+        {
+            int xOffset = 2;
+            int yOffset = 2;
+
+            int charHeight = 7;
+
+            drawFrame(); // Outside edge
+
+            // Test L-Band
+            oled.setFont(QW_FONT_5X7); // Set font to smallest
+
+            oled.setCursor(xOffset, yOffset + (0 * charHeight)); // x, y
+            oled.print("LBand:");
+            if (online.lband == true)
+                oled.print("OK");
+            else
+                oled.print("FAIL");
         } // End display 1
 
         if (productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT)
         {
-            if (systemTestDisplayNumber == 0)
+            // Toggle between two displays
+            if (millis() - systemTestDisplayTime > 3000)
             {
-                int xOffset = 2;
-                int yOffset = 2;
-
-                int charHeight = 7;
-
-                drawFrame(); // Outside edge
-
-                // Test ZED Firmware, L-Band
-
-                oled.setFont(QW_FONT_5X7); // Set font to smallest
-
-                oled.setCursor(xOffset, yOffset); // x, y
-                oled.print("ZED Firm:");
-                oled.setCursor(xOffset, yOffset + (1 * charHeight)); // x, y
-                oled.print("  ");
-                oled.print(zedFirmwareVersionInt);
-                oled.print("-");
-                if (zedFirmwareVersionInt < 130)
-                    oled.print("FAIL");
-                else
-                    oled.print("OK");
-
-                oled.setCursor(xOffset, yOffset + (2 * charHeight)); // x, y
-                oled.print("LBand:");
-                if (online.lband == true)
-                    oled.print("OK");
-                else
-                    oled.print("FAIL");
-            } // End display 0
-        }     // End Facet L-Band testing
+                systemTestDisplayTime = millis();
+                systemTestDisplayNumber++;
+                systemTestDisplayNumber %= 2;
+            }
+        }
     }
 }
 
@@ -3384,7 +3403,7 @@ const uint8_t *getMacAddress()
         return btMACAddress;
 #endif // COMPILE_BT
 #ifdef COMPILE_WIFI
-    if (wifiState != WIFI_OFF)
+    if (wifiState != WIFI_STATE_OFF)
         return wifiMACAddress;
 #endif // COMPILE_WIFI
 #ifdef COMPILE_ETHERNET

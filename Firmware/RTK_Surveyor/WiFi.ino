@@ -14,19 +14,19 @@
 
   WiFi Station States:
 
-                                  WIFI_OFF<--------------------.
+                             WIFI_STATE_OFF<-------------------.
                                     |                          |
                        wifiStart()  |                          |
                                     |                          | WL_CONNECT_FAILED (Bad password)
                                     |                          | WL_NO_SSID_AVAIL (Out of range)
                                     v                 Fail     |
-                                  WIFI_CONNECTING------------->+
+                            WIFI_STATE_CONNECTING------------->+
                                     |    ^                     ^
                      wifiConnect()  |    |                     | wifiShutdown()
                                     |    | WL_CONNECTION_LOST  |
                                     |    | WL_DISCONNECTED     |
                                     v    |                     |
-                                  WIFI_CONNECTED --------------'
+                             WIFI_STATE_CONNECTED -------------'
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
@@ -196,17 +196,17 @@ void wifiSetState(byte newState)
         default:
             systemPrintf("Unknown WiFi state: %d\r\n", newState);
             break;
-        case WIFI_OFF:
-            systemPrintln("WIFI_OFF");
+        case WIFI_STATE_OFF:
+            systemPrintln("WIFI_STATE_OFF");
             break;
-        case WIFI_START:
-            systemPrintln("WIFI_START");
+        case WIFI_STATE_START:
+            systemPrintln("WIFI_STATE_START");
             break;
-        case WIFI_CONNECTING:
-            systemPrintln("WIFI_CONNECTING");
+        case WIFI_STATE_CONNECTING:
+            systemPrintln("WIFI_STATE_CONNECTING");
             break;
-        case WIFI_CONNECTED:
-            systemPrintln("WIFI_CONNECTED");
+        case WIFI_STATE_CONNECTED:
+            systemPrintln("WIFI_STATE_CONNECTED");
             break;
         }
     }
@@ -322,11 +322,11 @@ void wifiUpdate()
         systemPrintf("Unknown wifiState: %d\r\n", wifiState);
         break;
 
-    case WIFI_OFF:
+    case WIFI_STATE_OFF:
         // Any service that needs WiFi will call wifiStart()
         break;
 
-    case WIFI_CONNECTING:
+    case WIFI_STATE_CONNECTING:
         // Pause until connection timeout has passed
         if (millis() - wifiLastConnectionAttempt > wifiConnectionAttemptTimeout)
         {
@@ -337,7 +337,7 @@ void wifiUpdate()
                 if (espnowState > ESPNOW_OFF)
                     espnowStart();
 
-                wifiSetState(WIFI_CONNECTED);
+                wifiSetState(WIFI_STATE_CONNECTED);
             }
             else
             {
@@ -353,20 +353,20 @@ void wifiUpdate()
                 {
                     systemPrintln("WiFi connection failed. Giving up.");
                     displayNoWiFi(2000);
-                    WIFI_STOP(); // Move back to WIFI_OFF
+                    WIFI_STOP(); // Move back to WIFI_STATE_OFF
                 }
             }
         }
 
         break;
 
-    case WIFI_CONNECTED:
+    case WIFI_STATE_CONNECTED:
         // Verify link is still up
         if (wifiIsConnected() == false)
         {
             systemPrintln("WiFi link lost");
             wifiConnectionAttempts = 0; // Reset the timeout
-            wifiSetState(WIFI_CONNECTING);
+            wifiSetState(WIFI_STATE_CONNECTING);
         }
 
         // If WiFi is connected, and no services require WiFi, shut it off
@@ -383,7 +383,7 @@ void wifiUpdate()
     }
 }
 
-// Starts the WiFi connection state machine (moves from WIFI_OFF to WIFI_CONNECTING)
+// Starts the WiFi connection state machine (moves from WIFI_STATE_OFF to WIFI_STATE_CONNECTING)
 // Sets the appropriate protocols (WiFi + ESP-Now)
 // If radio is off entirely, start WiFi
 // If ESP-Now is active, only add the LR protocol
@@ -400,12 +400,12 @@ void wifiStart()
     if (wifiIsConnected() == true)
         return; // We don't need to do anything
 
-    if (wifiState > WIFI_OFF)
+    if (wifiState > WIFI_STATE_OFF)
         return; // We're in the midst of connecting
 
     log_d("Starting WiFi");
 
-    wifiSetState(WIFI_CONNECTING); // This starts the state machine running
+    wifiSetState(WIFI_STATE_CONNECTING); // This starts the state machine running
 
     // Display the heap state
     reportHeapNow(settings.debugWifiState);
@@ -426,14 +426,14 @@ void wifiStop()
         dnsServer.stop();
 
     // Stop the other network clients and then WiFi
-    networkStop(NETWORK_TYPE_WIFI);
+    NETWORK_STOP(NETWORK_TYPE_WIFI);
 }
 
 // Stop WiFi and release all resources
 // If ESP NOW is active, leave WiFi on enough for ESP NOW
 void wifiShutdown()
 {
-    wifiSetState(WIFI_OFF);
+    wifiSetState(WIFI_STATE_OFF);
 
     wifiConnectionAttempts = 0; // Reset the timeout
 

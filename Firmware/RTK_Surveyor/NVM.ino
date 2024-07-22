@@ -137,7 +137,7 @@ void recordSystemSettingsToFileSD(char *fileName)
 
                 settingsFile.close();
             }
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
 
             log_d("Settings recorded to SD: %s", fileName);
         }
@@ -244,12 +244,15 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%s\r\n", "profileName", settings.profileName);
     settingsFile->printf("%s=%d\r\n", "enableNtripServer", settings.enableNtripServer);
     settingsFile->printf("%s=%d\r\n", "ntripServer_StartAtSurveyIn", settings.ntripServer_StartAtSurveyIn);
-    settingsFile->printf("%s=%s\r\n", "ntripServer_CasterHost", settings.ntripServer_CasterHost);
-    settingsFile->printf("%s=%d\r\n", "ntripServer_CasterPort", settings.ntripServer_CasterPort);
-    settingsFile->printf("%s=%s\r\n", "ntripServer_CasterUser", settings.ntripServer_CasterUser);
-    settingsFile->printf("%s=%s\r\n", "ntripServer_CasterUserPW", settings.ntripServer_CasterUserPW);
-    settingsFile->printf("%s=%s\r\n", "ntripServer_MountPoint", settings.ntripServer_MountPoint);
-    settingsFile->printf("%s=%s\r\n", "ntripServer_MountPointPW", settings.ntripServer_MountPointPW);
+    for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+    {
+        settingsFile->printf("%s_%d=%s\r\n", "ntripServer_CasterHost", serverIndex, &settings.ntripServer_CasterHost[serverIndex][0]);
+        settingsFile->printf("%s_%d=%d\r\n", "ntripServer_CasterPort", serverIndex, settings.ntripServer_CasterPort[serverIndex]);
+        settingsFile->printf("%s_%d=%s\r\n", "ntripServer_CasterUser", serverIndex, &settings.ntripServer_CasterUser[serverIndex][0]);
+        settingsFile->printf("%s_%d=%s\r\n", "ntripServer_CasterUserPW", serverIndex, &settings.ntripServer_CasterUserPW[serverIndex][0]);
+        settingsFile->printf("%s_%d=%s\r\n", "ntripServer_MountPoint", serverIndex, &settings.ntripServer_MountPoint[serverIndex][0]);
+        settingsFile->printf("%s_%d=%s\r\n", "ntripServer_MountPointPW", serverIndex, &settings.ntripServer_MountPointPW[serverIndex][0]);
+    }
     settingsFile->printf("%s=%d\r\n", "enableNtripClient", settings.enableNtripClient);
     settingsFile->printf("%s=%s\r\n", "ntripClient_CasterHost", settings.ntripClient_CasterHost);
     settingsFile->printf("%s=%d\r\n", "ntripClient_CasterPort", settings.ntripClient_CasterPort);
@@ -277,7 +280,6 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "debugPpCertificate", settings.debugPpCertificate);
 
     settingsFile->printf("%s=%d\r\n", "updateZEDSettings", settings.updateZEDSettings);
-    settingsFile->printf("%s=%d\r\n", "LBandFreq", settings.LBandFreq);
     settingsFile->printf("%s=%d\r\n", "enableLogging", settings.enableLogging);
     settingsFile->printf("%s=%d\r\n", "enableARPLogging", settings.enableARPLogging);
     settingsFile->printf("%s=%d\r\n", "ARPLoggingInterval_s", settings.ARPLoggingInterval_s);
@@ -348,6 +350,7 @@ void recordSystemSettingsToFile(File *settingsFile)
     for (int x = 0; x < MAX_WIFI_NETWORKS; x++)
     {
         char tempString[100]; // wifiNetwork0Password=parachutes
+
         snprintf(tempString, sizeof(tempString), "wifiNetwork%dSSID=%s", x, settings.wifiNetworks[x].ssid);
         settingsFile->println(tempString);
         snprintf(tempString, sizeof(tempString), "wifiNetwork%dPassword=%s", x, settings.wifiNetworks[x].password);
@@ -373,7 +376,8 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "shutdownNoChargeTimeout_s", settings.shutdownNoChargeTimeout_s);
     settingsFile->printf("%s=%d\r\n", "disableSetupButton", settings.disableSetupButton);
     settingsFile->printf("%s=%d\r\n", "useI2cForLbandCorrections", settings.useI2cForLbandCorrections);
-    settingsFile->printf("%s=%d\r\n", "useI2cForLbandCorrectionsConfigured", settings.useI2cForLbandCorrectionsConfigured);
+    settingsFile->printf("%s=%d\r\n", "useI2cForLbandCorrectionsConfigured",
+                         settings.useI2cForLbandCorrectionsConfigured);
 
     // Record constellation settings
     for (int x = 0; x < MAX_CONSTELLATIONS; x++)
@@ -449,7 +453,9 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "enableZedUsb", settings.enableZedUsb);
     settingsFile->printf("%s=%d\r\n", "debugWiFiConfig", settings.debugWiFiConfig);
 
-    //Add new settings above <------------------------------------------------------------>
+    settingsFile->printf("%s=%d\r\n", "geographicRegion", settings.geographicRegion);
+
+    // Add new settings above <------------------------------------------------------------>
 }
 
 // Given a fileName, parse the file and load the given settings struct
@@ -588,7 +594,7 @@ bool loadSystemSettingsFromFileSD(char *fileName, Settings *settings)
                 status = true;
                 break;
             }
-#endif  // COMPILE_SD_MMC
+#endif    // COMPILE_SD_MMC
         } // End Semaphore check
         else
         {
@@ -690,13 +696,13 @@ bool parseLine(char *str, Settings *settings)
     snprintf(settingName, sizeof(settingName), "%s", str);
 
     double d = 0.0;
-    char settingValue[100] = "";
+    char settingString[100] = "";
 
     // Move pointer to end of line
     str = strtok(nullptr, "\n");
     if (!str)
     {
-        // This line does not contain a \n or the settingValue is zero length
+        // This line does not contain a \n or the settingString is zero length
         // so there is nothing to parse
         // https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/77
     }
@@ -707,23 +713,23 @@ bool parseLine(char *str, Settings *settings)
         //   systemPrintf("Found problem spot raw: %s\r\n", str);
 
         // Assume the value is a string such as 8d8a48b. The leading number causes skipSpace to fail.
-        // If settingValue has a mix of letters and numbers, just convert to string
-        snprintf(settingValue, sizeof(settingValue), "%s", str);
+        // If settingString has a mix of letters and numbers, just convert to string
+        snprintf(settingString, sizeof(settingString), "%s", str);
 
         // Check if string is mixed: 8a011EF, 192.168.1.1, -102.4, t6-h4$, etc.
         bool hasSymbol = false;
         int decimalCount = 0;
-        for (int x = 0; x < strlen(settingValue); x++)
+        for (int x = 0; x < strlen(settingString); x++)
         {
-            if (settingValue[x] == '.')
+            if (settingString[x] == '.')
                 decimalCount++;
-            else if (x == 0 && settingValue[x] == '-')
+            else if (x == 0 && settingString[x] == '-')
             {
                 ; // Do nothing
             }
-            else if (isAlpha(settingValue[x]))
+            else if (isAlpha(settingString[x]))
                 hasSymbol = true;
-            else if (isDigit(settingValue[x]) == false)
+            else if (isDigit(settingString[x]) == false)
                 hasSymbol = true;
         }
 
@@ -733,7 +739,7 @@ bool parseLine(char *str, Settings *settings)
             // It's a mix. Skip strtod.
 
             // if (strcmp(settingName, "ntripServer_CasterHost") == 0) //Debug
-            //   systemPrintf("Skipping strtod - settingValue: %s\r\n", settingValue);
+            //   systemPrintf("Skipping strtod - settingString: %s\r\n", settingString);
         }
         else
         {
@@ -742,21 +748,17 @@ bool parseLine(char *str, Settings *settings)
 
             if (d == 0.0) // strtod failed, may be string or may be 0 but let it pass
             {
-                snprintf(settingValue, sizeof(settingValue), "%s", str);
+                snprintf(settingString, sizeof(settingString), "%s", str);
             }
             else
             {
                 if (str == ptr || *skipSpace(ptr))
                     return false; // Check str pointer
-
-                // See issue https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/47
-                snprintf(settingValue, sizeof(settingValue), "%1.0lf",
-                         d); // Catch when the input is pure numbers (strtod was successful), store as settingValue
             }
         }
     }
 
-    // log_d("settingName: %s - value: %s - d: %0.9f", settingName, settingValue, d);
+    // log_d("settingName: %s - value: %s - d: %0.9f", settingName, settingString, d);
 
     // Get setting name
     if (strcmp(settingName, "sizeOfSettings") == 0)
@@ -766,13 +768,13 @@ bool parseLine(char *str, Settings *settings)
         if (d == -1)
         {
             // Erase file system, erase settings file, reset u-blox module, display message on OLED
-            factoryReset(true); //We already have the SD semaphore
+            factoryReset(true); // We already have the SD semaphore
         }
 
         // Check to see if this setting file is compatible with this version of RTK Surveyor
         if (d != sizeof(Settings))
-            log_d("Settings size is %d but current firmware expects %d. Attempting to use settings from file.",
-                         (int)d, sizeof(Settings));
+            log_d("Settings size is %d but current firmware expects %d. Attempting to use settings from file.", (int)d,
+                  sizeof(Settings));
     }
 
     else if (strcmp(settingName, "rtkIdentifier") == 0)
@@ -1017,37 +1019,25 @@ bool parseLine(char *str, Settings *settings)
         }
     }
     else if (strcmp(settingName, "profileName") == 0)
-        strcpy(settings->profileName, settingValue);
+        strcpy(settings->profileName, settingString);
     else if (strcmp(settingName, "enableNtripServer") == 0)
         settings->enableNtripServer = d;
     else if (strcmp(settingName, "ntripServer_StartAtSurveyIn") == 0)
         settings->ntripServer_StartAtSurveyIn = d;
-    else if (strcmp(settingName, "ntripServer_CasterHost") == 0)
-        strcpy(settings->ntripServer_CasterHost, settingValue);
-    else if (strcmp(settingName, "ntripServer_CasterPort") == 0)
-        settings->ntripServer_CasterPort = d;
-    else if (strcmp(settingName, "ntripServer_CasterUser") == 0)
-        strcpy(settings->ntripServer_CasterUser, settingValue);
-    else if (strcmp(settingName, "ntripServer_CasterUserPW") == 0)
-        strcpy(settings->ntripServer_CasterUserPW, settingValue);
-    else if (strcmp(settingName, "ntripServer_MountPoint") == 0)
-        strcpy(settings->ntripServer_MountPoint, settingValue);
-    else if (strcmp(settingName, "ntripServer_MountPointPW") == 0)
-        strcpy(settings->ntripServer_MountPointPW, settingValue);
     else if (strcmp(settingName, "enableNtripClient") == 0)
         settings->enableNtripClient = d;
     else if (strcmp(settingName, "ntripClient_CasterHost") == 0)
-        strcpy(settings->ntripClient_CasterHost, settingValue);
+        strcpy(settings->ntripClient_CasterHost, settingString);
     else if (strcmp(settingName, "ntripClient_CasterPort") == 0)
         settings->ntripClient_CasterPort = d;
     else if (strcmp(settingName, "ntripClient_CasterUser") == 0)
-        strcpy(settings->ntripClient_CasterUser, settingValue);
+        strcpy(settings->ntripClient_CasterUser, settingString);
     else if (strcmp(settingName, "ntripClient_CasterUserPW") == 0)
-        strcpy(settings->ntripClient_CasterUserPW, settingValue);
+        strcpy(settings->ntripClient_CasterUserPW, settingString);
     else if (strcmp(settingName, "ntripClient_MountPoint") == 0)
-        strcpy(settings->ntripClient_MountPoint, settingValue);
+        strcpy(settings->ntripClient_MountPoint, settingString);
     else if (strcmp(settingName, "ntripClient_MountPointPW") == 0)
-        strcpy(settings->ntripClient_MountPointPW, settingValue);
+        strcpy(settings->ntripClient_MountPointPW, settingString);
     else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
         settings->ntripClient_TransmitGGA = d;
     else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
@@ -1055,27 +1045,27 @@ bool parseLine(char *str, Settings *settings)
 
     // Point Perfect
     else if (strcmp(settingName, "pointPerfectDeviceProfileToken") == 0)
-        strcpy(settings->pointPerfectDeviceProfileToken, settingValue);
+        strcpy(settings->pointPerfectDeviceProfileToken, settingString);
     else if (strcmp(settingName, "enablePointPerfectCorrections") == 0)
         settings->enablePointPerfectCorrections = d;
     else if (strcmp(settingName, "autoKeyRenewal") == 0)
         settings->autoKeyRenewal = d;
     else if (strcmp(settingName, "pointPerfectClientID") == 0)
-        strcpy(settings->pointPerfectClientID, settingValue);
+        strcpy(settings->pointPerfectClientID, settingString);
     else if (strcmp(settingName, "pointPerfectBrokerHost") == 0)
-        strcpy(settings->pointPerfectBrokerHost, settingValue);
+        strcpy(settings->pointPerfectBrokerHost, settingString);
     else if (strcmp(settingName, "pointPerfectLBandTopic") == 0)
-        strcpy(settings->pointPerfectLBandTopic, settingValue);
+        strcpy(settings->pointPerfectLBandTopic, settingString);
 
     else if (strcmp(settingName, "pointPerfectCurrentKey") == 0)
-        strcpy(settings->pointPerfectCurrentKey, settingValue);
+        strcpy(settings->pointPerfectCurrentKey, settingString);
     else if (strcmp(settingName, "pointPerfectCurrentKeyDuration") == 0)
         settings->pointPerfectCurrentKeyDuration = d;
     else if (strcmp(settingName, "pointPerfectCurrentKeyStart") == 0)
         settings->pointPerfectCurrentKeyStart = d;
 
     else if (strcmp(settingName, "pointPerfectNextKey") == 0)
-        strcpy(settings->pointPerfectNextKey, settingValue);
+        strcpy(settings->pointPerfectNextKey, settingString);
     else if (strcmp(settingName, "pointPerfectNextKeyDuration") == 0)
         settings->pointPerfectNextKeyDuration = d;
     else if (strcmp(settingName, "pointPerfectNextKeyStart") == 0)
@@ -1091,8 +1081,6 @@ bool parseLine(char *str, Settings *settings)
         if (settings->updateZEDSettings != d)
             settings->updateZEDSettings = true; // If there is a discrepancy, push ZED reconfig
     }
-    else if (strcmp(settingName, "LBandFreq") == 0)
-        settings->LBandFreq = d;
     else if (strcmp(settingName, "timeZoneHours") == 0)
         settings->timeZoneHours = d;
     else if (strcmp(settingName, "timeZoneMinutes") == 0)
@@ -1256,22 +1244,22 @@ bool parseLine(char *str, Settings *settings)
     // Ethernet
     else if (strcmp(settingName, "ethernetIP") == 0)
     {
-        String addr = String(settingValue);
+        String addr = String(settingString);
         settings->ethernetIP.fromString(addr);
     }
     else if (strcmp(settingName, "ethernetDNS") == 0)
     {
-        String addr = String(settingValue);
+        String addr = String(settingString);
         settings->ethernetDNS.fromString(addr);
     }
     else if (strcmp(settingName, "ethernetGateway") == 0)
     {
-        String addr = String(settingValue);
+        String addr = String(settingString);
         settings->ethernetGateway.fromString(addr);
     }
     else if (strcmp(settingName, "ethernetSubnet") == 0)
     {
-        String addr = String(settingValue);
+        String addr = String(settingString);
         settings->ethernetSubnet.fromString(addr);
     }
     else if (strcmp(settingName, "httpPort") == 0)
@@ -1283,7 +1271,7 @@ bool parseLine(char *str, Settings *settings)
     else if (strcmp(settingName, "pvtClientPort") == 0)
         settings->pvtClientPort = d;
     else if (strcmp(settingName, "pvtClientHost") == 0)
-        strcpy(settings->pvtClientHost, settingValue);
+        strcpy(settings->pvtClientHost, settingString);
     // NTP
     else if (strcmp(settingName, "ntpPollExponent") == 0)
         settings->ntpPollExponent = d;
@@ -1295,8 +1283,8 @@ bool parseLine(char *str, Settings *settings)
         settings->ntpRootDispersion = d;
     else if (strcmp(settingName, "ntpReferenceId") == 0)
     {
-        strcpy(settings->ntpReferenceId, settingValue);
-        for (int i = strlen(settingValue); i < 5; i++)
+        strcpy(settings->ntpReferenceId, settingString);
+        for (int i = strlen(settingString); i < 5; i++)
             settings->ntpReferenceId[i] = 0;
     }
     else if (strcmp(settingName, "coordinateInputType") == 0)
@@ -1379,7 +1367,10 @@ bool parseLine(char *str, Settings *settings)
     else if (strcmp(settingName, "debugWiFiConfig") == 0)
         settings->debugWiFiConfig = d;
 
-    //Add new settings above
+    else if (strcmp(settingName, "geographicRegion") == 0)
+        settings->geographicRegion = d;
+
+    // Add new settings above
     //<------------------------------------------------------------>
 
     // Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
@@ -1397,7 +1388,7 @@ bool parseLine(char *str, Settings *settings)
                 snprintf(tempString, sizeof(tempString), "wifiNetwork%dSSID", x);
                 if (strcmp(settingName, tempString) == 0)
                 {
-                    strcpy(settings->wifiNetworks[x].ssid, settingValue);
+                    strcpy(settings->wifiNetworks[x].ssid, settingString);
                     knownSetting = true;
                     break;
                 }
@@ -1406,7 +1397,7 @@ bool parseLine(char *str, Settings *settings)
                     snprintf(tempString, sizeof(tempString), "wifiNetwork%dPassword", x);
                     if (strcmp(settingName, tempString) == 0)
                     {
-                        strcpy(settings->wifiNetworks[x].password, settingValue);
+                        strcpy(settings->wifiNetworks[x].password, settingString);
                         knownSetting = true;
                         break;
                     }
@@ -1497,13 +1488,109 @@ bool parseLine(char *str, Settings *settings)
                     uint8_t macAddress[6];
                     uint8_t macByte = 0;
 
-                    char *token = strtok(settingValue, ","); // Break string up on ,
+                    char *token = strtok(settingString, ","); // Break string up on ,
                     while (token != nullptr && macByte < sizeof(macAddress))
                     {
                         settings->espnowPeers[x][macByte++] = (uint8_t)strtol(token, nullptr, 16);
                         token = strtok(nullptr, ",");
                     }
 
+                    knownSetting = true;
+                    break;
+                }
+            }
+        }
+
+        // Scan for ntripServer_CasterHost
+        if (knownSetting == false)
+        {
+            for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+            {
+                char tempString[50];
+                snprintf(tempString, sizeof(tempString), "ntripServer_CasterHost_%d", serverIndex);
+                if (strcmp(settingName, tempString) == 0)
+                {
+                    strcpy(&settings->ntripServer_CasterHost[serverIndex][0], settingString);
+                    knownSetting = true;
+                    break;
+                }
+            }
+        }
+
+        // Scan for ntripServer_CasterPort
+        if (knownSetting == false)
+        {
+            for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+            {
+                char tempString[50];
+                snprintf(tempString, sizeof(tempString), "ntripServer_CasterPort_%d", serverIndex);
+                if (strcmp(settingName, tempString) == 0)
+                {
+                    settings->ntripServer_CasterPort[serverIndex] = d;
+                    knownSetting = true;
+                    break;
+                }
+            }
+        }
+
+        // Scan for ntripServer_CasterUser
+        if (knownSetting == false)
+        {
+            for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+            {
+                char tempString[50];
+                snprintf(tempString, sizeof(tempString), "ntripServer_CasterUser_%d", serverIndex);
+                if (strcmp(settingName, tempString) == 0)
+                {
+                    strcpy(&settings->ntripServer_CasterUser[serverIndex][0], settingString);
+                    knownSetting = true;
+                    break;
+                }
+            }
+        }
+
+        // Scan for ntripServer_CasterUserPW
+        if (knownSetting == false)
+        {
+            for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+            {
+                char tempString[50];
+                snprintf(tempString, sizeof(tempString), "ntripServer_CasterUserPW_%d", serverIndex);
+                if (strcmp(settingName, tempString) == 0)
+                {
+                    strcpy(&settings->ntripServer_CasterUserPW[serverIndex][0], settingString);
+                    knownSetting = true;
+                    break;
+                }
+            }
+        }
+
+        // Scan for ntripServer_MountPoint
+        if (knownSetting == false)
+        {
+            for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+            {
+                char tempString[50];
+                snprintf(tempString, sizeof(tempString), "ntripServer_MountPoint_%d", serverIndex);
+                if (strcmp(settingName, tempString) == 0)
+                {
+                    strcpy(&settings->ntripServer_MountPoint[serverIndex][0], settingString);
+                    knownSetting = true;
+                    break;
+                }
+            }
+        }
+
+        // Scan for ntripServer_MountPointPW
+        if (knownSetting == false)
+        {
+            for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+            {
+                char tempString[50];
+                snprintf(tempString, sizeof(tempString), "ntripServer_MountPointPW_%d", serverIndex);
+                if (strcmp(settingName, tempString) == 0)
+                {
+                    strcpy(&settings->ntripServer_MountPointPW[serverIndex][0], settingString);
                     knownSetting = true;
                     break;
                 }

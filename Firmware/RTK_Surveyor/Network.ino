@@ -183,11 +183,12 @@ const char * const networkUser[] =
 {
     "NTP Server",
     "NTRIP Client",
-    "NTRIP Server",
     "OTA Firmware Update",
     "PVT Client",
     "PVT Server",
     "PVT UDP Server",
+    "NTRIP Server 0",
+    "NTRIP Server 1",
 };
 const int networkUserEntries = sizeof(networkUser) / sizeof(networkUser[0]);
 
@@ -536,7 +537,8 @@ NETWORK_DATA * networkGetUserNetwork(NETWORK_USER user)
     for (networkType = 0; networkType < NETWORK_TYPE_MAX; networkType++)
     {
         network = networkGet(networkType, false);
-        if (network && (network->activeUsers & userMask))
+        if (network && ((network->activeUsers & userMask)
+                        || (network->userOpens & userMask)))
             return network;
     }
 
@@ -837,6 +839,7 @@ void networkStop(uint8_t networkType)
 {
     NETWORK_DATA * network;
     bool restart;
+    int serverIndex;
     bool shutdown;
     int user;
 
@@ -876,6 +879,17 @@ void networkStop(uint8_t networkType)
                 // Stop the network client
                 switch(user)
                 {
+                default:
+                    if ((user >= NETWORK_USER_NTRIP_SERVER)
+                        && (user < (NETWORK_USER_NTRIP_SERVER + NTRIP_SERVER_MAX)))
+                    {
+                        serverIndex = user - NETWORK_USER_NTRIP_SERVER;
+                        if (settings.debugNetworkLayer)
+                            systemPrintln("Network layer stopping NTRIP server");
+                        ntripServerStop(serverIndex, true); // Note: was ntripServerRestart(serverIndex);
+                    }
+                    break;
+
                 case NETWORK_USER_NTP_SERVER:
                     if (settings.debugNetworkLayer)
                         systemPrintln("Network layer stopping NTP server");
@@ -885,13 +899,7 @@ void networkStop(uint8_t networkType)
                 case NETWORK_USER_NTRIP_CLIENT:
                     if (settings.debugNetworkLayer)
                         systemPrintln("Network layer stopping NTRIP client");
-                    ntripClientRestart();
-                    break;
-
-                case NETWORK_USER_NTRIP_SERVER:
-                    if (settings.debugNetworkLayer)
-                        systemPrintln("Network layer stopping NTRIP server");
-                    ntripServerRestart();
+                    ntripClientStop(true); // Note: was ntripClientRestart();
                     break;
 
                 case NETWORK_USER_OTA_FIRMWARE_UPDATE:
@@ -1041,7 +1049,9 @@ void networkTypeUpdate(uint8_t networkType)
         case NETWORK_STATE_DELAY:
             // Determine if the network is shutting down
             if (network->shutdown)
-                networkStop(network->type);
+            {
+                NETWORK_STOP(network->type);
+            }
 
             // Delay before starting the network
             else if ((millis() - network->timerStart) >= network->timeout)
@@ -1070,7 +1080,9 @@ void networkTypeUpdate(uint8_t networkType)
         case NETWORK_STATE_CONNECTING:
             // Determine if the network is shutting down
             if (network->shutdown)
-                networkStop(network->type);
+            {
+                NETWORK_STOP(network->type);
+            }
 
             // Determine if the connection failed
             else if ((millis() - network->timerStart) >= network->timeout)
@@ -1079,7 +1091,7 @@ void networkTypeUpdate(uint8_t networkType)
                 if (settings.debugNetworkLayer)
                     systemPrintf("Network: %s connection timed out\r\n", networkName[network->type]);
                 networkRestartNetwork(network);
-                networkStop(network->type);
+                NETWORK_STOP(network->type);
             }
 
             // Determine if the RTK host is connected to the network
@@ -1099,7 +1111,9 @@ void networkTypeUpdate(uint8_t networkType)
         case NETWORK_STATE_IN_USE:
             // Determine if the network is shutting down
             if (network->shutdown)
-                networkStop(network->type);
+            {
+                NETWORK_STOP(network->type);
+            }
 
             // Verify that the RTK device is still connected to the network
             else if (!networkIsMediaConnected(network))
@@ -1108,7 +1122,7 @@ void networkTypeUpdate(uint8_t networkType)
                 if (settings.debugNetworkLayer)
                     systemPrintf("Network: %s connection failed!\r\n", networkName[network->type]);
                 networkRestartNetwork(network);
-                networkStop(network->type);
+                NETWORK_STOP(network->type);
             }
 
             // Check for the idle timeout
@@ -1130,7 +1144,7 @@ void networkTypeUpdate(uint8_t networkType)
                 {
                     if (settings.debugNetworkLayer)
                         systemPrintf("Network shutting down %s, no users\r\n", networkName[network->type]);
-                    networkStop(network->type);
+                    NETWORK_STOP(network->type);
                 }
             }
             break;
@@ -1138,7 +1152,7 @@ void networkTypeUpdate(uint8_t networkType)
         case NETWORK_STATE_WAIT_NO_USERS:
             // Stop the network when all the users are removed
             if (!network->activeUsers)
-                networkStop(network->type);
+                NETWORK_STOP(network->type);
             break;
     }
 
@@ -1208,7 +1222,7 @@ void networkUserClose(uint8_t user)
 
             // Shutdown the network if requested
             if (network->shutdown && (!network->activeUsers))
-                networkStop(network->type);
+                NETWORK_STOP(network->type);
         }
 
         // The network user is not running

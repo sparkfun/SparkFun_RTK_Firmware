@@ -883,8 +883,19 @@ void printPosition()
     }
 }
 
+// Periodically print RTK state if enabled
+void printRTKState()
+{
+    // Periodically print the RTK state
+    if (settings.enablePrintState && ((millis() - lastPrintState) > 15000))
+    {
+        printCurrentRTKState();
+        lastPrintState = millis();
+    }
+}
+
 // Given a user's string, try to identify the type and return the coordinate in DD.ddddddddd format
-CoordinateInputType coordinateIdentifyInputType(char *userEntryOriginal, double *coordinate)
+CoordinateInputType coordinateIdentifyInputType(const char *userEntryOriginal, double *coordinate)
 {
     char userEntry[50];
     strncpy(userEntry, userEntryOriginal,
@@ -1009,7 +1020,7 @@ CoordinateInputType coordinateIdentifyInputType(char *userEntryOriginal, double 
         token = strtok(nullptr, "-");
 
         // Find '.'
-        char *decimalPtr = strchr(userEntry, '.');
+        char *decimalPtr = strchr(token, '.'); // Use token, not userEntry, as the dashes are now NULL
         if (decimalPtr == nullptr)
             coordinateInputType = COORDINATE_INPUT_TYPE_DD_MM_SS_DASH_NO_DECIMAL;
 

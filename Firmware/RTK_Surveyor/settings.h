@@ -1,3 +1,6 @@
+#ifndef __SETTINGS_H__
+#define __SETTINGS_H__
+
 // System can enter a variety of states
 // See statemachine diagram at:
 // https://lucid.app/lucidchart/53519501-9fa5-4352-aa40-673f88ca0c9b/edit?invitationId=inv_ebd4b988-513d-4169-93fd-c291851108f8
@@ -237,16 +240,18 @@ enum NetworkUsers
 {
     NETWORK_USER_NTP_SERVER = 0,      // NTP server
     NETWORK_USER_NTRIP_CLIENT,        // NTRIP client
-    NETWORK_USER_NTRIP_SERVER,        // NTRIP server
     NETWORK_USER_OTA_FIRMWARE_UPDATE, // Over-The-Air firmware updates
     NETWORK_USER_PVT_CLIENT,          // PVT client
     NETWORK_USER_PVT_SERVER,          // PVT server
     NETWORK_USER_PVT_UDP_SERVER,      // PVT UDP server
+
+    // Add new users above this line
+    NETWORK_USER_NTRIP_SERVER,        // NTRIP server
     // Last network user
-    NETWORK_USER_MAX
+    NETWORK_USER_MAX = NETWORK_USER_NTRIP_SERVER + NTRIP_SERVER_MAX
 };
 
-typedef uint8_t NETWORK_USER;
+typedef uint16_t NETWORK_USER;
 
 typedef struct _NETWORK_DATA
 {
@@ -267,12 +272,45 @@ typedef struct _NETWORK_DATA
 // either WiFi or ESP-Now are active
 enum WiFiState
 {
-    WIFI_OFF = 0,
-    WIFI_START,
-    WIFI_CONNECTING,
-    WIFI_CONNECTED,
+    WIFI_STATE_OFF = 0,
+    WIFI_STATE_START,
+    WIFI_STATE_CONNECTING,
+    WIFI_STATE_CONNECTED,
 };
-volatile byte wifiState = WIFI_OFF;
+volatile byte wifiState = WIFI_STATE_OFF;
+
+#include "NetworkClient.h" // Built-in - Supports both WiFiClient and EthernetClient
+#include "NetworkUDP.h"    //Built-in - Supports both WiFiUdp and EthernetUdp
+
+// NTRIP Server data
+typedef struct _NTRIP_SERVER_DATA
+{
+    // Network connection used to push RTCM to NTRIP caster
+    NetworkClient *networkClient;
+    volatile uint8_t state;
+
+    // Count of bytes sent by the NTRIP server to the NTRIP caster
+    uint32_t bytesSent;
+
+    // Throttle the time between connection attempts
+    // ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
+    uint32_t connectionAttemptTimeout;
+    uint32_t lastConnectionAttempt;
+    int connectionAttempts; // Count the number of connection attempts between restarts
+
+    // NTRIP server timer usage:
+    //  * Reconnection delay
+    //  * Measure the connection response time
+    //  * Receive RTCM correction data timeout
+    //  * Monitor last RTCM byte received for frame counting
+    uint32_t timer;
+    uint32_t startTime;
+    int connectionAttemptsTotal; // Count the number of connection attempts absolutely
+
+    // Additional count / times for ntripServerProcessRTCM
+    uint32_t zedBytesSent ;
+    uint32_t previousMilliseconds;
+} NTRIP_SERVER_DATA;
 
 typedef enum
 {
@@ -853,6 +891,38 @@ const ubxCmd ubxCommands[] = {
 
 #define MAX_UBX_CMD (sizeof(ubxCommands) / sizeof(ubxCmd))
 
+// Regional Support
+// Do we want the user to be able to specify which region they are in?
+// Or do we want to figure it out based on position?
+// If we define a simple 'square' area for each region, we can do both.
+// Note: the best way to obtain the L-Band frequencies would be from the MQTT /pp/frequencies/Lb topic.
+//       But it is easier to record them here, in case we don't have access to MQTT...
+// Note: the key distribution topic is provided during ZTP. We don't need to record it here.
+
+typedef struct
+{
+    const double latNorth; // Degrees
+    const double latSouth; // Degrees
+    const double lonEast; // Degrees
+    const double lonWest; // Degrees
+} Regional_Area;
+
+typedef struct
+{
+    const char *name; // As defined in the ZTP subscriptions description: EU, US, KR, AU, Japan
+    const char *topicRegion; // As used in the corrections topic path
+    const Regional_Area area;
+    const uint32_t frequency; // L-Band frequency, Hz, if supported. 0 if not supported
+} Regional_Information;
+
+const Regional_Information Regional_Information_Table[] =
+{
+    { "US", "us", { 50.0,  25.0, -60.0, -125.0}, 1556290000 },
+    { "EU", "eu", { 72.0,  36.0,  32.0,  -11.0}, 1545260000 },
+    // Note: we only include regions with L-Band coverage. AU, KR and Japan are not included here.
+};
+const int numRegionalAreas = sizeof(Regional_Information_Table) / sizeof(Regional_Information_Table[0]);
+
 // This is all the settings that can be set on RTK Surveyor. It's recorded to NVM and the config file.
 typedef struct
 {
@@ -929,7 +999,7 @@ typedef struct
     bool autoKeyRenewal = true; // Attempt to get keys if we get under 28 days from the expiration date
     char pointPerfectClientID[50] = "";
     char pointPerfectBrokerHost[50] = ""; // pp.services.u-blox.com
-    char pointPerfectLBandTopic[20] = ""; // /pp/key/Lb
+    char pointPerfectLBandTopic[20] = ""; // /pp/ubx/0236/Lb
 
     char pointPerfectCurrentKey[33] = ""; // 32 hexadecimal digits = 128 bits = 16 Bytes
     uint64_t pointPerfectCurrentKeyDuration = 0;
@@ -941,7 +1011,6 @@ typedef struct
 
     uint64_t lastKeyAttempt = 0;     // Epoch time of last attempt at obtaining keys
     bool updateZEDSettings = true;   // When in doubt, update the ZED with current settings
-    uint32_t LBandFreq = 1556290000; // Default to US band
 
     bool debugPpCertificate = false; // Debug Point Perfect certificate management
 
@@ -1081,13 +1150,36 @@ typedef struct
     bool debugNtripServerState = false;
     bool enableNtripServer = false;
     bool ntripServer_StartAtSurveyIn = false;       // true = Start WiFi instead of Bluetooth at Survey-In
-    char ntripServer_CasterHost[50] = "rtk2go.com"; // It's free...
-    uint16_t ntripServer_CasterPort = 2101;
-    char ntripServer_CasterUser[50] =
-        "test@test.com"; // Some free casters require auth. User must provide their own email address to use RTK2Go
-    char ntripServer_CasterUserPW[50] = "";
-    char ntripServer_MountPoint[50] = "bldr_dwntwn2"; // NTRIP Server
-    char ntripServer_MountPointPW[50] = "WR5wRo4H";
+    char ntripServer_CasterHost[NTRIP_SERVER_MAX][50] = // It's free...
+    {
+        "rtk2go.com",
+        "",
+    };
+    uint16_t ntripServer_CasterPort[NTRIP_SERVER_MAX] =
+    {
+        2101,
+        0,
+    };
+    char ntripServer_CasterUser[NTRIP_SERVER_MAX][50] =
+    {
+        "test@test.com" // Some free casters require auth. User must provide their own email address to use RTK2Go
+        "",
+    };
+    char ntripServer_CasterUserPW[NTRIP_SERVER_MAX][50] =
+    {
+        "",
+        "",
+    };
+    char ntripServer_MountPoint[NTRIP_SERVER_MAX][50] =
+    {
+        "bldr_dwntwn2", // NTRIP Server
+        "",
+    };
+    char ntripServer_MountPointPW[NTRIP_SERVER_MAX][50] =
+    {
+        "WR5wRo4H",
+        "",
+    };
 
     // TCP Client
     bool debugPvtClient = false;
@@ -1120,6 +1212,8 @@ typedef struct
 
     bool debugWiFiConfig = false;
 
+    int geographicRegion = 0; // Default to US - first entry in Regional_Information_Table
+
     // Add new settings above <------------------------------------------------------------>
 
 } Settings;
@@ -1138,7 +1232,7 @@ struct struct_online
     bool battery = false;
     bool accelerometer = false;
     bool ntripClient = false;
-    bool ntripServer = false;
+    bool ntripServer[NTRIP_SERVER_MAX] = {false, false};
     bool lband = false;
     bool lbandCorrections = false;
     bool i2c = false;
@@ -1177,3 +1271,4 @@ rqXRfboQnoZsG4q5WTP468SQvvG5
 )=====";
 #endif // COMPILE_L_BAND
 #endif // COMPILE_WIFI
+#endif // __SETTINGS_H__

@@ -953,7 +953,7 @@ void handleGnssDataTask(void *e)
                     slowConsumer = "SD card";
                 }
             } // bytesToSend
-        }     // End connected
+        } // End connected
 
         //----------------------------------------------------------------------
         // Update the available space in the ring buffer
@@ -1017,7 +1017,7 @@ void updateBTled()
             ledcWrite(ledBTChannel, 255);
 
         // Pulse LED while no BT and we wait for WiFi connection
-        else if (wifiState == WIFI_CONNECTING || wifiState == WIFI_CONNECTED)
+        else if (wifiState == WIFI_STATE_CONNECTING || wifiState == WIFI_STATE_CONNECTED)
         {
             // Fade in/out the BT LED during WiFi AP mode
             btFadeLevel += pwmFadeAmount;
@@ -1292,8 +1292,9 @@ void ButtonCheckTask(void *e)
                     powerDown(true); // State machine is not updated while in menu system so go straight to power down
                                      // as needed
             }
-            else if (powerBtn != nullptr && systemState == STATE_ROVER_NOT_STARTED && firstRoverStart == true &&
-                     powerBtn->pressedFor(500))
+            else if (powerBtn != nullptr &&
+                     (systemState == STATE_ROVER_NOT_STARTED || systemState == STATE_KEYS_STARTED) &&
+                     firstRoverStart == true && powerBtn->pressedFor(500))
             {
                 forceSystemStateUpdate = true;
                 requestChangeState(STATE_TEST);
@@ -1426,7 +1427,7 @@ void ButtonCheckTask(void *e)
                     }
                 } // End disableSetupButton check
             }
-        }                                             // End Platform = RTK Facet
+        } // End Platform = RTK Facet
         else if (productVariant == REFERENCE_STATION) // Check one momentary button
         {
             if (setupBtn != nullptr)
@@ -1582,7 +1583,7 @@ void idleTask(void *e)
         idleCount++;
 
         // Determine if it is time to print the CPU idle times
-        if ((millis() - lastDisplayIdleTime) >= (IDLE_TIME_DISPLAY_SECONDS * 1000))
+        if ((millis() - lastDisplayIdleTime) >= (IDLE_TIME_DISPLAY_SECONDS * 1000) && !inMainMenu)
         {
             lastDisplayIdleTime = millis();
 
@@ -1613,8 +1614,7 @@ void idleTask(void *e)
             systemPrintf("idleTask %d High watermark: %d\r\n", xPortGetCoreID(), uxTaskGetStackHighWaterMark(nullptr));
         }
 
-        // Let other same priority tasks run
-        taskYIELD();
+        // The idle task should NOT delay or yield
     }
 }
 

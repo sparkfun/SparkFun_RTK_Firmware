@@ -239,76 +239,92 @@ bool surveyInReset()
 bool startFixedBase()
 {
     bool response = true;
+    int retries = 0;
+    uint16_t maxWait = 1100;
 
-    if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
-    {
-        // Break ECEF into main and high precision parts
-        // The type casting should not effect rounding of original double cast coordinate
-        long majorEcefX = floor((settings.fixedEcefX * 100.0) + 0.5);
-        long minorEcefX = floor((((settings.fixedEcefX * 100.0) - majorEcefX) * 100.0) + 0.5);
-        long majorEcefY = floor((settings.fixedEcefY * 100) + 0.5);
-        long minorEcefY = floor((((settings.fixedEcefY * 100.0) - majorEcefY) * 100.0) + 0.5);
-        long majorEcefZ = floor((settings.fixedEcefZ * 100) + 0.5);
-        long minorEcefZ = floor((((settings.fixedEcefZ * 100.0) - majorEcefZ) * 100.0) + 0.5);
+    do {
+        if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
+        {
+            // Break ECEF into main and high precision parts
+            // The type casting should not effect rounding of original double cast coordinate
+            long majorEcefX = floor((settings.fixedEcefX * 100.0) + 0.5);
+            long minorEcefX = floor((((settings.fixedEcefX * 100.0) - majorEcefX) * 100.0) + 0.5);
+            long majorEcefY = floor((settings.fixedEcefY * 100) + 0.5);
+            long minorEcefY = floor((((settings.fixedEcefY * 100.0) - majorEcefY) * 100.0) + 0.5);
+            long majorEcefZ = floor((settings.fixedEcefZ * 100) + 0.5);
+            long minorEcefZ = floor((((settings.fixedEcefZ * 100.0) - majorEcefZ) * 100.0) + 0.5);
 
-        //    systemPrintf("fixedEcefY (should be -4716808.5807): %0.04f\r\n", settings.fixedEcefY);
-        //    systemPrintf("major (should be -471680858): %ld\r\n", majorEcefY);
-        //    systemPrintf("minor (should be -7): %ld\r\n", minorEcefY);
+            //    systemPrintf("fixedEcefY (should be -4716808.5807): %0.04f\r\n", settings.fixedEcefY);
+            //    systemPrintf("major (should be -471680858): %ld\r\n", majorEcefY);
+            //    systemPrintf("minor (should be -7): %ld\r\n", minorEcefY);
 
-        // Units are cm with a high precision extension so -1234.5678 should be called: (-123456, -78)
-        //-1280208.308,-4716803.847,4086665.811 is SparkFun HQ so...
+            // Units are cm with a high precision extension so -1234.5678 should be called: (-123456, -78)
+            //-1280208.308,-4716803.847,4086665.811 is SparkFun HQ so...
 
-        response &= theGNSS.newCfgValset();
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 2);     // Fixed
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_POS_TYPE, 0); // Position in ECEF
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_ECEF_X, majorEcefX);
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_ECEF_X_HP, minorEcefX);
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_ECEF_Y, majorEcefY);
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_ECEF_Y_HP, minorEcefY);
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_ECEF_Z, majorEcefZ);
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_ECEF_Z_HP, minorEcefZ);
-        response &= theGNSS.sendCfgValset();
-    }
-    else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
-    {
-        // Add height of instrument (HI) to fixed altitude
-        // https://www.e-education.psu.edu/geog862/node/1853
-        // For example, if HAE is at 100.0m, + 2m stick + 73mm ARP = 102.073
-        float totalFixedAltitude =
-            settings.fixedAltitude + (settings.antennaHeight / 1000.0) + (settings.antennaReferencePoint / 1000.0);
+            response &= theGNSS.newCfgValset();
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 2);     // Fixed
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_POS_TYPE, 0); // Position in ECEF
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_ECEF_X, majorEcefX);
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_ECEF_X_HP, minorEcefX);
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_ECEF_Y, majorEcefY);
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_ECEF_Y_HP, minorEcefY);
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_ECEF_Z, majorEcefZ);
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_ECEF_Z_HP, minorEcefZ);
+            response &= theGNSS.sendCfgValset();
+        }
+        else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
+        {
+            // Add height of instrument (HI) to fixed altitude
+            // https://www.e-education.psu.edu/geog862/node/1853
+            // For example, if HAE is at 100.0m, + 2m stick + 73mm ARP = 102.073
+            float totalFixedAltitude =
+                settings.fixedAltitude + (settings.antennaHeight / 1000.0) + (settings.antennaReferencePoint / 1000.0);
 
-        // Break coordinates into main and high precision parts
-        // The type casting should not effect rounding of original double cast coordinate
-        int64_t majorLat = settings.fixedLat * 10000000;
-        int64_t minorLat = ((settings.fixedLat * 10000000) - majorLat) * 100;
-        int64_t majorLong = settings.fixedLong * 10000000;
-        int64_t minorLong = ((settings.fixedLong * 10000000) - majorLong) * 100;
-        int32_t majorAlt = totalFixedAltitude * 100;
-        int32_t minorAlt = ((totalFixedAltitude * 100) - majorAlt) * 100;
+            // Break coordinates into main and high precision parts
+            // The type casting should not effect rounding of original double cast coordinate
+            int64_t majorLat = settings.fixedLat * 10000000;
+            int64_t minorLat = ((settings.fixedLat * 10000000) - majorLat) * 100;
+            int64_t majorLong = settings.fixedLong * 10000000;
+            int64_t minorLong = ((settings.fixedLong * 10000000) - majorLong) * 100;
+            int32_t majorAlt = totalFixedAltitude * 100;
+            int32_t minorAlt = ((totalFixedAltitude * 100) - majorAlt) * 100;
 
-        //    systemPrintf("fixedLong (should be -105.184774720): %0.09f\r\n", settings.fixedLong);
-        //    systemPrintf("major (should be -1051847747): %lld\r\n", majorLat);
-        //    systemPrintf("minor (should be -20): %lld\r\n", minorLat);
-        //
-        //    systemPrintf("fixedLat (should be 40.090335429): %0.09f\r\n", settings.fixedLat);
-        //    systemPrintf("major (should be 400903354): %lld\r\n", majorLong);
-        //    systemPrintf("minor (should be 29): %lld\r\n", minorLong);
-        //
-        //    systemPrintf("fixedAlt (should be 1560.2284): %0.04f\r\n", settings.fixedAltitude);
-        //    systemPrintf("major (should be 156022): %ld\r\n", majorAlt);
-        //    systemPrintf("minor (should be 84): %ld\r\n", minorAlt);
+            //    systemPrintf("fixedLong (should be -105.184774720): %0.09f\r\n", settings.fixedLong);
+            //    systemPrintf("major (should be -1051847747): %lld\r\n", majorLat);
+            //    systemPrintf("minor (should be -20): %lld\r\n", minorLat);
+            //
+            //    systemPrintf("fixedLat (should be 40.090335429): %0.09f\r\n", settings.fixedLat);
+            //    systemPrintf("major (should be 400903354): %lld\r\n", majorLong);
+            //    systemPrintf("minor (should be 29): %lld\r\n", minorLong);
+            //
+            //    systemPrintf("fixedAlt (should be 1560.2284): %0.04f\r\n", settings.fixedAltitude);
+            //    systemPrintf("major (should be 156022): %ld\r\n", majorAlt);
+            //    systemPrintf("minor (should be 84): %ld\r\n", minorAlt);
 
-        response &= theGNSS.newCfgValset();
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 2);     // Fixed
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_POS_TYPE, 1); // Position in LLH
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_LAT, majorLat);
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_LAT_HP, minorLat);
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_LON, majorLong);
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_LON_HP, minorLong);
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_HEIGHT, majorAlt);
-        response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_HEIGHT_HP, minorAlt);
-        response &= theGNSS.sendCfgValset();
-    }
+            response &= theGNSS.newCfgValset();
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 2);     // Fixed
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_POS_TYPE, 1); // Position in LLH
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_LAT, majorLat);
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_LAT_HP, minorLat);
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_LON, majorLong);
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_LON_HP, minorLong);
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_HEIGHT, majorAlt);
+            response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_HEIGHT_HP, minorAlt);
+            response &= theGNSS.sendCfgValset(maxWait);
+        }
+
+        if (!response) {
+            systemPrint("startFixedBase failed! ");
+            if (retries <= 2) {
+                systemPrintln("Retrying...");
+                delay(1000);
+                maxWait = 2200;
+            }
+            else {
+                systemPrintln("Giving up and going into Rover mode!");
+            }
+        }
+    } while ((!response) && (++retries <= 3));
 
     return (response);
 }
@@ -349,7 +365,8 @@ void DevUBLOXGNSS::processRTCM(uint8_t incoming)
         rtcmLastReceived = millis();
         rtcmBytesSent++;
 
-        ntripServerProcessRTCM(incoming);
+        for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+            ntripServerProcessRTCM(serverIndex, incoming);
 
         espnowProcessRTCM(incoming);
     }
@@ -391,7 +408,8 @@ void processRTCMBuffer()
             rtcmLastReceived = millis();
             rtcmBytesSent++;
 
-            ntripServerProcessRTCM(incoming);
+            for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+                ntripServerProcessRTCM(serverIndex, incoming);
 
             espnowProcessRTCM(incoming);
         }

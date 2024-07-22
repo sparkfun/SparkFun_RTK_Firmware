@@ -272,7 +272,7 @@ InputResponse getString(char *userString, uint8_t stringSize)
 
         //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-        if (btPrintEchoExit) // User has disconnect from BT. Force exit all menus.
+        if (btPrintEchoExit) // User has disconnected from BT. Force exit all menus.
             return INPUT_RESPONSE_TIMEOUT;
 
         // Get the next input character
@@ -797,6 +797,41 @@ void printUbloxInvalidData(PARSE_STATE *parse)
 {
     dumpBuffer(parse->buffer, parse->length - 1);
     systemPrintf("    %s Invalid UBX data, %d bytes\r\n", parse->parserName, parse->length - 1);
+}
+
+void printPartitionTable(void)
+{
+    systemPrintln("ESP32 Partition table:\n");
+
+    systemPrintln("| Type | Sub |  Offset  |   Size   |       Label      |");
+    systemPrintln("| ---- | --- | -------- | -------- | ---------------- |");
+
+    esp_partition_iterator_t pi = esp_partition_find(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL);
+    if (pi != NULL)
+    {
+        do
+        {
+            const esp_partition_t *p = esp_partition_get(pi);
+            systemPrintf("|  %02x  | %02x  | 0x%06X | 0x%06X | %-16s |\r\n", p->type, p->subtype, p->address, p->size,
+                         p->label);
+        } while ((pi = (esp_partition_next(pi))));
+    }
+}
+
+// Locate the partition for the little file system
+bool findSpiffsPartition(void)
+{
+    esp_partition_iterator_t pi = esp_partition_find(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL);
+    if (pi != NULL)
+    {
+        do
+        {
+            const esp_partition_t *p = esp_partition_get(pi);
+            if (strcmp(p->label, "spiffs") == 0)
+                return true;
+        } while ((pi = (esp_partition_next(pi))));
+    }
+    return false;
 }
 
 // Verify table sizes match enum definitions

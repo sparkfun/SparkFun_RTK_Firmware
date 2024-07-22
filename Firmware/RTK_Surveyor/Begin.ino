@@ -283,6 +283,8 @@ void beginBoard()
         settings.enablePrintBatteryMessages = false; // No pesky battery messages
     }
 
+    displaySfeFlame();
+
     char versionString[21];
     getFirmwareVersion(versionString, sizeof(versionString), true);
     systemPrintf("SparkFun RTK %s %s\r\n", platformPrefix, versionString);
@@ -361,6 +363,9 @@ void beginBoard()
 
 void beginSD()
 {
+    if(sdCardForcedOffline == true)
+        return;
+
     bool gotSemaphore;
 
     online.microSD = false;
@@ -444,6 +449,8 @@ void beginSD()
                 {
                     systemPrintln("SD init failed - using SPI and SdFat. Is card formatted?");
                     digitalWrite(pin_microSD_CS, HIGH); // Be sure SD is deselected
+
+                    sdCardForcedOffline = true; //Prevent future scans for SD cards
 
                     // Check reset count and prevent rolling reboot
                     if (settings.resetCount < 5)
@@ -807,13 +814,14 @@ void beginGNSS()
         // Construct the firmware version as uint8_t. Note: will fail above 2.55!
         zedFirmwareVersionInt = (theGNSS.getFirmwareVersionHigh() * 100) + theGNSS.getFirmwareVersionLow();
 
-        // Check this is known firmware
+        // Check if this is known firmware
         //"1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20
         //"1.21" - F9R HPS v1.21
         //"1.30" - ZED-F9P (HPG) released Dec, 2021. Also ZED-F9R (HPS) released Sept, 2022
         //"1.32" - ZED-F9P released May, 2022
+        //"1.50" - ZED-F9P released July, 2024
 
-        const uint8_t knownFirmwareVersions[] = {100, 112, 113, 120, 121, 130, 132};
+        const uint8_t knownFirmwareVersions[] = {100, 112, 113, 120, 121, 130, 132, 150};
         bool knownFirmware = false;
         for (uint8_t i = 0; i < (sizeof(knownFirmwareVersions) / sizeof(uint8_t)); i++)
         {

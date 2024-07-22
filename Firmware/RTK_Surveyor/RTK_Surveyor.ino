@@ -60,10 +60,34 @@
 //    the minor firmware version
 #define RTK_IDENTIFIER (FIRMWARE_VERSION_MAJOR * 0x10 + FIRMWARE_VERSION_MINOR)
 
+#define NTRIP_SERVER_MAX            2
+
+#ifdef COMPILE_ETHERNET
+#include <Ethernet.h> // http://librarymanager/All#Arduino_Ethernet
+#include "SparkFun_WebServer_ESP32_W5500.h" //http://librarymanager/All#SparkFun_WebServer_ESP32_W5500 v1.5.5
+#endif // COMPILE_ETHERNET
+
+#ifdef COMPILE_WIFI
+#include "ESP32OTAPull.h" //http://librarymanager/All#ESP-OTA-Pull Used for getting
+#include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
+#include <DNSServer.h>        //Built-in.
+#include <ESPmDNS.h>      //Built-in.
+#include <HTTPClient.h>   //Built-in. Needed for ThingStream API for ZTP
+#include <PubSubClient.h> //http://librarymanager/All#PubSubClient_MQTT_Lightweight by Nick O'Leary v2.8.0 Used for MQTT obtaining of keys
+#include <WiFi.h>             //Built-in.
+#include <WiFiClientSecure.h> //Built-in.
+#include <WiFiMulti.h>        //Built-in.
+#endif // COMPILE_WIFI
+
+#if COMPILE_NETWORK
+#include <SSLClientESP32.h> // http://librarymanager/All#SSLClientESP32
+#include "X509_Certificate_Bundle.h" // Root certificates
+#endif // COMPILE_NETWORK
+
 #include "settings.h"
 
 #define MAX_CPU_CORES 2
-#define IDLE_COUNT_PER_SECOND 1000
+#define IDLE_COUNT_PER_SECOND 515400 //Found by empirical sketch
 #define IDLE_TIME_DISPLAY_SECONDS 5
 #define MAX_IDLE_TIME_COUNT (IDLE_TIME_DISPLAY_SECONDS * IDLE_COUNT_PER_SECOND)
 #define MILLISECONDS_IN_A_SECOND 1000
@@ -200,16 +224,18 @@ char logFileName[sizeof("SFE_Reference_Station_230101_120101.ubx_plusExtraSpace"
 // Over-the-Air (OTA) update support
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-#if COMPILE_NETWORK
-#include <SSLClientESP32.h> // http://librarymanager/All#SSLClientESP32
-#include "X509_Certificate_Bundle.h" // Root certificates
-#endif // COMPILE_NETWORK
 #include <ArduinoJson.h>  //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
 
 #include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
 
+#define NETWORK_STOP(type)                                                                                                    \
+    {                                                                                                                  \
+        if (settings.debugNetworkLayer)                                                                                   \
+            systemPrintf("networkStop called by %s %d\r\n", __FILE__, __LINE__);                                          \
+        networkStop(type);                                                                                                    \
+    }
+
 #ifdef COMPILE_WIFI
-#include "ESP32OTAPull.h" //http://librarymanager/All#ESP-OTA-Pull Used for getting
 
 #define WIFI_STOP()                                                         \
 {                                                                           \
@@ -230,19 +256,6 @@ unsigned int binBytesSent = 0;         // Tracks firmware bytes sent over WiFi O
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 // Connection settings to NTRIP Caster
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#ifdef COMPILE_WIFI
-#include <ESPmDNS.h>      //Built-in.
-#include <HTTPClient.h>   //Built-in. Needed for ThingStream API for ZTP
-#include <PubSubClient.h> //http://librarymanager/All#PubSubClient_MQTT_Lightweight by Nick O'Leary v2.8.0 Used for MQTT obtaining of keys
-#include <WiFi.h>             //Built-in.
-#include <WiFiClientSecure.h> //Built-in.
-#include <WiFiMulti.h>        //Built-in.
-#include <DNSServer.h>        //Built-in.
-
-#include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
-
-#endif  // COMPILE_WIFI
-
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
 bool enableRCFirmware = false;                // Goes true from AP config page
@@ -567,7 +580,6 @@ const uint8_t ESPNOW_MAX_PEERS = 5; // Maximum of 5 rovers
 // Ethernet
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_ETHERNET
-#include <Ethernet.h> // http://librarymanager/All#Arduino_Ethernet
 IPAddress ethernetIPAddress;
 IPAddress ethernetDNS;
 IPAddress ethernetGateway;
@@ -584,14 +596,10 @@ class derivedEthernetUDP : public EthernetUDP
 volatile struct timeval ethernetNtpTv; // This will hold the time the Ethernet NTP packet arrived
 bool ntpLogIncreasing;
 
-#include "SparkFun_WebServer_ESP32_W5500.h" //http://librarymanager/All#SparkFun_WebServer_ESP32_W5500 v1.5.5
 #endif  // COMPILE_ETHERNET
 
 unsigned long lastEthernetCheck = 0; // Prevents cable checking from continually happening
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-#include "NetworkClient.h" //Supports both WiFiClient and EthernetClient
-#include "NetworkUDP.h" //Supports both WiFiUdp and EthernetUdp
 
 // Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -624,6 +632,7 @@ uint32_t lastRTCAttempt = 0;      // Wait 1000ms between checking GNSS for curre
 uint32_t lastRTCSync = 0;         // Time in millis when the RTC was last sync'd
 bool rtcSyncd = false;            // Set to true when the RTC has been sync'd via TP pulse
 uint32_t lastPrintPosition = 0;   // For periodic display of the position
+uint32_t lastPrintState = 0;      // For periodic display of the RTK state (solution)
 
 uint32_t lastBaseIconUpdate = 0;
 bool baseIconDisplayed = false;   // Toggles as lastBaseIconUpdate goes above 1000ms
@@ -664,8 +673,6 @@ bool lbandCorrectionsReceived = false; // Used to display L-Band SIV icon when c
 unsigned long lastLBandDecryption = 0; // Timestamp of last successfully decrypted PMP message
 volatile bool mqttMessageReceived = false; // Goes true when the subscribed MQTT channel reports back
 uint8_t leapSeconds = 0;                   // Gets set if GNSS is online
-unsigned long systemTestDisplayTime = 0;   // Timestamp for swapping the graphic during testing
-uint8_t systemTestDisplayNumber = 0;       // Tracks which test screen we're looking at
 unsigned long rtcWaitTime = 0; // At poweron, we give the RTC a few seconds to update during PointPerfect Key checking
 
 TaskHandle_t idleTaskHandle[MAX_CPU_CORES];
@@ -713,6 +720,9 @@ unsigned long shutdownNoChargeTimer = 0;
 
 RtkMode_t rtkMode; // Mode of operation
 
+bool sdCardForcedOffline = false; //Goes true if a isPresent() test passes, but then sdFat fails to mount SD card.
+//See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/758
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 #define DEAD_MAN_WALKING_ENABLED    0
@@ -724,6 +734,7 @@ RtkMode_t rtkMode; // Mode of operation
 volatile bool deadManWalking;
 #define DMW_if                  if (deadManWalking)
 #define DMW_c(string)           DMW_if systemPrintf("%s called\r\n", string);
+#define DMW_ds(routine, dataStructure) DMW_if routine(dataStructure, dataStructure->state);
 #define DMW_m(string)           DMW_if systemPrintln(string);
 #define DMW_r(string)           DMW_if systemPrintf("%s returning\r\n",string);
 #define DMW_rs(string, status)  DMW_if systemPrintf("%s returning %d\r\n",string, (int32_t)status);
@@ -772,6 +783,7 @@ volatile bool deadManWalking;
 #define deadManWalking              0
 #define DMW_if                      if (0)
 #define DMW_c(string)
+#define DMW_ds(routine, dataStructure)
 #define DMW_m(string)
 #define DMW_r(string)
 #define DMW_rs(string, status)
@@ -888,6 +900,13 @@ void setup()
 
     DMW_c("beginDisplay");
     beginDisplay(); // Start display to be able to display any errors
+
+    DMW_c("findSpiffsPartition");
+    if (!findSpiffsPartition())
+    {
+        printPartitionTable(); // Print the partition tables
+        reportFatalError("spiffs partition not found!");
+    }
 
     DMW_c("beginFS");
     beginFS(); // Start LittleFS file system for settings
@@ -1015,6 +1034,9 @@ void loop()
 
     DMW_c("printPosition");
     printPosition(); // Periodically print GNSS coordinates if enabled
+
+    DMW_c("printRTKState");
+    printRTKState(); // Periodically print RTK state (solution) if enabled
 
     // A small delay prevents panic if no other I2C or functions are called
     delay(10);

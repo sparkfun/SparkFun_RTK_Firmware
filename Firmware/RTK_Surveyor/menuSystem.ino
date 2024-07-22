@@ -80,7 +80,7 @@ void menuSystem()
         systemPrint("WiFi MAC Address: ");
         systemPrintf("%02X:%02X:%02X:%02X:%02X:%02X\r\n", wifiMACAddress[0], wifiMACAddress[1], wifiMACAddress[2],
                      wifiMACAddress[3], wifiMACAddress[4], wifiMACAddress[5]);
-        if (wifiState == WIFI_CONNECTED)
+        if (wifiState == WIFI_STATE_CONNECTED)
             wifiDisplayIpAddress();
 #endif // COMPILE_WIFI
 
@@ -136,7 +136,8 @@ void menuSystem()
         ntripClientPrintStatus();
 
         // Display NTRIP Server status and uptime
-        ntripServerPrintStatus();
+        for (int serverIndex = 0; serverIndex < NTRIP_SERVER_MAX; serverIndex++)
+            ntripServerPrintStatus(serverIndex);
 
         systemPrintf("Filtered by parser: %d NMEA / %d RTCM / %d UBX\r\n", failedParserMessages_NMEA,
                      failedParserMessages_RTCM, failedParserMessages_UBX);
@@ -647,6 +648,8 @@ void menuDebugSoftware()
             systemPrintf("%d (%d days %d:%02d:%02d)\r\n", settings.rebootSeconds, days, hours, minutes, seconds);
         }
 
+        systemPrintf("34) Print partition table\r\n");
+
         // Tasks
         systemPrint("50) Task Highwater Reporting: ");
         if (settings.enableTaskReports == true)
@@ -716,6 +719,8 @@ void menuDebugSoftware()
                 }
             }
         }
+        else if (incoming == 34)
+            printPartitionTable();
         else if (incoming == 50)
             settings.enableTaskReports ^= 1;
         else if (incoming == 60)
@@ -1421,6 +1426,28 @@ void printCurrentConditions()
 
         systemPrint(", Altitude (m): ");
         systemPrint(altitude, 1);
+
+        systemPrintln();
+    }
+}
+
+void printCurrentRTKState()
+{
+    if (online.gnss == true)
+    {
+        systemPrint("RTK solution: ");
+
+        if (carrSoln == 0) // No RTK
+            systemPrint("NONE");
+
+        else if (carrSoln == 1) // RTK Float
+            systemPrint("FLOAT");
+
+        else if (carrSoln == 2) // RTK Fix
+            systemPrint("FIX");
+
+        else
+            systemPrint("UNKNOWN!");
 
         systemPrintln();
     }

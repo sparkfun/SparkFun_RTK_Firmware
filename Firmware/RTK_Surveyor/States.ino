@@ -27,7 +27,7 @@ void updateSystemState()
             }
         }
 
-        if (settings.enablePrintState && ((millis() - lastStateTime) > 15000))
+        if (settings.enablePrintStates && ((millis() - lastStateTime) > 15000))
         {
             changeState(systemState);
             lastStateTime = millis();
@@ -121,7 +121,7 @@ void updateSystemState()
 
             setMuxport(settings.dataPortChannel); // Return mux to original channel
 
-            networkStop(NETWORK_TYPE_WIFI);
+            NETWORK_STOP(NETWORK_TYPE_WIFI);
             WIFI_STOP();      // Stop WiFi, ntripClient will start as needed.
             bluetoothStart(); // Turn on Bluetooth with 'Rover' name
             radioStart();     // Start internal radio if enabled, otherwise disable
@@ -254,7 +254,7 @@ void updateSystemState()
             // Allow WiFi to continue running if NTRIP Client is needed for assisted survey in
             if (wifiIsNeeded() == false)
             {
-                networkStop(NETWORK_TYPE_WIFI);
+                NETWORK_STOP(NETWORK_TYPE_WIFI);
                 WIFI_STOP();
             }
 

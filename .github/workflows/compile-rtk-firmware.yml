@@ -67,7 +67,7 @@ jobs:
         run: arduino-cli lib install
           ArduinoJson@6.19.4
           ESP32Time@2.0.0
-          ESP32_BleSerial@1.0.4
+          ESP32_BleSerial@1.0.5
           "ESP32-OTA-Pull"@1.0.0
           Ethernet@2.0.2
           JC_Button@2.1.2

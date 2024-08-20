@@ -15,9 +15,10 @@ To achieve an RTK Fix, SparkFun RTK products must be provided with a correction 
 These services cover entire countries and regions but charge a monthly fee. Easy to use, but the most expensive.
 
 * [PointOneNav](https://app.pointonenav.com/trial?src=sparkfun) ($50/month) - US, EU
+* [Onocoy](https://console.onocoy.com/explorer) ($25/month) - US, EU, Australia, and many other partial areas
 * [Skylark](https://www.swiftnav.com/skylark) ($29 to $69/month) - US, EU, Japan, Australia
-* [Vector RTK](https://vectorrtk.com/) ($115/month) - UK
 * [SensorCloud RTK](https://rtk.sensorcloud.com/pricing/) ($100/month) partial US, EU
+* [Premium Positioning](https://www.premium-positioning.com) (~$315/month) partial EU
 * [KeyNetGPS](https://www.keypre.com/KeynetGPS) ($375/month) North Eastern US
 * [Hexagon/Leica](https://hxgnsmartnet.com/en-US) ($500/month) - partial US, EU
 

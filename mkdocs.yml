@@ -145,7 +145,7 @@ nav:
       - menu_ethernet.md
       - menu_gnss.md
       - menu_messages.md
-      - menu_network.md
+      - menu_tcp_udp.md
       - menu_ntp.md
       - menu_pointperfect.md
       - menu_ports.md

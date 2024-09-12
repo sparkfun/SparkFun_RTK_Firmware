@@ -1,8 +1,109 @@
 # Android
 
-Torch: ![Feature Supported](img/Icons/GreenDot.png)
+Surveyor: ![Feature Supported](img/Icons/GreenDot.png) / Express: ![Feature Supported](img/Icons/GreenDot.png) / Express Plus: ![Feature Supported](img/Icons/GreenDot.png) / Facet: ![Feature Supported](img/Icons/GreenDot.png) / Facet L-Band: ![Feature Supported](img/Icons/GreenDot.png) / Reference Station: ![Feature Supported](img/Icons/GreenDot.png)
 
-While we recommend [SW Maps for Android](https://docs.sparkfun.com/SparkFun_RTK_Firmware/gis_software_android/#sw-maps), there are a variety of 3rd party apps available for GIS and surveying. We will cover a few examples below that should give you an idea of how to get the incoming NMEA data into the software of your choice.
+While we recommend [SW Maps for Android](gis_software_android/#sw-maps), there are a variety of 3rd party apps available for GIS and surveying for [Android](gis_software_android.md), [iOS](gis_software_ios.md), and [Windows](gis_software_windows.md). We will cover a few examples below that should give you an idea of how to get the incoming NMEA data into the software of your choice.
+
+## ArcGIS Field Maps
+
+[ArcGIS Field Maps](https://play.google.com/store/apps/details?id=com.esri.fieldmaps&hl=en_US) by Esri is a popular GIS app. Unfortunately it does not have a built in NTRIP Client to allow high precision corrections down to the RTK device. To enable high-precision, a [mock location](connecting_bluetooth.md/#enable-mock-location) and an intermediary app such as [GNSS Master](gis_software_android.md/#gnss-master) or [Lefebure](gis_software_android.md/#lefebure) is needed.
+
+Once a [mock location](connecting_bluetooth.md/#enable-mock-location) provider is setup, open Field Maps.
+![Field Maps main menu](<img/FieldMaps/SparkFun RTK Field Maps - Main.png>)
+
+Select **World Imagery**.
+
+![ArcGIS Field Maps with 12mm accuracy](<img/FieldMaps/SparkFun RTK Field Maps - RTK Fix.png>)
+
+*ArcGIS Field Maps with 12mm accuracy*
+
+Field Maps will use the device's internal location as its default location provider. With GNSS Master or Lefebure providing the mock location to the phone, Field Maps will have a super precise GNSS location and data collection can begin.
+
+## ArcGIS QuickCapture
+
+[ArcGIS QuickCapture](https://play.google.com/store/apps/details?id=com.esri.arcgisquickcapture&hl=en_US) by Esri is a popular GIS app. Unfortunately it does not allow Bluetooth connections to 3rd party RTK devices. To enable a connection to a SparkFun RTK device, a [mock location](connecting_bluetooth.md/#enable-mock-location) and an intermediary app such as [GNSS Master](gis_software_android.md/#gnss-master) or [Lefebure](gis_software_android.md/#lefebure) is needed.
+
+Once a [mock location](connecting_bluetooth.md/#enable-mock-location) provider is setup, open QuickCapture.
+
+![QuickCapture Main Window](<img/QuickCapture/SparkFun RTK QuickCapture - Main Window.png>)
+
+For the purposes of this demonstration, click *Continue without signing in*.
+
+![Add project button](<img/QuickCapture/SparkFun RTK QuickCapture - Workspace.png>)
+
+Select the **+** then **Browse Projects**.
+
+![Select BioBlitz](<img/QuickCapture/SparkFun RTK QuickCapture - Select Project.png>)
+
+Select a project.
+
+![BioBlitz options](<img/QuickCapture/SparkFun RTK QuickCapture - BioBlitz.png>)
+
+From the BioBlitz project screen we can see we have a GPS accuracy of less than 1 ft. The RTK device has RTK fix and is providing extremely accurate (better than 20mm or 1") positional data.
+
+Click the map icon in the upper right.
+
+![BioBlitz Map](<img/QuickCapture/SparkFun RTK QuickCapture - BioBlitz Map.png>)
+
+The location of the receiver is shown on a map. With GNSS Master or Lefebure providing the mock location to the phone, QuickCapture will have a very precise GNSS location and data collection can begin.
+
+## ArcGIS Survey123
+
+[ArcGIS Survey123](https://play.google.com/store/apps/details?id=com.esri.survey123&hl=en_US) by Esri is a popular GIS app. Unfortunately it does not allow Bluetooth connections to 3rd party RTK devices. To enable a connection to a SparkFun RTK device, a [mock location](connecting_bluetooth.md/#enable-mock-location) and an intermediary app such as [GNSS Master](gis_software_android.md/#gnss-master) or [Lefebure](gis_software_android.md/#lefebure) is needed.
+
+Once a [mock location](connecting_bluetooth.md/#enable-mock-location) provider is setup, open Survey123.
+
+![Survey123 Splash](<img/Survey123/SparkFun RTK Survey123 - Splash.png>)
+
+For the purposes of this demonstration, click *Continue without signing in*.
+
+![Main window](<img/Survey123/SparkFun RTK Survey123 - Main.png>)
+
+Select the satellite icon in the upper right corner.
+
+![Location status showing RTK Fix](<img/Survey123/SparkFun RTK Survey123 - Location Status.png>)
+
+If the mock location provider app is running, you should see the Lat/Lon/Alt from the RTK device. In the above image, RTK Fix is achieved with 0.033ft (10mm) accuracy. Click on the map icon.
+
+![Survey123 Map](<img/Survey123/SparkFun RTK Survey123 - Map.png>)
+
+The location of the receiver is shown on a map. With GNSS Master or Lefebure providing the mock location to the phone, Survey123 will have a very precise GNSS location and data collection can begin.
+
+## Diamond Maps
+
+[Diamond Maps](https://diamondmaps.com/) is a great solution for utilities and municipalities. $20/month GIS software with many great features. Get the Android app [here](https://play.google.com/store/apps/details?id=com.diamondmaps.OfflineApp&hl=en_US).
+
+Be sure your device is [paired over Bluetooth](connecting_bluetooth.md#android).
+
+![Home Screen](<img/DiamondMaps/SparkFun RTK Diamond Maps - Home Screen.png>)
+
+From the Home Screen, click on the 'hamburger' settings button in the top left corner.
+
+![Settings Menu](<img/DiamondMaps/SparkFun RTK Diamond Maps - Settings Menu.png>)
+
+Select **GPS Status**.
+
+![Click GPS Source](<img/DiamondMaps/SparkFun RTK Diamond Maps - GNSS Source.png>)
+
+Click on the **Select a GPS Source** box and select the RTK device that was previously paired with.
+
+![GPS details](<img/DiamondMaps/SparkFun RTK Diamond Maps - GNSS Source Selected.png>)
+
+Once a receiver is selected, its status will be shown in the GPS Setup window. Additionally, an NTRIP Client is available for corrections.
+
+**NTRIP Client**
+
+If you’re using a serial radio to connect a Base to a Rover for your correction data, or if you're using the RTK Facet L-Band with built-in corrections, you can skip this part.
+
+![NTRIP Settings](<img/DiamondMaps/SparkFun RTK Diamond Maps - NTRIP Settings.png>)
+
+From this window, an NTRIP Client can be configured. Enter your NTRIP Caster information then click on **START**. Click *Close* to exit out to the main window.
+
+![RTK Fix at SparkFun](<img/DiamondMaps/SparkFun RTK Diamond Maps - RTK Fix.png>)
+
+*0.03ft accuracy shown in green*
+
+Closing the GPS Source window will show the map as well as the relative accuracy in feet. 
 
 ## Field Genius
 
@@ -73,6 +174,78 @@ Select 'Done' then from the main menu select 'Survey' to begin using the device.
 ![Surveying Screen](img/FieldGenius/Field%20Genius%201.png)
 
 Now you can begin using the SparkFun RTK device with Field Genius.
+
+## GNSS Master
+
+[GNSS Master](https://play.google.com/store/apps/details?id=com.gnssmaster&hl=en_US) is a great utility when a given GIS app does not have an NTRIP Client or a way to connect over Bluetooth. GNSS Master connects to a RTK device over Bluetooth (or Bluetooth BLE) as well as any correction source (NTRIP, PointPerfect, even USB Serial), and then acts as the phone's location using [Mock Location](connecting_bluetooth.md/#enable-mock-location).
+
+**Note:** Most GIS apps will not need GNSS Master or Mock Location enabled and this section can be skipped.
+
+Read how to [Enable Mock Location](connecting_bluetooth.md/#enable-mock-location).
+
+![GNSS Master main menu](<img/GNSSMaster/SparkFun RTK GNSS Master - Main.png>)
+
+From the GNSS Master main screen, select **GNSS Receiver Connection**.
+
+![GNSS Receiver Selection](<img/GNSSMaster/SparkFun RTK GNSS Master - Receiver Selection.png>)
+
+Pick the RTK device to connect to from the list, then click *Connect*. The **Data Rate** should increase indicating data flowing from the RTK device to the GNSS Master app. Click the back button to return to the main screen.
+
+![Correction Input](<img/GNSSMaster/SparkFun RTK GNSS Master - Correction Input.png>)
+
+Select **Correction Input** to setup an NTRIP Client.
+
+![Corrections List](<img/GNSSMaster/SparkFun RTK GNSS Master - Correction Source List.png>)
+
+This is one of the powerful features of GNSS Master - multiple connections can be entered. This is helpful if you regularly switch between locations or NTRIP Casters and your GIS software only allows entry of a single NTRIP source. GNSS Master supports corrections from NTRIP Casters but also PointPerfect and a direct serial connection to a GNSS receiver. This can be really helpful in advanced setups.
+
+![NTRIP Client information](<img/GNSSMaster/SparkFun RTK GNSS Master - NTRIP Client Input.png>)
+
+Enter your NTRIP Client information then click **SAVE**.
+
+![Data from Caster](<img/GNSSMaster/SparkFun RTK GNSS Master - Correction Source Data Flowing.png>)
+
+Once connected the *Data Rate* should increase above 0 bytes per second.  Return to the home screen by hitting the back button.
+
+![Enable Mock Location](<img/GNSSMaster/SparkFun RTK GNSS Master - Mock Location.png>)
+
+Enable mock location. If GNSS Master throws an error, re-enable GNSS Master as your [Mock Location provider](connecting_bluetooth.md/#enable-mock-location) in Developer Options.
+
+Once enabled, any GIS app that selects 'Internal' or 'Phone Location' as its source will instead be fed the high precision NMEA being generated by the RTK device connected over Bluetooth.
+
+## Lefebure 
+
+[Lefebure NTRIP Client](https://play.google.com/store/apps/details?id=com.lefebure.ntripclient&hl=en_US) is the *original* app for getting correction from an NTRIP caster and down over Bluetooth. It's an oldie but a goodie.
+
+**Note:** Most GIS apps will not need Lefebure or Mock Location enabled and this section can be skipped.
+
+The problem is that if Lefebure is connected to the RTK device providing RTCM corrections over Bluetooth, then other GIS applications cannot use the same Bluetooth connection at the same time. That's where mock locations save the day. Lefebure can be setup to take over or 'mock' the GPS location being reported by the phone. Nearly all GIS apps can use the phone's GPS location. So if the phone's location is magically super precise, then Lefebure can be the NTRIP Client and data provide, and your GIS app is none the wiser, and uses the phone's location.
+
+Read how to [Enable Mock Location](connecting_bluetooth.md/#enable-mock-location).
+
+![LEfebure settings](<img/Lefebure/SparkFun RTK Lefebure - Main.png>)
+
+Once mock locations are enabled, click on the *Settings* gear in the top left corner.
+
+![NTRIP Settings](<img/Lefebure/SparkFun RTK Lefebure - NTRIP Settings.png>)
+
+If needed, an NTRIP Client can be setup to provide corrections over Bluetooth to the RTK device.
+
+![NTRIP Client Settings](<img/Lefebure/SparkFun RTK Lefebure - NTRIP Client Settings.png>)
+
+Enter the Caster information and hit the back button.
+
+![Receive Settings](<img/Lefebure/SparkFun RTK Lefebure - Receiver Settings.png>)
+
+Select *Receiver Settings*.
+
+![Bluetooth and Mock location enable](<img/Lefebure/SparkFun RTK Lefebure - Receiver Settings Bluetooth.png>)
+
+Select the RTK device that has been paired over Bluetooth. Also enable Mock Locations. Hit the back button to return to the main screen.
+
+![alt text](<img/Lefebure/SparkFun RTK Lefebure - Getting Data with Mock Location.png>)
+
+Press the **Connect** button. The app will connect to the NTRIP Caster. Now, any GIS app that selects 'Internal' or 'Phone Location' as its source will instead be fed the high precision NMEA being generated by the RTK device connected over Bluetooth.
 
 ## QField
 
@@ -213,6 +386,56 @@ Known Issues:
 
 To verify the NMEA sentences are being delivered correctly, Survey Master has a built-in tool. Select the Device->Rover->More->'H-Terminal'. 
 
+## SurPad
+
+[SurPad](https://surpadapp.com/) is an Android app available as a free trial for 30-days. It's loaded as an APK (rather than through Google Play).
+
+Be sure your RTK device has been [paired over Bluetooth](connecting_bluetooth.md#android) to your phone.
+
+![SurPad Home Screen](<img/SurPad/SparkFun RTK - SurPad - Home Screen.png>)
+
+*SurPad Home Screen*
+
+Create a project and get to the home screen. Shown above, click on the GNSS receiver icon.
+
+![SurPad connecting over Bluetooth](<img/SurPad/SparkFun RTK - SurPad - Communication.png>)
+
+*SurPad connecting over Bluetooth*
+
+Set the **Device manufacturer** to *Other*, **Device type** to *RTK(NMEA0183)*, and **Communication Mode** to *Bluetooth*. Select the SparkFun RTK device that you would like to connect to on the **Paired Devices** list and then click *Connect*.
+
+Once connected to the device a *Debug* button will appear. This is one of the nice features of SurPad: Running debug will allow you to inspect the NMEA coming across the link.
+
+Once done, press the back arrow (top left corner) to return to the home screen. 
+
+![SurPad Point Survey map](<img/SurPad/SparkFun RTK - SurPad - Point Survey.png>)
+
+*SurPad Point Survey map*
+
+Above: From the home screen press the **Survey** button at the bottom, then **Point Survey** to bring up the map.
+
+In the top left corner, press the green hamburger + cell phone icon. This will open the NTRIP settings.
+
+![SurPad Data Link NTRIP Configuration](<img/SurPad/SparkFun RTK - SurPad - Data Link.png>)
+
+*SurPad Data Link NTRIP Configuration*
+
+Change the **Connect Mode** from *TCP Client* to *NTRIP*. If you are unable to edit or change the **Connect Mode** from TCP Client be sure the TCP Client is stopped by pressing the *Stop* button in the lower left corner (located in the same spot as the highlighted *Start*).
+
+![SurPad NTRIP Connection](<img/SurPad/SparkFun RTK - SurPad - Communication NTRIP Connected.png>)
+
+*SurPad NTRIP Connection*
+
+Enter the information for your NTRIP caster. In the above example, we are connected to the SparkFun base station on RTK2Go. For RTK2Go you will need to enter a valid email address for a user name but a password is not required.
+
+Click on *Start* and you should see the 'Receive data' progress bar (highlighted above) increase each second indicating a connection. Once complete, press 'Apply' to return to the map.
+
+![SurPad with RTK Fix](<img/SurPad/SparkFun RTK - SurPad - Map with RTK Fix.png>)
+
+*SurPad with RTK Fix*
+
+Above: After a few moments, the RTK device should move to RTK Float, then RTK Fix. You can see the age of the RTCM data in the upper bar, along with the horizontal (23mm) and vertical (31mm) accuracy estimates. Now you can begin taking points.
+
 ## SurvPC
 
 Be sure your device is [paired over Bluetooth](connecting_bluetooth.md#windows).
@@ -336,8 +559,6 @@ We need to send RTCM correction data from the phone back to the RTK device so th
 Enter your NTRIP Caster credentials and click connect. You will see bytes begin to transfer from your phone to the RTK device. Within a few seconds, the RTK device will go from ~300mm accuracy to 14mm. Pretty nifty, no?
 
 Once you have a full RTK fix you'll notice the location bubble in SW Maps turns green. Just for fun, rock your rover monopole back and forth on a fixed point. You'll see your location accurately reflected in SW Maps. Millimeter location precision is a truly staggering thing.
-
-
 
 ## Vespucci
 

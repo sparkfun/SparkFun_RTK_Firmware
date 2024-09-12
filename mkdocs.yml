@@ -139,20 +139,21 @@ nav:
       - configure_with_settings_file.md
       - configure_with_ucenter.md
   - Configuration Menus:
+      - menu_base.md
+      - menu_data_logging.md
+      - menu_debug.md
+      - menu_ethernet.md
       - menu_gnss.md
       - menu_messages.md
-      - menu_base.md
-      - menu_wifi.md
-      - menu_ports.md
-      - menu_data_logging.md
-      - menu_profiles.md
-      - menu_pointperfect.md
-      - menu_sensor.md
-      - menu_radios.md
-      - menu_system.md
-      - menu_ethernet.md
+      - menu_network.md
       - menu_ntp.md
-      - menu_debug.md
+      - menu_pointperfect.md
+      - menu_ports.md
+      - menu_profiles.md
+      - menu_radios.md
+      - menu_sensor.md
+      - menu_system.md
+      - menu_wifi.md
   - Hardware:
       - firmware_update.md
       - displays.md

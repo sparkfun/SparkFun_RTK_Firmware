@@ -20,6 +20,44 @@ When powered on, the RTK product will broadcast itself as either '[Platform] Rov
 
 **Note:** *B022* is the last four digits of your unit's MAC address and will be unique to the device in front of you. This is helpful in case there are multiple RTK devices within Bluetooth range.
 
+### Enable Mock Location
+
+Most GIS applications will gracefully handle the Bluetooth connection to the RTK device and provide an NTRIP Client for getting the RTCM corrections so this section can be skipped. If, in the rare case, a GIS app does not allow NTRIP corrections, Mock Locations can be enabled under Android. Then a data provider like Lefebure or GNSS Master can be used to act as a middle-man.
+
+Before proceeding, it is recommended to have the mock location provider app already installed. So if you haven't already, consider installing Lefebure(gis_software_android.md/#lefebure), [GNSS Master](gis_software_android.md/#gnss-master), etc.
+
+To enable **Mock Locations**, *Developer Mode* in Android must be enabled. It is best to google the [most recent procedure for this](https://www.google.com/search?q=how+to+allow+mock+location+on+android) but the following procedure should work:
+
+1) Open Android settings ![alt text](<img/MockLocation/SparkFun RTK Mock Location - Settings.png>)
+
+2) Open *About phone*
+
+   ![Build Number box](<img/MockLocation/SparkFun RTK Mock Location - Build Number.png>)
+
+3) Scroll to the bottom and click on *Build number* five or more times. The device will prompt as more taps are required.
+
+Once Developer Mode is enabled:
+
+1) Open Android settings ![alt text](<img/MockLocation/SparkFun RTK Mock Location - Settings.png>)
+
+2) Open *System*
+    
+   ![Develop options menu](<img/MockLocation/SparkFun RTK Mock Location - Developer Options.png>)
+
+3) Open *Developer options*
+
+   ![Mock Location button](<img/MockLocation/SparkFun RTK Mock Location - Select Mock Location App.png>)
+
+4) Scroll all the way to the bottom of a very long list of developer options. 
+
+5) Select the app to use for Mock Location. This is usually [Lefebure](gis_software_android.md/#lefebure) or [GNSS Master](gis_software_android.md/#gnss-master) but can be tailored as needed.
+
+## Apple iOS
+
+Please see [iOS GIS Software](gis_software_ios.md) for information about how to connect to individual GIS apps. Some require a BLE connection and some require a WiFi hotspot connection.
+
+More information is available on the [System Menu](menu_system.md) for switching between Bluetooth SPP and BLE.
+
 ## Windows
 
 Open settings and navigate to Bluetooth. Click **Add device**.
@@ -59,11 +97,3 @@ The device is now paired and a series of COM ports will be added under 'Device M
 *NMEA received over the Bluetooth COM port*
 
 If necessary, you can open a terminal connection to one of the COM ports. Because the Bluetooth driver creates multiple COM ports, it's impossible to tell which is the serial stream so it's easiest to just try each port until you see a stream of NMEA sentences (shown above). You're all set! Be sure to close out the terminal window so that other software can use that COM port.
-
-## Apple iOS
-
-Please see the [Apple iOS](gis_software.md#apple-ios) example of connecting to SW Maps.
-
-Apple products do not support Bluetooth SPP. That's ok! The SparkFun RTK devices support Bluetooth Low Energy (BLE) which does work with iOS.
-
-More information is available on the [System Menu](menu_system.md) for switching between Bluetooth SPP and BLE.

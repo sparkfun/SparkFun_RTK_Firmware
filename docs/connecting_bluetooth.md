@@ -24,7 +24,7 @@ When powered on, the RTK product will broadcast itself as either '[Platform] Rov
 
 Most GIS applications will gracefully handle the Bluetooth connection to the RTK device and provide an NTRIP Client for getting the RTCM corrections so this section can be skipped. If, in the rare case, a GIS app does not allow NTRIP corrections, Mock Locations can be enabled under Android. Then a data provider like Lefebure or GNSS Master can be used to act as a middle-man.
 
-Before proceeding, it is recommended to have the mock location provider app already installed. So if you haven't already, consider installing Lefebure(gis_software_android.md/#lefebure), [GNSS Master](gis_software_android.md/#gnss-master), etc.
+Before proceeding, it is recommended to have the mock location provider app already installed. So if you haven't already, consider installing [Lefebure](gis_software_android.md/#lefebure), [GNSS Master](gis_software_android.md/#gnss-master), etc.
 
 To enable **Mock Locations**, *Developer Mode* in Android must be enabled. It is best to google the [most recent procedure for this](https://www.google.com/search?q=how+to+allow+mock+location+on+android) but the following procedure should work:
 

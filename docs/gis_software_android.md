@@ -9,6 +9,7 @@ While we recommend [SW Maps for Android](gis_software_android/#sw-maps), there a
 [ArcGIS Field Maps](https://play.google.com/store/apps/details?id=com.esri.fieldmaps&hl=en_US) by Esri is a popular GIS app. Unfortunately it does not have a built in NTRIP Client to allow high precision corrections down to the RTK device. To enable high-precision, a [mock location](connecting_bluetooth.md/#enable-mock-location) and an intermediary app such as [GNSS Master](gis_software_android.md/#gnss-master) or [Lefebure](gis_software_android.md/#lefebure) is needed.
 
 Once a [mock location](connecting_bluetooth.md/#enable-mock-location) provider is setup, open Field Maps.
+
 ![Field Maps main menu](<img/FieldMaps/SparkFun RTK Field Maps - Main.png>)
 
 Select **World Imagery**.

@@ -140,6 +140,7 @@ jobs:
           cd Firmware/RTK_Surveyor/build/esp32.esp32.esp32/
           mkdir ${{ env.ARTIFACT }}
           mv RTK_Surveyor.ino.bin ${{ env.ARTIFACT }}
+          mv RTK_Surveyor.ino.elf ${{ env.ARTIFACT }}
 
       - name: Upload artifact directory to action - avoid double-zip
         uses: actions/upload-artifact@v3

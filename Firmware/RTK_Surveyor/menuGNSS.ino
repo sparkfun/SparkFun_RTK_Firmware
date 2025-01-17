@@ -464,6 +464,7 @@ void printZEDInfo()
     else if (zedModuleType == PLATFORM_F9R)
         systemPrintf("ZED-F9R firmware: %s\r\n", zedFirmwareVersion);
     else
+        // This will never be printed as beginGNSS defaults zedModuleType to PLATFORM_F9P
         systemPrintf("Unknown module with firmware: %s\r\n", zedFirmwareVersion);
 }
 

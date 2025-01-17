@@ -807,6 +807,15 @@ void beginGNSS()
     // Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
     if (theGNSS.getModuleInfo(1100) == true) // Try to get the module info
     {
+        // Clear the module type. Default to PLATFORM_F9P below - if needed
+        zedModuleType = 0;
+
+        // Determine if we have a ZED-F9P (Express/Facet) or an ZED-F9R (Express Plus/Facet Plus)
+        if (strstr(theGNSS.getModuleName(), "ZED-F9P") != nullptr)
+            zedModuleType = PLATFORM_F9P;
+        else if (strstr(theGNSS.getModuleName(), "ZED-F9R") != nullptr)
+            zedModuleType = PLATFORM_F9R;
+
         // Reconstruct the firmware version
         snprintf(zedFirmwareVersion, sizeof(zedFirmwareVersion), "%s %d.%02d", theGNSS.getFirmwareType(),
                  theGNSS.getFirmwareVersionHigh(), theGNSS.getFirmwareVersionLow());
@@ -815,13 +824,14 @@ void beginGNSS()
         zedFirmwareVersionInt = (theGNSS.getFirmwareVersionHigh() * 100) + theGNSS.getFirmwareVersionLow();
 
         // Check if this is known firmware
-        //"1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20
-        //"1.21" - F9R HPS v1.21
-        //"1.30" - ZED-F9P (HPG) released Dec, 2021. Also ZED-F9R (HPS) released Sept, 2022
-        //"1.32" - ZED-F9P released May, 2022
+        //"1.51" - ZED-F9P released November, 2024
         //"1.50" - ZED-F9P released July, 2024
+        //"1.32" - ZED-F9P released May, 2022
+        //"1.30" - ZED-F9P (HPG) released Dec, 2021. Also ZED-F9R (HPS) released Sept, 2022
+        //"1.21" - F9R HPS v1.21
+        //"1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20
 
-        const uint8_t knownFirmwareVersions[] = {100, 112, 113, 120, 121, 130, 132, 150};
+        const uint8_t knownFirmwareVersions[] = {151, 150, 132, 130, 121, 120, 113, 112, 100};
         bool knownFirmware = false;
         for (uint8_t i = 0; i < (sizeof(knownFirmwareVersions) / sizeof(uint8_t)); i++)
         {
@@ -832,17 +842,21 @@ void beginGNSS()
         if (!knownFirmware)
         {
             systemPrintf("Unknown firmware version: %s\r\n", zedFirmwareVersion);
-            zedFirmwareVersionInt = 99; // 0.99 invalid firmware version
+            // Let's be clever and allow ZED-F9P firmware versions higher than knownFirmwareVersions[0]
+            if ((zedModuleType == PLATFORM_F9P) && (zedFirmwareVersionInt > knownFirmwareVersions[0]))
+            {
+                zedFirmwareVersionInt = knownFirmwareVersions[0];
+                systemPrintf("Assuming firmware compatibility with %d.%02d\r\n", zedFirmwareVersionInt / 100, zedFirmwareVersionInt % 100);
+            }
+            else
+            {
+                zedFirmwareVersionInt = 99; // 0.99 invalid firmware version
+            }
         }
 
-        // Determine if we have a ZED-F9P (Express/Facet) or an ZED-F9R (Express Plus/Facet Plus)
-        if (strstr(theGNSS.getModuleName(), "ZED-F9P") != nullptr)
-            zedModuleType = PLATFORM_F9P;
-        else if (strstr(theGNSS.getModuleName(), "ZED-F9R") != nullptr)
-            zedModuleType = PLATFORM_F9R;
-        else
+        if (zedModuleType == 0)
         {
-            systemPrintf("Unknown ZED module: %s\r\n", theGNSS.getModuleName());
+            systemPrintf("Unknown ZED module: %s. Assuming compatibility with ZED-F9P\r\n", theGNSS.getModuleName());
             zedModuleType = PLATFORM_F9P;
         }
 

@@ -1,0 +1,149 @@
+name: RTK Firmware Non-Release Build
+on: 
+  workflow_dispatch:
+    branches: 
+
+env:
+  FILENAME_PREFIX: RTK_Surveyor_Firmware
+  FIRMWARE_VERSION_MAJOR: 99
+  FIRMWARE_VERSION_MINOR: 99
+  POINTPERFECT_TOKEN: ${{ secrets.POINTPERFECT_TOKEN }}
+
+jobs:
+  build:
+    
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%b_%d_%Y')" >> $GITHUB_OUTPUT
+
+      - name: Get current date
+        id: dateNoScores
+        run: echo "dateNoScores=$(date +'%b %d %Y')" >> $GITHUB_OUTPUT
+
+      - name: Extract branch name
+        run: echo "BRANCH=${{github.ref_name}}" >> $GITHUB_ENV
+
+      #File_Name_v3_1.bin
+      #File_Name_RC-Jan_26_2023.bin
+      - name: Create file ending and compiler flags based on branch
+        run: |
+            echo "FILE_ENDING_UNDERSCORE=_RC-${{ steps.date.outputs.date }}" >> "$GITHUB_ENV"
+            echo "FILE_ENDING_NOUNDERSCORE=_RC-${{ steps.dateNoScores.outputs.dateNoScores }}" >> "$GITHUB_ENV"
+            echo "JSON_ENDING=-${{ steps.dateNoScores.outputs.dateNoScores }}" >> "$GITHUB_ENV"
+            echo "JSON_FILE_NAME=RTK-RC-Firmware.json" >> "$GITHUB_ENV"
+            echo "ENABLE_DEVELOPER=true" >> "$GITHUB_ENV"
+            echo "DEBUG_LEVEL=debug" >> "$GITHUB_ENV"
+
+      - name: Setup Arduino CLI
+        uses: arduino/setup-arduino-cli@v1
+
+      - name: Start config file
+        run: arduino-cli config init --additional-urls "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
+
+      - name: Update index
+        run: arduino-cli core update-index
+
+      #We limit the ESP32 core to v2.0.2
+      - name: Install platform
+        run: arduino-cli core install esp32:esp32@2.0.2
+
+      - name: Get Known Libraries
+        run: arduino-cli lib install
+          ArduinoJson@6.19.4
+          ESP32Time@2.0.0
+          ESP32_BleSerial@1.0.5
+          "ESP32-OTA-Pull"@1.0.0
+          Ethernet@2.0.2
+          JC_Button@2.1.2
+          PubSubClient@2.8.0
+          "SdFat"@2.1.1
+          "SparkFun LIS2DH12 Arduino Library"@1.0.3
+          "SparkFun MAX1704x Fuel Gauge Arduino Library"@1.0.4
+          "SparkFun u-blox GNSS v3"@3.0.14
+          SparkFun_WebServer_ESP32_W5500@1.5.5
+          SSLClientESP32@2.0.0
+
+      - name: Enable external libs
+        run: arduino-cli config set library.enable_unsafe_install true
+
+      - name: Get Libraries
+        run: arduino-cli lib install --git-url
+          https://github.com/sparkfun/SparkFun_Qwiic_OLED_Arduino_Library.git
+          https://github.com/me-no-dev/ESPAsyncWebServer.git 
+          https://github.com/me-no-dev/AsyncTCP.git
+          
+      #Incorporate ESP-Now patch into core: https://github.com/espressif/arduino-esp32/pull/7044/files
+      #- name: Patch ESP32 Core
+      #  run: |
+      #    cd Firmware/RTK_Surveyor/Patch/
+      #    cp WiFiGeneric.cpp /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.2/libraries/WiFi/src/WiFiGeneric.cpp
+
+      #Patch Server.h to avoid https://github.com/arduino-libraries/Ethernet/issues/88#issuecomment-455498941
+      #Note: this patch can be removed if/when we upgrade to ESP32 core >= v2.0.6 
+      - name: Patch ESP32 Server.h for Ethernet
+        run: |
+          cd Firmware/RTK_Surveyor/Patch/
+          cp Server.h /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.2/cores/esp32/Server.h
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # Configure Python - now we have Python installed, we need to provide everything needed by esptool otherwise the compile fails
+      - name: Configure Python
+        run: |
+          pip3 install pyserial
+
+      - name: Update index_html
+        run: |
+          cd Firmware/Tools
+          python index_html_zipper.py ../RTK_Surveyor/AP-Config/index.html ../RTK_Surveyor/form.h
+
+      - name: Update main_js
+        run: |
+          cd Firmware/Tools
+          python main_js_zipper.py ../RTK_Surveyor/AP-Config/src/main.js ../RTK_Surveyor/form.h
+
+      - name: Commit and push form.h
+        uses: actions-js/push@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          directory: ./Firmware/RTK_Surveyor
+          branch: ${{ env.BRANCH }}
+          message: 'Update form.h via Python'
+
+      - name: Copy custom app3M_fat9M_16MB.csv
+        run:
+          cp Firmware/app3M_fat9M_16MB.csv /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.2/tools/partitions/app3M_fat9M_16MB.csv
+
+      - name: Compile Sketch
+        run: arduino-cli compile --fqbn "esp32:esp32:esp32":DebugLevel=${{ env.DEBUG_LEVEL }} ./Firmware/RTK_Surveyor/RTK_Surveyor.ino
+          --build-property build.partitions=app3M_fat9M_16MB
+          --build-property upload.maximum_size=3145728 
+          --build-property "compiler.cpp.extra_flags=\"-DPOINTPERFECT_TOKEN=$POINTPERFECT_TOKEN\" \"-DFIRMWARE_VERSION_MAJOR=$FIRMWARE_VERSION_MAJOR\" \"-DFIRMWARE_VERSION_MINOR=$FIRMWARE_VERSION_MINOR\" \"-DENABLE_DEVELOPER=${{ env.ENABLE_DEVELOPER }}\""
+          --export-binaries
+
+      - name: Create artifact name
+        run: |
+          echo "ARTIFACT=${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}" >> $GITHUB_ENV
+
+      - name: Create artifact directory
+        run: |
+          cd Firmware/RTK_Surveyor/build/esp32.esp32.esp32/
+          mkdir ${{ env.ARTIFACT }}
+          mv RTK_Surveyor.ino.bin ${{ env.ARTIFACT }}
+
+      - name: Upload artifact directory to action - avoid double-zip
+        uses: actions/upload-artifact@v3
+        with: 
+          name: ${{ env.ARTIFACT }}
+          path: Firmware/RTK_Surveyor/build/esp32.esp32.esp32/${{ env.ARTIFACT }}
+          retention-days: 7

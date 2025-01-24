@@ -58,13 +58,15 @@ The top lid should then come off. The front overlay is adhesive and may adhere s
 
 **Tip:** The lid makes a great screw bin.
 
+Before starting to remove the antenna, be aware that the antenna material is susceptible to fingerprints. You won't likely damage the reception but it's best to just avoid touching the elements.
+
 ![Remove the antenna](img/Repair/SparkFun-RTK-Repair-4.jpg)
 
-Note the antenna orientation so that it can be re-mounted in the same way. A sharpie dot towards the display is a handy method. 
+Note the antenna orientation so that it can be re-mounted in the same way. A sharpie dot towards the display is a handy method. However, if you forget, this is the correct orientation:
+
+![image](https://github.com/user-attachments/assets/2d3c4f1e-6d20-4b78-9bcf-5399af5d2093)
 
 Remove the four screws holding the antenna in place. 
-
-Be aware that the antenna material is susceptible to fingerprints. You won't likely damage the reception but it's best to just avoid touching the elements.
 
 ![Antenna to the side](img/Repair/SparkFun-RTK-Repair-5.jpg)
 

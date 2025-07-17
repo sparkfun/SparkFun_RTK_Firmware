@@ -97,7 +97,7 @@ bool zedDisableLBandCommunication()
     }
     else
     {
-        systemPrintln("zedEnableLBandCorrections: Unknown platform");
+        systemPrintln("zedDisableLBandCorrections: Unknown platform");
         return (false);
     }
 

@@ -4,7 +4,9 @@ Surveyor: ![Feature Not Supported](img/Icons/RedDot.png) / Express: ![Feature No
 
 **Note:** This section only applies to RTK Facet *L-Band* products. Regular RTK Facet, Surveyor, Express, and Express Plus products do not have L-Band antennas or receivers built-in.
 
-![PointPerfect Menu](img/WiFi Config/SparkFun%20RTK%20PointPerfect%20Config.png)
+**Note:** In July of 2025 u-blox announced the discontinuation of L-Band service to North America on December 31st, 2025. RTK Facet L-Band units will continue to work after this date as high precision devices, but they will need to switch to an internet based correction services to obtain an RTK Fix.
+
+![PointPerfect Menu](<./img/WiFi Config/SparkFun RTK PointPerfect Config.png>)
 
 *Configuring PointPerfect settings over WiFi*
 

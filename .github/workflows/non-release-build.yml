@@ -58,12 +58,6 @@ jobs:
       - name: Install platform
         run: arduino-cli core install esp32:esp32@${{ env.CORE_VERSION }}
 
-      - name: Get IDF version
-        run: |
-          cd /home/runner/.arduino15/packages/esp32/tools/esp32-arduino-libs
-          IDF_VERSION=$(ls | grep idf-release)
-          echo "ESP_IDF=${IDF_VERSION}" >> "$GITHUB_ENV"
-
       - name: Get Known Libraries
         run: arduino-cli lib install
           ArduinoJson@6.19.4

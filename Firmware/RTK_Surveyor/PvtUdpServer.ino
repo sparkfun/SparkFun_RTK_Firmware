@@ -226,8 +226,6 @@ void pvtUdpServerSetState(uint8_t newState)
 // Start the PVT server
 bool pvtUdpServerStart()
 {
-    IPAddress localIp;
-
     if (settings.debugPvtUdpServer && (!inMainMenu))
         systemPrintln("PVT UDP server starting");
 

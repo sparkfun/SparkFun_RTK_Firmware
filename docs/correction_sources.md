@@ -8,7 +8,7 @@ To achieve an RTK Fix, SparkFun RTK products must be provided with a correction 
 * [Government Provided Corrections](correction_sources.md#government-provided-corrections)
 * [Permanent Base](correction_sources.md#permanent-base)
 
-**Note:** The RTK Facet L-Band is capable of receiving RTCM corrections from a terrestrial source but because it has a built-in L-Band receiver, we recommend using the satellite-based corrections.
+**Note:** In July of 2025 u-blox announced the L-Band service to North America would be discontinued on December 31st, 2025. **RTK Facet L-Band** units will continue to work after this date as high precision devices, but they will need to switch to an internet based correction services to obtain an RTK Fix.
 
 ## Paid Services
 
@@ -50,9 +50,9 @@ One downside is that with a 'regional' provider such as Skylark the distance to 
 
 **PointPerfect**
 
-![PointPerfacet Coverage Map](img/Corrections/SparkFun_RTK_Facet_L-Band_Coverage_Area.jpg)
+PointPerfect is a correction service run by u-blox. While a few different types of services are offered by PointPerfect, we no longer recommend using PointPerfect for the older models including RTK Facet L-Band, RTK Facet, RTK Express, RTK Express Plus, or RTK Surveyor. Other correction services using NTRIP are easier to use with these models. The newer RTK models, including [RTK Torch](https://www.sparkfun.com/sparkfun-rtk-torch.html), [RTK Postcard](https://www.sparkfun.com/sparkfun-rtk-postcard.html), [RTK Facet mosaic](https://www.sparkfun.com/sparkpnt-rtk-facet-mosaic.html), and [RTK EVK](https://www.sparkfun.com/sparkfun-rtk-evk.html) *do* support **PointPerfect Flex NTRIP/RTCM**. More information can be found [here](https://docs.sparkfun.com/SparkFun_RTK_Everywhere_Firmware/menu_pointperfect/) for those devices.
 
-PointPerfect is a correction service run by u-blox. The service runs about $44 per month and covers the contiguous USA and Europe. Unfortunately, it does not have NTRIP access at the time of writing. Instead, they use an API and encrypted packets in a format called SPARTN. SparkFun uses the PointPerfect service to provide satellite-based corrections to the [RTK Facet L-Band](https://www.sparkfun.com/products/20000). This service works very well for the RTK Facet L-Band, but because no 3rd party GIS software is known to exist that can communicate with PointPerfect, we don't currently recommend using PointPerfect with SW Maps, Lefebure, Field Genius, SurvPC, Survey Master, etc.
+**Discontinuation of L-Band Service:** In July of 2025 u-blox announced the discontinuation of L-Band service to North America on December 31st, 2025. RTK Facet L-Band units will continue to work after this date as high precision devices, but they will need to switch to an internet based correction services to obtain an RTK Fix.
 
 ## Government Provided Corrections
 

@@ -31,7 +31,7 @@ pvtServer.ino
 
 */
 
-#ifdef COMPILE_WIFI
+#ifdef COMPILE_NETWORK
 
 //----------------------------------------
 // Constants
@@ -68,7 +68,7 @@ const RtkMode_t pvtServerMode = RTK_MODE_BASE_FIXED
 //----------------------------------------
 
 // PVT server
-static WiFiServer * pvtServer = nullptr;
+static NetworkServer * pvtServer = nullptr;
 static uint8_t pvtServerState;
 static uint32_t pvtServerTimer;
 
@@ -240,17 +240,22 @@ bool pvtServerStart()
 {
     IPAddress localIp;
 
+    NETWORK_DATA * network;
+    network = &networkData;
+    if (network)
+        localIp = networkGetIpAddress(network->type);
+
     if (settings.debugPvtServer && (!inMainMenu))
         systemPrintln("PVT server starting the server");
 
     // Start the PVT server
-    pvtServer = new WiFiServer(settings.pvtServerPort);
+    pvtServer = new NetworkServer(NETWORK_USER_PVT_SERVER, settings.pvtServerPort);
     if (!pvtServer)
         return false;
 
     pvtServer->begin();
     online.pvtServer = true;
-    localIp = wifiGetIpAddress();
+
     systemPrintf("PVT server online, IP address %d.%d.%d.%d:%d\r\n",
                  localIp[0], localIp[1], localIp[2], localIp[3],
                  settings.pvtServerPort);
@@ -380,7 +385,9 @@ void pvtServerUpdate()
     // Wait until the PVT server is enabled
     case PVT_SERVER_STATE_OFF:
         // Determine if the PVT server should be running
-        if (EQ_RTK_MODE(pvtServerMode) && settings.enablePvtServer && (!wifiIsConnected()))
+        NETWORK_DATA * network;
+        network = &networkData;
+        if (EQ_RTK_MODE(pvtServerMode) && settings.enablePvtServer && network && (!networkIsTypeConnected(network->type)))
         {
             if (networkUserOpen(NETWORK_USER_PVT_SERVER, NETWORK_TYPE_ACTIVE))
             {
@@ -468,7 +475,7 @@ void pvtServerUpdate()
             // Determine if the client data structure is in use
             if (!(pvtServerClientConnected & (1 << index)))
             {
-                WiFiClient client;
+                NetworkClient client = NetworkClient(NETWORK_USER_PVT_CLIENT);
 
                 // Data structure not in use
                 // Check for another PVT server client
@@ -479,7 +486,7 @@ void pvtServerUpdate()
                     break;
 
                 // Start processing the new PVT server client connection
-                pvtServerClient[index] = new NetworkWiFiClient(client);
+                pvtServerClient[index] = new NetworkClient(client);
                 pvtServerClientIpAddress[index] = pvtServerClient[index]->remoteIP();
                 pvtServerClientConnected |= 1 << index;
                 pvtServerClientDataSent |= 1 << index;
@@ -537,4 +544,4 @@ void pvtServerZeroTail()
         pvtServerClientTails[index] = 0;
 }
 
-#endif // COMPILE_WIFI
+#endif // COMPILE_NETWORK

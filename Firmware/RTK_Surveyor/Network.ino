@@ -395,7 +395,7 @@ NetworkClient * networkClient(uint8_t user, bool useSSL)
         if (useSSL)
             client = new NetworkEthernetSslClient();
         else
-            client = new NetworkEthernetClient;
+            client = new NetworkEthernetClient();
     }
     else
 #endif // COMPILE_ETHERNET
@@ -411,6 +411,26 @@ NetworkClient * networkClient(uint8_t user, bool useSSL)
     }
     return client;
 }
+
+//----------------------------------------
+// Constructor for NetworkServer - header is in NetworkServer.h
+//----------------------------------------
+NetworkServer::NetworkServer(uint8_t user, uint16_t port)
+{
+    _friendClass = false;
+    _networkType = networkGetType(user);
+    _port = port;
+#if defined(COMPILE_ETHERNET)
+    if (_networkType == NETWORK_TYPE_ETHERNET)
+        _server = new NetworkEthernetServer(port);
+    else
+#endif // COMPILE_ETHERNET
+#if defined(COMPILE_WIFI)
+        _server = new NetworkWiFiServer(port);
+#else   // COMPILE_WIFI
+        _server = nullptr;
+#endif  // COMPILE_WIFI
+};
 
 //----------------------------------------
 // Display the IP address

@@ -280,6 +280,7 @@ enum WiFiState
 volatile byte wifiState = WIFI_STATE_OFF;
 
 #include "NetworkClient.h" // Built-in - Supports both WiFiClient and EthernetClient
+#include "NetworkServer.h" // Built-in - Supports both WiFiServer and EthernetServer
 #include "NetworkUDP.h"    //Built-in - Supports both WiFiUdp and EthernetUdp
 
 // NTRIP Server data

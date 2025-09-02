@@ -249,11 +249,12 @@ bool pvtServerStart()
         systemPrintln("PVT server starting the server");
 
     // Start the PVT server
-    pvtServer = new NetworkServer(NETWORK_USER_PVT_SERVER, settings.pvtServerPort);
+    if (pvtServer == nullptr)
+        pvtServer = new NetworkServer(NETWORK_USER_PVT_SERVER, settings.pvtServerPort);
     if (!pvtServer)
         return false;
 
-    pvtServer->begin();
+    pvtServer->beginMe();
     online.pvtServer = true;
 
     systemPrintf("PVT server online, IP address %d.%d.%d.%d:%d\r\n",
@@ -475,18 +476,21 @@ void pvtServerUpdate()
             // Determine if the client data structure is in use
             if (!(pvtServerClientConnected & (1 << index)))
             {
-                NetworkClient client = NetworkClient(NETWORK_USER_PVT_CLIENT);
-
                 // Data structure not in use
                 // Check for another PVT server client
-                client = pvtServer->available();
+                Client *client = pvtServer->available();
 
                 // Done if no PVT server client found
-                if (!client)
+                if (!*client)
+                    break;
+
+                NETWORK_DATA * network;
+                network = &networkData;
+                if (!network)
                     break;
 
                 // Start processing the new PVT server client connection
-                pvtServerClient[index] = new NetworkClient(client);
+                pvtServerClient[index] = new NetworkClient(client, network->type);
                 pvtServerClientIpAddress[index] = pvtServerClient[index]->remoteIP();
                 pvtServerClientConnected |= 1 << index;
                 pvtServerClientDataSent |= 1 << index;

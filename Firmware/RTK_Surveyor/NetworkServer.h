@@ -18,16 +18,28 @@ class NetworkServer : public Server
     //------------------------------
     // Create the network server
     //------------------------------
-    NetworkServer(Server * server, uint8_t networkType, uint16_t port)
+    NetworkServer(Server * server, uint8_t networkType, uint16_t port) :
+        _friendClass(true),
+        _server{server},
+        _networkType{networkType},
+        _port{port}
     {
-        _friendClass = true;
-        _server = server;
-        _networkType = networkType;
-        _port = port;
+#if defined(COMPILE_ETHERNET)
         if (_networkType == NETWORK_TYPE_ETHERNET)
+        {
             _client = new EthernetClient;
+        }
         else
+#endif // COMPILE_ETHERNET
+#if defined(COMPILE_WIFI)
+        {
             _client = new WiFiClient;
+        }
+#else   // COMPILE_WIFI
+        {
+            _client = nullptr;
+        }
+#endif  // COMPILE_WIFI
     }
 
     //------------------------------
@@ -52,26 +64,19 @@ class NetworkServer : public Server
                 delete _server;
             _server = nullptr;
         }
-    };
+        if (_client)
+            delete _client;
+        _client = nullptr;
+    }
 
     //------------------------------
     // Begin the network server
     //------------------------------
 
-    void beginMe()
+    void begin()
     {
-        Serial.println("beginMe start"); Serial.flush();
-#if defined(COMPILE_ETHERNET)
-        if (_networkType == NETWORK_TYPE_ETHERNET)
-            if (_server)
-                ((EthernetServer *)_server)->begin();
-#endif  // COMPILE_WIFI
-#if defined(COMPILE_WIFI)
-        if (_networkType == NETWORK_TYPE_WIFI)
-            if (_server)
-                ((WiFiServer *)_server)->begin();
-#endif  // COMPILE_WIFI
-        Serial.println("beginMe end"); Serial.flush();
+        if (_server)
+            _server->begin();
     }
 
     //------------------------------
@@ -84,8 +89,6 @@ class NetworkServer : public Server
         if (_networkType == NETWORK_TYPE_ETHERNET)
             if (_server)
             {
-                Serial.printf("_server : %p\r\n", (void *)_server);
-                Serial.flush();
                 *_client = ((EthernetServer *)_server)->available();
                 return _client;
             }
@@ -132,24 +135,14 @@ class NetworkServer : public Server
 
     operator bool()
     {
-#if defined(COMPILE_ETHERNET)
-        if (_networkType == NETWORK_TYPE_ETHERNET)
-            if (_server)
-                return ((EthernetServer *)_server);
-#endif  // COMPILE_WIFI
-#if defined(COMPILE_WIFI)
-        if (_networkType == NETWORK_TYPE_WIFI)
-            if (_server)
-                return ((WiFiServer *)_server);
-#endif  // COMPILE_WIFI
-        return false;
+        return _server;
     }
 
     //------------------------------
     // Stop the network server
     //------------------------------
 
-    void stop()
+    void stop() // WiFiServer only - EthernetServer has no stop method
     {
 #if defined(COMPILE_WIFI)
         if (_networkType == NETWORK_TYPE_WIFI)
@@ -164,16 +157,8 @@ class NetworkServer : public Server
 
     size_t write(uint8_t b)
     {
-#if defined(COMPILE_ETHERNET)
-        if (_networkType == NETWORK_TYPE_ETHERNET)
-            if (_server)
-                return ((EthernetServer *)_server)->write(b);
-#endif  // COMPILE_WIFI
-#if defined(COMPILE_WIFI)
-        if (_networkType == NETWORK_TYPE_WIFI)
-            if (_server)
-                return ((WiFiServer *)_server)->write(b);
-#endif  // COMPILE_WIFI
+        if (_server)
+            return _server->write(b);
         return 0;
     }
 
@@ -183,16 +168,8 @@ class NetworkServer : public Server
 
     size_t write(const uint8_t *buf, size_t size)
     {
-#if defined(COMPILE_ETHERNET)
-        if (_networkType == NETWORK_TYPE_ETHERNET)
-            if (_server)
-                return ((EthernetServer *)_server)->write(buf, size);
-#endif  // COMPILE_WIFI
-#if defined(COMPILE_WIFI)
-        if (_networkType == NETWORK_TYPE_WIFI)
-            if (_server)
-                return ((WiFiServer *)_server)->write(buf, size);
-#endif  // COMPILE_WIFI
+        if (_server)
+            return _server->write(buf, size);
         return 0;
     }
 
@@ -209,23 +186,23 @@ class NetworkServer : public Server
 #ifdef  COMPILE_ETHERNET
 class NetworkEthernetServer : public NetworkServer
 {
-  private:
+  protected:
 
-    EthernetServer *_ethernetServer;
+    EthernetServer _ethernetServer;
 
   public:
 
-    NetworkEthernetServer(uint16_t port) :
-        _ethernetServer{new EthernetServer(port)},
-        NetworkServer(_ethernetServer, NETWORK_TYPE_ETHERNET, port)
+    NetworkEthernetServer(uint16_t port) : 
+        _ethernetServer{EthernetServer(port)},
+        NetworkServer(&_ethernetServer, NETWORK_TYPE_ETHERNET, port)
     {
     }
 
-    // NetworkEthernetServer(EthernetServer& server, uint16_t port) : 
-    //     _ethernetServer{server},
-    //     NetworkServer(_ethernetServer, NETWORK_TYPE_ETHERNET, port)
-    // {
-    // }
+    NetworkEthernetServer(EthernetServer& server, uint16_t port) : 
+        _ethernetServer{server},
+        NetworkServer(&_ethernetServer, NETWORK_TYPE_ETHERNET, port)
+    {
+    }
 
     ~NetworkEthernetServer()
     {

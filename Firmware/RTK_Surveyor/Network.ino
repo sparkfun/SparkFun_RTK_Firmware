@@ -386,7 +386,7 @@ void menuNetwork()
 NetworkClient * networkClient(uint8_t user, bool useSSL)
 {
     NetworkClient * client;
-    int type;
+    uint8_t type;
 
     type = networkGetType(user);
 #if defined(COMPILE_ETHERNET)
@@ -413,24 +413,50 @@ NetworkClient * networkClient(uint8_t user, bool useSSL)
 }
 
 //----------------------------------------
+// Allocate a network server
+//----------------------------------------
+NetworkServer * networkServer(uint8_t user, uint16_t port)
+{
+    NetworkServer * _server;
+    uint8_t type;
+
+    type = networkGetType(user);
+#if defined(COMPILE_ETHERNET)
+    if (type == NETWORK_TYPE_ETHERNET)
+    {
+        _server = new NetworkEthernetServer(port);
+    }
+    else
+#endif // COMPILE_ETHERNET
+    {
+#if defined(COMPILE_WIFI)
+        _server = new NetworkWiFiServer(port);
+#else   // COMPILE_WIFI
+        _server = nullptr;
+#endif  // COMPILE_WIFI
+    }
+    return _server;
+}
+
+//----------------------------------------
 // Constructor for NetworkServer - header is in NetworkServer.h
 //----------------------------------------
-NetworkServer::NetworkServer(uint8_t user, uint16_t port)
+NetworkServer::NetworkServer(uint8_t user, uint16_t port) : 
+    _friendClass(false),
+    _networkType{networkGetType(user)},
+    _port{port}
 {
-    _friendClass = false;
-    _networkType = networkGetType(user);
-    _port = port;
 #if defined(COMPILE_ETHERNET)
     if (_networkType == NETWORK_TYPE_ETHERNET)
     {
-        _server = new NetworkEthernetServer(port);
+        _server = new EthernetServer(port);
         _client = new EthernetClient;
     }
     else
 #endif // COMPILE_ETHERNET
 #if defined(COMPILE_WIFI)
     {
-        _server = new NetworkWiFiServer(port);
+        _server = new WiFiServer(port);
         _client = new WiFiClient;
     }
 #else   // COMPILE_WIFI
@@ -439,7 +465,7 @@ NetworkServer::NetworkServer(uint8_t user, uint16_t port)
         _client = nullptr;
     }
 #endif  // COMPILE_WIFI
-};
+}
 
 //----------------------------------------
 // Display the IP address

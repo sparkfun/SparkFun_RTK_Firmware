@@ -37,7 +37,7 @@ class NetworkClient : public Client
 #else   // COMPILE_WIFI
             _client = nullptr;
 #endif  // COMPILE_WIFI
-    };
+    }
 
     //------------------------------
     // Delete the network client
@@ -51,7 +51,7 @@ class NetworkClient : public Client
                 delete _client;
             _client = nullptr;
         }
-    };
+    }
 
     //------------------------------
     // Determine if receive data is available

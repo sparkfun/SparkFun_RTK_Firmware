@@ -450,19 +450,16 @@ NetworkServer::NetworkServer(uint8_t user, uint16_t port) :
     if (_networkType == NETWORK_TYPE_ETHERNET)
     {
         _server = new EthernetServer(port);
-        _client = new EthernetClient;
     }
     else
 #endif // COMPILE_ETHERNET
 #if defined(COMPILE_WIFI)
     {
         _server = new WiFiServer(port);
-        _client = new WiFiClient;
     }
 #else   // COMPILE_WIFI
     {
         _server = nullptr;
-        _client = nullptr;
     }
 #endif  // COMPILE_WIFI
 }

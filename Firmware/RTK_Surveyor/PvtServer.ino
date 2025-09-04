@@ -37,7 +37,6 @@ pvtServer.ino
 // Constants
 //----------------------------------------
 
-#define PVT_SERVER_MAX_CLIENTS 4
 #define PVT_SERVER_CLIENT_DATA_TIMEOUT  (15 * 1000)
 
 // Define the PVT server states
@@ -312,31 +311,37 @@ void pvtServerStopClient(int index)
     bool connected;
     bool dataSent;
 
-    // Done with this client connection
-    if ((settings.debugPvtServer || PERIODIC_DISPLAY(PD_PVT_SERVER_DATA)) && (!inMainMenu))
+    // Determine if a client was allocated
+    if (pvtServerClient[index])
     {
-        PERIODIC_CLEAR(PD_PVT_SERVER_DATA);
+        // Done with this client connection
+        if ((settings.debugPvtServer || PERIODIC_DISPLAY(PD_PVT_SERVER_DATA)) && (!inMainMenu))
+        {
+            //PERIODIC_CLEAR(PD_PVT_SERVER_DATA);
 
-        // Determine the shutdown reason
-        connected = pvtServerClient[index]->connected()
-                    && (!(pvtServerClientWriteError & (1 << index)));
-        dataSent = ((millis() - pvtServerTimer) < PVT_SERVER_CLIENT_DATA_TIMEOUT)
-                 || (pvtServerClientDataSent & (1 << index));
-        if (!dataSent)
-            systemPrintf("PVT Server: No data sent over %d seconds\r\n",
-                         PVT_SERVER_CLIENT_DATA_TIMEOUT / 1000);
-        if (!connected)
-            systemPrintf("PVT Server: Link to client broken\r\n");
-        systemPrintf("PVT server client %d disconnected from %d.%d.%d.%d\r\n",
-                     index,
-                     pvtServerClientIpAddress[index][0],
-                     pvtServerClientIpAddress[index][1],
-                     pvtServerClientIpAddress[index][2],
-                     pvtServerClientIpAddress[index][3]);
+            // Determine the shutdown reason
+            connected = pvtServerClient[index]->connected()
+                        && (!(pvtServerClientWriteError & (1 << index)));
+            dataSent = ((millis() - pvtServerTimer) < PVT_SERVER_CLIENT_DATA_TIMEOUT)
+                    || (pvtServerClientDataSent & (1 << index));
+            if (!dataSent)
+                systemPrintf("PVT Server: No data sent over %d seconds\r\n",
+                            PVT_SERVER_CLIENT_DATA_TIMEOUT / 1000);
+            if (!connected)
+                systemPrintf("PVT Server: Link to client broken\r\n");
+            systemPrintf("PVT server client %d disconnected from %d.%d.%d.%d\r\n",
+                        index,
+                        pvtServerClientIpAddress[index][0],
+                        pvtServerClientIpAddress[index][1],
+                        pvtServerClientIpAddress[index][2],
+                        pvtServerClientIpAddress[index][3]);
+        }
+
+        // Shutdown the PVT server client link
+        pvtServerClient[index]->stop();
+        delete pvtServerClient[index];
+        pvtServerClient[index] = nullptr;
     }
-
-    // Shutdown the PVT server client link
-    pvtServerClient[index]->stop();
     pvtServerClientConnected &= ~(1 << index);
     pvtServerClientWriteError &= ~(1 << index);
 }
@@ -441,7 +446,7 @@ void pvtServerUpdate()
         // Walk the list of PVT server clients
         for (index = 0; index < PVT_SERVER_MAX_CLIENTS; index++)
         {
-            // Determine if the client data structure is in use
+            // Determine if the client data structure is still in use
             if (pvtServerClientConnected & (1 << index))
             {
                 // Data structure in use
@@ -473,30 +478,53 @@ void pvtServerUpdate()
         // Walk the list of PVT server clients
         for (index = 0; index < PVT_SERVER_MAX_CLIENTS; index++)
         {
-            // Determine if the client data structure is in use
+            // Determine if the client data structure is not in use
             if (!(pvtServerClientConnected & (1 << index)))
             {
                 // Data structure not in use
-                // Check for another PVT server client
-                Client *client = pvtServer->available();
-
-                // Done if no PVT server client found
-                if (!client)
-                    break;
-
                 NETWORK_DATA * network;
                 network = &networkData;
                 if (!network)
                     break;
 
+                // Check for another PVT server client
+                // Use accept, not available:
+                //   Ethernet accept will return the connected client even if no data received
+                //   Ethernet available expects the client to send data first
+                // The client instances are stored within the NetworkServer instance
+                Client *client = pvtServer->accept(index);
+
+                // Done if no PVT server client found
+                if (!*client)
+                    break;
+
+                // Check if the data structure has been initialized
+                if (pvtServerClient[index] == nullptr)
+                {
+                    pvtServerClient[index] = new NetworkClient(client, network->type);
+
+                    // Check for allocation failure
+                    if(pvtServerClient[index] == nullptr)
+                    {
+                        if (settings.debugPvtServer)
+                            Serial.printf("ERROR: Failed to allocate PVT server client %d!\r\n", index);
+                        break;
+                    }
+                }
+                else
+                {
+                    // This should never happen...
+                    Serial.printf("ERROR: pvtServerClient[%d] already exists!\r\n", index);
+                    break;
+                }
+
                 // Start processing the new PVT server client connection
-                pvtServerClient[index] = new NetworkClient(client, network->type);
                 pvtServerClientIpAddress[index] = pvtServerClient[index]->remoteIP();
                 pvtServerClientConnected |= 1 << index;
                 pvtServerClientDataSent |= 1 << index;
                 if ((settings.debugPvtServer || PERIODIC_DISPLAY(PD_PVT_SERVER_DATA)) && (!inMainMenu))
                 {
-                    PERIODIC_CLEAR(PD_PVT_SERVER_DATA);
+                    PERIODIC_CLEAR(PD_PVT_SERVER_DATA); // This will only print the first client...
                     systemPrintf("PVT server client %d connected to %d.%d.%d.%d\r\n",
                                  index,
                                  pvtServerClientIpAddress[index][0],

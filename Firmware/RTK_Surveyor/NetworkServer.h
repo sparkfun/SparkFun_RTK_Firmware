@@ -55,19 +55,6 @@ class NetworkServer : public Server
                 delete _server;
             _server = nullptr;
         }
-        // for (uint8_t i = 0; i < PVT_SERVER_MAX_CLIENTS; i++)
-        // {
-        //     if (_ethernetClient[i])
-        //     {
-        //         delete _ethernetClient[i];
-        //         _ethernetClient[i] = nullptr;
-        //     }
-        //     if (_wifiClient[i])
-        //     {
-        //         delete _wifiClient[i];
-        //         _wifiClient[i] = nullptr;
-        //     }
-        // }
     }
 
     //------------------------------
@@ -79,16 +66,12 @@ class NetworkServer : public Server
 #if defined(COMPILE_ETHERNET)
         if (_networkType == NETWORK_TYPE_ETHERNET)
             if (_server)
-            {
                 ((EthernetServer *)_server)->begin();
-            }
 #endif  // COMPILE_ETHERNET
 #if defined(COMPILE_WIFI)
         if (_networkType == NETWORK_TYPE_WIFI)
             if (_server)
-            {
                 ((WiFiServer *)_server)->begin();
-            }
 #endif  // COMPILE_WIFI
     }
 
@@ -104,10 +87,6 @@ class NetworkServer : public Server
         if (_networkType == NETWORK_TYPE_ETHERNET)
             if (_server)
             {
-                // if (!_ethernetClient[index])
-                //     _ethernetClient[index] = new EthernetClient;
-                // if (!_ethernetClient[index])
-                //     return nullptr;
                 _ethernetClient[index] = ((EthernetServer *)_server)->available();
                 return &_ethernetClient[index];
             }
@@ -116,10 +95,6 @@ class NetworkServer : public Server
         if (_networkType == NETWORK_TYPE_WIFI)
             if (_server)
             {
-                // if (!_wifiClient[index])
-                //     _wifiClient[index] = new WiFiClient;
-                // if (!_wifiClient[index])
-                //     return nullptr;
                 _wifiClient[index] = ((WiFiServer *)_server)->available();
                 return &_wifiClient[index];
             }
@@ -226,15 +201,6 @@ class NetworkServer : public Server
 return 0;
     }
 
-    void statusreport() // EthernetServer only - and only if uncommented in EthernetServer.cpp
-    {
-#if defined(COMPILE_ETHERNET)
-        if (_networkType == NETWORK_TYPE_ETHERNET)
-            if (_server)
-                ((EthernetServer *)_server)->statusreport();
-#endif  // COMPILE_ETHERNET
-    }
-
   protected:
 
     //------------------------------
@@ -283,6 +249,7 @@ class NetworkWiFiServer : public NetworkServer
   public:
 
     NetworkWiFiServer(uint16_t port) :
+        _wifiServer{WiFiServer(port)},
         NetworkServer(&_wifiServer, NETWORK_TYPE_WIFI, port)
     {
     }

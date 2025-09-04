@@ -236,6 +236,9 @@ void menuNetwork()
         if (settings.enablePvtUdpServer)
             systemPrintf("7) PVT UDP Server Port: %ld\r\n", settings.pvtUdpServerPort);
 
+        if ((settings.enablePvtServer) || (settings.enablePvtUdpServer))
+            systemPrintf("8) Display server IP address: %s\r\n", settings.displayServerIP ? "Enabled" : "Disabled");
+
         if (HAS_ETHERNET)
         {
             //------------------------------
@@ -348,7 +351,10 @@ void menuNetwork()
             }
         }
 
-        //------------------------------
+        else if (incoming == 8 && ((settings.enablePvtServer) || (settings.enablePvtUdpServer)))
+            settings.displayServerIP ^= 1;
+
+            //------------------------------
         // Get the network layer parameters
         //------------------------------
 

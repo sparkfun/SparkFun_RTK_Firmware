@@ -83,6 +83,8 @@ static volatile RING_BUFFER_OFFSET pvtServerClientTails[PVT_SERVER_MAX_CLIENTS];
 // PVT Server handleGnssDataTask Support Routines
 //----------------------------------------
 
+bool pvtServerRunning() { return (pvtServerState == PVT_SERVER_STATE_RUNNING); }
+
 // Send data to the PVT clients
 int32_t pvtServerClientSendData(int index, uint8_t *data, uint16_t length)
 {
@@ -574,6 +576,23 @@ void pvtServerZeroTail()
 
     for (index = 0; index < PVT_SERVER_MAX_CLIENTS; index++)
         pvtServerClientTails[index] = 0;
+}
+
+void paintPvtServerIP()
+{
+    IPAddress localIp;
+    NETWORK_DATA * network;
+    network = &networkData;
+    if (network)
+        localIp = networkGetIpAddress(network->type);
+
+    char message[31];
+
+    snprintf(message, sizeof(message), "%d.%d. %d.%d: %d",
+                 localIp[0], localIp[1], localIp[2], localIp[3],
+                 settings.pvtServerPort);
+
+    displayMessageSmall(message, 0);
 }
 
 #endif // COMPILE_NETWORK

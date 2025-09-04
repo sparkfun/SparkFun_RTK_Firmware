@@ -101,6 +101,10 @@ static volatile RING_BUFFER_OFFSET pvtUdpServerTail;
 // PVT UDP Server handleGnssDataTask Support Routines
 //----------------------------------------
 
+bool udpServerRunning()
+{
+    return (pvtUdpServerState == PVT_UDP_SERVER_STATE_RUNNING);
+}
 // Send data as broadcast
 int32_t pvtUdpServerSendDataBroadcast(uint8_t *data, uint16_t length)
 {
@@ -376,6 +380,23 @@ void pvtUdpServerUpdate()
 void pvtUdpServerZeroTail()
 {
     pvtUdpServerTail = 0;
+}
+
+void paintUdpServerIP()
+{
+    IPAddress localIp;
+    NETWORK_DATA * network;
+    network = &networkData;
+    if (network)
+        localIp = networkGetIpAddress(network->type);
+
+    char message[31];
+
+    snprintf(message, sizeof(message), "%d.%d. %d.%d: %d",
+                 localIp[0], localIp[1], localIp[2], localIp[3],
+                 settings.pvtUdpServerPort);
+
+    displayMessageSmall(message, 0);
 }
 
 #endif // COMPILE_NETWORK

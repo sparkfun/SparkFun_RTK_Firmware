@@ -193,22 +193,31 @@ void updateDisplay()
             oled.reset(false); // Incase of previous corruption, force re-alignment of CGRAM. Do not init buffers as it
                                // takes time and causes screen to blink.
 
-#ifdef COMPILE_NETWORK
-            bool displayPvtServerIP = settings.displayServerIP && ((millis() % 10000) < 4000)
-                                   && pvtServerRunning();
-            bool displayUdpServerIP = settings.displayServerIP && ((millis() % 10000) < 4000)
-                                   && udpServerRunning();
+#if COMPILE_NETWORK
+            // If enabled, display server info every displayServerRepeatInterval millis
+            // Display "PVT Server" for displayServerSplashTime millis
+            // Display the IP for (displayServerTotalTime - displayServerSplashTime) millis
+            // These won't be exact, due to the >= 500ms display updates
+            const unsigned long displayServerRepeatInterval = 16384;
+            const unsigned long displayServerTotalTime = 4096;
+            const unsigned long displayServerSplashTime = 1024;
+            bool displayPvtServerIP = settings.displayServerIP
+                                      && ((millis() % displayServerRepeatInterval) < displayServerTotalTime)
+                                      && pvtServerRunning();
+            bool displayUdpServerIP = settings.displayServerIP
+                                      && ((millis() % displayServerRepeatInterval) < displayServerTotalTime)
+                                      && udpServerRunning();
 
             if (displayPvtServerIP)
             {
-                if ((millis() % 10000) < 2000)
+                if ((millis() % displayServerRepeatInterval) < displayServerSplashTime)
                     paintPvtServer();
                 else
-                    paintPvtServerIP();
+                    paintPvtServerIP(); 
             }
             else if (displayUdpServerIP)
             {
-                if ((millis() % 10000) < 2000)
+                if ((millis() % displayServerRepeatInterval) < displayServerSplashTime)
                     paintUdpServer();
                 else
                     paintUdpServerIP();

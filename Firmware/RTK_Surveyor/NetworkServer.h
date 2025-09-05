@@ -63,16 +63,8 @@ class NetworkServer : public Server
 
     void begin()
     {
-#if defined(COMPILE_ETHERNET)
-        if (_networkType == NETWORK_TYPE_ETHERNET)
-            if (_server)
-                ((EthernetServer *)_server)->begin();
-#endif  // COMPILE_ETHERNET
-#if defined(COMPILE_WIFI)
-        if (_networkType == NETWORK_TYPE_WIFI)
-            if (_server)
-                ((WiFiServer *)_server)->begin();
-#endif  // COMPILE_WIFI
+        if (_server)
+            _server->begin();
     }
 
     //------------------------------
@@ -169,16 +161,8 @@ class NetworkServer : public Server
 
     size_t write(uint8_t b)
     {
-#if defined(COMPILE_ETHERNET)
-        if (_networkType == NETWORK_TYPE_ETHERNET)
-            if (_server)
-                return ((EthernetServer *)_server)->write(b);
-#endif  // COMPILE_ETHERNET
-#if defined(COMPILE_WIFI)
-        if (_networkType == NETWORK_TYPE_WIFI)
-            if (_server)
-                return ((WiFiServer *)_server)->write(b);
-#endif  // COMPILE_WIFI
+        if (_server)
+            return _server->write(b);
         return 0;
     }
 
@@ -188,17 +172,9 @@ class NetworkServer : public Server
 
     size_t write(const uint8_t *buf, size_t size)
     {
-#if defined(COMPILE_ETHERNET)
-        if (_networkType == NETWORK_TYPE_ETHERNET)
-            if (_server)
-                return ((EthernetServer *)_server)->write(buf, size);
-#endif  // COMPILE_ETHERNET
-#if defined(COMPILE_WIFI)
-        if (_networkType == NETWORK_TYPE_WIFI)
-            if (_server)
-                return ((WiFiServer *)_server)->write(buf, size);
-#endif  // COMPILE_WIFI
-return 0;
+        if (_server)
+            return _server->write(buf, size);
+        return 0;
     }
 
   protected:

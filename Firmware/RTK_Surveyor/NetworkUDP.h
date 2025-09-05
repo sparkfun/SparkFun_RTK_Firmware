@@ -56,21 +56,12 @@ class NetworkUDP : public UDP
     
     //------------------------------
     // Determine if the network client was allocated
+    // Note: EthernetUDP and WiFiUDP do not have operator bool() methods
     //------------------------------
 
     operator bool()
     {
-#if defined(COMPILE_ETHERNET)
-        if (_networkType == NETWORK_TYPE_ETHERNET)
-            if (_udp)
-                return (*((EthernetUDP *)_udp));
-#endif // COMPILE_ETHERNET
-#if defined(COMPILE_WIFI)
-        if (_networkType == NETWORK_TYPE_WIFI)
-            if (_udp)
-                return (*((WiFiUDP *)_udp));
-#endif  // COMPILE_WIFI
-        return false;
+        return _udp;
     }
 
     //------------------------------

@@ -60,7 +60,17 @@ class NetworkUDP : public UDP
 
     operator bool()
     {
-        return _udp;
+#if defined(COMPILE_ETHERNET)
+        if (_networkType == NETWORK_TYPE_ETHERNET)
+            if (_udp)
+                return (*((EthernetUDP *)_udp));
+#endif // COMPILE_ETHERNET
+#if defined(COMPILE_WIFI)
+        if (_networkType == NETWORK_TYPE_WIFI)
+            if (_udp)
+                return (*((WiFiUDP *)_udp));
+#endif  // COMPILE_WIFI
+        return false;
     }
 
     //------------------------------

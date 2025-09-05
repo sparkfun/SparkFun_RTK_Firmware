@@ -70,7 +70,17 @@ class NetworkClient : public Client
 
     operator bool()
     {
-        return _client;
+#if defined(COMPILE_ETHERNET)
+        if (_networkType == NETWORK_TYPE_ETHERNET)
+            if (_client)
+                return (*((EthernetClient *)_client));
+#endif // COMPILE_ETHERNET
+#if defined(COMPILE_WIFI)
+        if (_networkType == NETWORK_TYPE_WIFI)
+            if (_client)
+                return (*((WiFiClient *)_client));
+#endif  // COMPILE_WIFI
+        return false;
     }
 
     //------------------------------

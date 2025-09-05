@@ -206,7 +206,7 @@ void updateDisplay()
                                       && pvtServerRunning();
             bool displayUdpServerIP = settings.displayServerIP
                                       && ((millis() % displayServerRepeatInterval) < displayServerTotalTime)
-                                      && udpServerRunning();
+                                      && pvtUdpServerRunning();
 
             if (displayPvtServerIP)
             {

@@ -482,7 +482,7 @@ const uint8_t btMaxEscapeCharacters = 3; // Number of characters needed to enter
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_Qwiic_OLED.h> //http://librarymanager/All#SparkFun_Qwiic_Graphic_OLED
 
-#ifdef COMPILE_NETWORK
+#if COMPILE_NETWORK
 bool pvtServerRunning(); // Header
 bool udpServerRunning(); // Header
 #endif // COMPILE_NETWORK

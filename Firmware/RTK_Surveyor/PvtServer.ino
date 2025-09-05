@@ -31,7 +31,7 @@ pvtServer.ino
 
 */
 
-#ifdef COMPILE_NETWORK
+#if COMPILE_NETWORK
 
 //----------------------------------------
 // Constants

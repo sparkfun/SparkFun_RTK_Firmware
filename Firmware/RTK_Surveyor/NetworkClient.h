@@ -37,7 +37,7 @@ class NetworkClient : public Client
 #else   // COMPILE_WIFI
             _client = nullptr;
 #endif  // COMPILE_WIFI
-    };
+    }
 
     //------------------------------
     // Delete the network client
@@ -51,7 +51,7 @@ class NetworkClient : public Client
                 delete _client;
             _client = nullptr;
         }
-    };
+    }
 
     //------------------------------
     // Determine if receive data is available
@@ -70,7 +70,17 @@ class NetworkClient : public Client
 
     operator bool()
     {
-        return _client;
+#if defined(COMPILE_ETHERNET)
+        if (_networkType == NETWORK_TYPE_ETHERNET)
+            if (_client)
+                return (*((EthernetClient *)_client));
+#endif // COMPILE_ETHERNET
+#if defined(COMPILE_WIFI)
+        if (_networkType == NETWORK_TYPE_WIFI)
+            if (_client)
+                return (*((WiFiClient *)_client));
+#endif  // COMPILE_WIFI
+        return false;
     }
 
     //------------------------------

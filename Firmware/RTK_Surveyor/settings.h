@@ -280,6 +280,7 @@ enum WiFiState
 volatile byte wifiState = WIFI_STATE_OFF;
 
 #include "NetworkClient.h" // Built-in - Supports both WiFiClient and EthernetClient
+#include "NetworkServer.h" // Built-in - Supports both WiFiServer and EthernetServer
 #include "NetworkUDP.h"    //Built-in - Supports both WiFiUdp and EthernetUdp
 
 // NTRIP Server data
@@ -1191,6 +1192,7 @@ typedef struct
     bool debugPvtServer = false;
     bool enablePvtServer = false;
     uint16_t pvtServerPort = 2948; // PVT server port, 2948 is GPS Daemon: http://tcp-udp-ports.com/port-2948.htm
+    bool displayServerIP = true;
 
     // UDP Server
     bool debugPvtUdpServer = false;

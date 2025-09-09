@@ -721,7 +721,7 @@ void ntripClientUpdate()
                     {
                         // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
                         theGNSS.setVal8(UBLOX_CFG_NMEA_MAINTALKERID, 1);
-                        theGNSS.setNMEAGPGGAcallbackPtr(&pushGPGGA); // Set up the callback for GPGGA
+                        theGNSS.setNMEAGPGGAcallbackPtr(&newGPGGA); // Set up the callback for GPGGA
 
                         float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
                         if (measurementFrequency < 0.2)
@@ -850,6 +850,9 @@ void ntripClientUpdate()
                     }
                 }
             }
+
+            // Now that the ntripClient->read is complete, write GPGGA if needed and available. See RTK Everywhere issue #695
+            pushGPGGA(nullptr);
         }
         break;
     }
@@ -869,24 +872,60 @@ void ntripClientValidateTables()
         reportFatalError("Fix ntripClientStateNameEntries to match NTRIPClientState");
 }
 
-void pushGPGGA(NMEA_GGA_data_t *nmeaData)
+void newGPGGA(NMEA_GGA_data_t *nmeaData)
 {
-    // Provide the caster with our current position as needed
-    if (ntripClient->connected() && settings.ntripClient_TransmitGGA == true)
+    // New GPGGA data received from GNSS. Store it. ntripClientUpdate will push it.
+    pushGPGGA((char *)nmeaData->nmea);
+}
+
+// Periodically push GGA sentence over NTRIP Client, to Caster, if enabled
+// We must not push to the Caster while we are reading data from the Caster
+// See RTK Everywhere Issue #695
+// pushGPGGA is called by processUart1Message from gnssReadTask
+// ntripClient->read is called by ntripClientUpdate and ntripClientResponse from networkUpdate from loop
+// We need to make sure processUart1Message doesn't gatecrash
+// If ggaData is provided, store it. If ggaData is nullptr, try to push it
+static void pushGPGGA(char *ggaData)
+{
+    static char storedGPGGA[100];
+
+    static SemaphoreHandle_t reentrant = xSemaphoreCreateMutex();  // Create the mutex
+
+    if (xSemaphoreTake(reentrant, 10 / portTICK_PERIOD_MS) == pdPASS)
     {
-        if (millis() - lastGGAPush > NTRIPCLIENT_MS_BETWEEN_GGA)
+        if (ggaData)
         {
-            lastGGAPush = millis();
-
-            if (settings.debugNtripClientRtcm || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_GGA))
-            {
-                PERIODIC_CLEAR(PD_NTRIP_CLIENT_GGA);
-                systemPrintf("NTRIP Client pushing GGA to server: %s", (const char *)nmeaData->nmea);
-            }
-
-            // Push our current GGA sentence to caster
-            ntripClient->print((const char *)nmeaData->nmea);
+            snprintf(storedGPGGA, sizeof(storedGPGGA), "%s", ggaData);
+            xSemaphoreGive(reentrant);
+            return;
         }
+
+#ifdef COMPILE_NETWORK
+        // Wait until the client has been created
+        if (ntripClient != nullptr)
+        {
+            // Provide the caster with our current position as needed
+            if (ntripClient->connected() && settings.ntripClient_TransmitGGA == true)
+            {
+                if (millis() - lastGGAPush > NTRIPCLIENT_MS_BETWEEN_GGA)
+                {
+                    lastGGAPush = millis();
+
+                    if ((settings.debugNtripClientRtcm || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_GGA)) && !inMainMenu)
+                    {
+                        PERIODIC_CLEAR(PD_NTRIP_CLIENT_GGA);
+                        systemPrintf("NTRIP Client pushing GGA to server: %s", (const char *)storedGPGGA);
+                    }
+
+                    // Push our current GGA sentence to caster
+                    if (strlen(storedGPGGA) > 0)
+                        ntripClient->write((const uint8_t *)storedGPGGA, strlen(storedGPGGA));
+                }
+            }
+        }
+#endif // COMPILE_NETWORK
+
+        xSemaphoreGive(reentrant);
     }
 }
 

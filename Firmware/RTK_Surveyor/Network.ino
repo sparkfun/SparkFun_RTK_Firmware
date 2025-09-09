@@ -236,6 +236,9 @@ void menuNetwork()
         if (settings.enablePvtUdpServer)
             systemPrintf("7) PVT UDP Server Port: %ld\r\n", settings.pvtUdpServerPort);
 
+        if ((settings.enablePvtServer) || (settings.enablePvtUdpServer))
+            systemPrintf("8) Display server IP address: %s\r\n", settings.displayServerIP ? "Enabled" : "Disabled");
+
         if (HAS_ETHERNET)
         {
             //------------------------------
@@ -348,7 +351,10 @@ void menuNetwork()
             }
         }
 
-        //------------------------------
+        else if (incoming == 8 && ((settings.enablePvtServer) || (settings.enablePvtUdpServer)))
+            settings.displayServerIP ^= 1;
+
+            //------------------------------
         // Get the network layer parameters
         //------------------------------
 
@@ -386,7 +392,7 @@ void menuNetwork()
 NetworkClient * networkClient(uint8_t user, bool useSSL)
 {
     NetworkClient * client;
-    int type;
+    uint8_t type;
 
     type = networkGetType(user);
 #if defined(COMPILE_ETHERNET)
@@ -395,7 +401,7 @@ NetworkClient * networkClient(uint8_t user, bool useSSL)
         if (useSSL)
             client = new NetworkEthernetSslClient();
         else
-            client = new NetworkEthernetClient;
+            client = new NetworkEthernetClient();
     }
     else
 #endif // COMPILE_ETHERNET
@@ -410,6 +416,58 @@ NetworkClient * networkClient(uint8_t user, bool useSSL)
 #endif  // COMPILE_WIFI
     }
     return client;
+}
+
+//----------------------------------------
+// Allocate a network server
+//----------------------------------------
+NetworkServer * networkServer(uint8_t user, uint16_t port)
+{
+    NetworkServer * _server;
+    uint8_t type;
+
+    type = networkGetType(user);
+#if defined(COMPILE_ETHERNET)
+    if (type == NETWORK_TYPE_ETHERNET)
+    {
+        _server = new NetworkEthernetServer(port);
+    }
+    else
+#endif // COMPILE_ETHERNET
+    {
+#if defined(COMPILE_WIFI)
+        _server = new NetworkWiFiServer(port);
+#else   // COMPILE_WIFI
+        _server = nullptr;
+#endif  // COMPILE_WIFI
+    }
+    return _server;
+}
+
+//----------------------------------------
+// Constructor for NetworkServer - header is in NetworkServer.h
+//----------------------------------------
+NetworkServer::NetworkServer(uint8_t user, uint16_t port) : 
+    _friendClass(false),
+    _networkType{networkGetType(user)},
+    _port{port}
+{
+#if defined(COMPILE_ETHERNET)
+    if (_networkType == NETWORK_TYPE_ETHERNET)
+    {
+        _server = new EthernetServer(port);
+    }
+    else
+#endif // COMPILE_ETHERNET
+#if defined(COMPILE_WIFI)
+    {
+        _server = new WiFiServer(port);
+    }
+#else   // COMPILE_WIFI
+    {
+        _server = nullptr;
+    }
+#endif  // COMPILE_WIFI
 }
 
 //----------------------------------------

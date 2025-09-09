@@ -199,6 +199,8 @@ void discardPvtUdpServerBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSE
 // PVT Server Routines
 //----------------------------------------
 
+bool pvtUdpServerRunning() { return (pvtUdpServerState == PVT_UDP_SERVER_STATE_RUNNING); }
+
 // Update the state of the PVT server state machine
 void pvtUdpServerSetState(uint8_t newState)
 {
@@ -226,8 +228,6 @@ void pvtUdpServerSetState(uint8_t newState)
 // Start the PVT server
 bool pvtUdpServerStart()
 {
-    IPAddress localIp;
-
     if (settings.debugPvtUdpServer && (!inMainMenu))
         systemPrintln("PVT UDP server starting");
 
@@ -378,6 +378,23 @@ void pvtUdpServerUpdate()
 void pvtUdpServerZeroTail()
 {
     pvtUdpServerTail = 0;
+}
+
+void paintUdpServerIP()
+{
+    IPAddress localIp;
+    NETWORK_DATA * network;
+    network = &networkData;
+    if (network)
+        localIp = networkGetIpAddress(network->type);
+
+    char message[31];
+
+    snprintf(message, sizeof(message), "%d.%d. %d.%d: %d",
+                 localIp[0], localIp[1], localIp[2], localIp[3],
+                 settings.pvtUdpServerPort);
+
+    displayMessageSmall(message, 0);
 }
 
 #endif // COMPILE_NETWORK

@@ -481,6 +481,12 @@ const uint8_t btMaxEscapeCharacters = 3; // Number of characters needed to enter
 // External Display
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_Qwiic_OLED.h> //http://librarymanager/All#SparkFun_Qwiic_Graphic_OLED
+
+#if COMPILE_NETWORK
+bool pvtServerRunning(); // Header
+bool pvtUdpServerRunning(); // Header
+#endif // COMPILE_NETWORK
+
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 // Firmware binaries loaded from SD
@@ -1126,85 +1132,6 @@ void updateLogs()
 
     if (online.logging == true)
     {
-        // Record any pending trigger events
-        if (newEventToRecord == true)
-        {
-            systemPrintln("Recording event");
-
-            // Record trigger count with Time Of Week of rising edge (ms), Millisecond fraction of Time Of Week of
-            // rising edge (ns), and accuracy estimate (ns)
-            char eventData[82]; // Max NMEA sentence length is 82
-            snprintf(eventData, sizeof(eventData), "%d,%d,%d,%d", triggerCount, triggerTowMsR, triggerTowSubMsR,
-                     triggerAccEst);
-
-            char nmeaMessage[82]; // Max NMEA sentence length is 82
-            createNMEASentence(CUSTOM_NMEA_TYPE_EVENT, nmeaMessage, sizeof(nmeaMessage),
-                               eventData); // textID, buffer, sizeOfBuffer, text
-
-            if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
-            {
-                markSemaphore(FUNCTION_EVENT);
-
-                ubxFile->println(nmeaMessage);
-
-                xSemaphoreGive(sdCardSemaphore);
-                newEventToRecord = false;
-            }
-            else
-            {
-                char semaphoreHolder[50];
-                getSemaphoreFunction(semaphoreHolder);
-
-                // While a retry does occur during the next loop, it is possible to loose
-                // trigger events if they occur too rapidly or if the log file is closed
-                // before the trigger event is written!
-                log_w("sdCardSemaphore failed to yield, held by %s, RTK_Surveyor.ino line %d", semaphoreHolder,
-                      __LINE__);
-            }
-        }
-
-        // Record the Antenna Reference Position - if available
-        if (newARPAvailable == true && settings.enableARPLogging &&
-            ((millis() - lastARPLog) > (settings.ARPLoggingInterval_s * 1000)))
-        {
-            systemPrintln("Recording Antenna Reference Position");
-
-            lastARPLog = millis();
-            newARPAvailable = false;
-
-            double x = ARPECEFX;
-            x /= 10000.0; // Convert to m
-            double y = ARPECEFY;
-            y /= 10000.0; // Convert to m
-            double z = ARPECEFZ;
-            z /= 10000.0; // Convert to m
-            double h = ARPECEFH;
-            h /= 10000.0;     // Convert to m
-            char ARPData[82]; // Max NMEA sentence length is 82
-            snprintf(ARPData, sizeof(ARPData), "%.4f,%.4f,%.4f,%.4f", x, y, z, h);
-
-            char nmeaMessage[82]; // Max NMEA sentence length is 82
-            createNMEASentence(CUSTOM_NMEA_TYPE_ARP_ECEF_XYZH, nmeaMessage, sizeof(nmeaMessage),
-                               ARPData); // textID, buffer, sizeOfBuffer, text
-
-            if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
-            {
-                markSemaphore(FUNCTION_EVENT);
-
-                ubxFile->println(nmeaMessage);
-
-                xSemaphoreGive(sdCardSemaphore);
-                newEventToRecord = false;
-            }
-            else
-            {
-                char semaphoreHolder[50];
-                getSemaphoreFunction(semaphoreHolder);
-                log_w("sdCardSemaphore failed to yield, held by %s, RTK_Surveyor.ino line %d", semaphoreHolder,
-                      __LINE__);
-            }
-        }
-
         // Report file sizes to show recording is working
         if ((millis() - lastFileReport) > 5000)
         {

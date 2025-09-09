@@ -543,6 +543,29 @@ void pvtServerUpdate()
             // Restart the data verification
             pvtServerTimer = millis();
             pvtServerClientDataSent = 0;
+
+            // Keep WiFi alive for PvtServer when no clients are connected
+            // Prevents:
+            //   [D][WiFiGeneric.cpp:831] _eventCallback(): Arduino Event: 5 - STA_DISCONNECTED
+            //   [W][WiFiGeneric.cpp:852] _eventCallback(): Reason: 4 - ASSOC_EXPIRE
+            if (!pvtServerClientConnected)
+            {
+                NETWORK_DATA * network;
+                network = &networkData;
+                if (network->type == NETWORK_TYPE_WIFI)
+                {
+                    // Generate a little DNS traffic
+                    // Use a random host. Checking the same host more than once generates no new traffic...
+                    char randomHost[strlen("www.00000000.com") + 1];
+                    snprintf(randomHost, sizeof(randomHost), "www.%08x.com", millis());
+                    IPAddress theIP;
+                    unsigned long start = millis();
+                    WiFi.hostByName(randomHost, theIP);
+                    if (settings.debugPvtServer)
+                        systemPrintf("PVT Server keep alive: WiFi.hostByName(%s) took %ld ms\r\n", randomHost, millis() - start);
+                }
+            }
+
         }
         break;
     }

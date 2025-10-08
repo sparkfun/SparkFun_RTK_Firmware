@@ -6,8 +6,10 @@ on:
 env:
   FILENAME_PREFIX: RTK_Surveyor_Firmware
   FIRMWARE_VERSION_MAJOR: 4
-  FIRMWARE_VERSION_MINOR: 2
+  FIRMWARE_VERSION_MINOR: 3
   POINTPERFECT_TOKEN: ${{ secrets.POINTPERFECT_TOKEN }}
+  #We limit the ESP32 core to v2.0.2
+  CORE_VERSION: 2.0.2
 
 jobs:
   build:
@@ -17,7 +19,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@master
+        uses: actions/checkout@main
 
       - name: Get current date
         id: date
@@ -59,9 +61,8 @@ jobs:
       - name: Update index
         run: arduino-cli core update-index
 
-      #We limit the ESP32 core to v2.0.2
       - name: Install platform
-        run: arduino-cli core install esp32:esp32@2.0.2
+        run: arduino-cli core install esp32:esp32@${{ env.CORE_VERSION }}
 
       - name: Get Known Libraries
         run: arduino-cli lib install
@@ -92,14 +93,14 @@ jobs:
       #- name: Patch ESP32 Core
       #  run: |
       #    cd Firmware/RTK_Surveyor/Patch/
-      #    cp WiFiGeneric.cpp /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.2/libraries/WiFi/src/WiFiGeneric.cpp
+      #    cp WiFiGeneric.cpp /home/runner/.arduino15/packages/esp32/hardware/esp32/${{ env.CORE_VERSION }}/libraries/WiFi/src/WiFiGeneric.cpp
 
       #Patch Server.h to avoid https://github.com/arduino-libraries/Ethernet/issues/88#issuecomment-455498941
       #Note: this patch can be removed if/when we upgrade to ESP32 core >= v2.0.6 
       - name: Patch ESP32 Server.h for Ethernet
         run: |
           cd Firmware/RTK_Surveyor/Patch/
-          cp Server.h /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.2/cores/esp32/Server.h
+          cp Server.h /home/runner/.arduino15/packages/esp32/hardware/esp32/${{ env.CORE_VERSION }}/cores/esp32/Server.h
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -131,7 +132,7 @@ jobs:
 
       - name: Copy custom app3M_fat9M_16MB.csv
         run:
-          cp Firmware/app3M_fat9M_16MB.csv /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.2/tools/partitions/app3M_fat9M_16MB.csv
+          cp Firmware/app3M_fat9M_16MB.csv /home/runner/.arduino15/packages/esp32/hardware/esp32/${{ env.CORE_VERSION }}/tools/partitions/app3M_fat9M_16MB.csv
 
       - name: Compile Sketch
         run: arduino-cli compile --fqbn "esp32:esp32:esp32":DebugLevel=${{ env.DEBUG_LEVEL }} ./Firmware/RTK_Surveyor/RTK_Surveyor.ino

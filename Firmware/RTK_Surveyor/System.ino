@@ -600,6 +600,8 @@ void settingsToDefaults()
 {
     static const Settings defaultSettings;
     memcpy(&settings, &defaultSettings, sizeof(defaultSettings));
+
+    checkMessageRates(); // Ensure message rates are valid - especially before they are sent to web config
 }
 
 // Given a spot in the ubxMsg array, return true if this message is supported on this platform and firmware version

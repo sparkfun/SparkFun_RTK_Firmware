@@ -5,7 +5,7 @@
 //https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/469
 #include "src/BluetoothSerial/BluetoothSerial.h"
 
-#include <BleSerial.h> //Click here to get the library: http://librarymanager/All#ESP32_BleSerial v1.0.4 by Avinab Malla
+#include <BleSerial.h> //Click here to get the library: http://librarymanager/All#ESP32_BleSerial v1.0.5 by Avinab Malla
 
 class BTSerialInterface
 {

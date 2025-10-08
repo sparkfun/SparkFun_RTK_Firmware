@@ -193,400 +193,433 @@ void updateDisplay()
             oled.reset(false); // Incase of previous corruption, force re-alignment of CGRAM. Do not init buffers as it
                                // takes time and causes screen to blink.
 
-            oled.erase();
+#if COMPILE_NETWORK
+            // If enabled, display server info every displayServerRepeatInterval millis
+            // Display "PVT Server" for displayServerSplashTime millis
+            // Display the IP for (displayServerTotalTime - displayServerSplashTime) millis
+            // These won't be exact, due to the >= 500ms display updates
+            const unsigned long displayServerRepeatInterval = 16384;
+            const unsigned long displayServerTotalTime = 4096;
+            const unsigned long displayServerSplashTime = 1024;
+            bool displayPvtServerIP = settings.displayServerIP
+                                      && ((millis() % displayServerRepeatInterval) < displayServerTotalTime)
+                                      && pvtServerRunning();
+            bool displayUdpServerIP = settings.displayServerIP
+                                      && ((millis() % displayServerRepeatInterval) < displayServerTotalTime)
+                                      && pvtUdpServerRunning();
 
-            icons = 0;
-            iconsRadio = 0;
-            switch (systemState)
+            if (displayPvtServerIP)
             {
-
-                /*
-                               111111111122222222223333333333444444444455555555556666
-                     0123456789012345678901234567890123456789012345678901234567890123
-                    .----------------------------------------------------------------
-                   0|   *******         **             **         *****************
-                   1|  *       *        **             **         *               *
-                   2| *  *****  *       **          ******        * ***  ***  *** *
-                   3|*  *     *  *      **         *      *       * ***  ***  *** ***
-                   4|  *  ***  *        **       * * **** * *     * ***  ***  ***   *
-                   5|    *   *       ** ** **    * * **** * *     * ***  ***  ***   *
-                   6|      *          ******     * *      * *     * ***  ***  ***   *
-                   7|     ***          ****      * *      * *     * ***  ***  ***   *
-                   8|      *            **       * *      * *     * ***  ***  *** ***
-                   9|                            * *      * *     * ***  ***  *** *
-                  10|                              *      *       *               *
-                  11|                               ******        *****************
-                  12|
-                  13|
-                  14|
-                  15|
-                  16|
-                  17|
-                  18|       *
-                  19|       *
-                  20|    *******
-                  21|   *   *   *               ***               ***      ***
-                  22|  *    *    *             *   *             *   *    *   *
-                  23|  *    *    *             *   *             *   *    *   *
-                  24|  *    *    *     **       * *               * *      * *
-                  25|******* *******   **        *                 *        *
-                  26|  *    *    *              * *               * *      * *
-                  27|  *    *    *             *   *             *   *    *   *
-                  28|  *    *    *             *   *             *   *    *   *
-                  29|   *   *   *      **      *   *     **      *   *    *   *
-                  30|    *******       **       ***      **       ***      ***
-                  31|       *
-                  32|       *
-                  33|
-                  34|
-                  35|
-                  36|   **                                                  *******
-                  37|   * *                    ***      ***                 *     **
-                  38|   *  *   *              *   *    *   *                *      **
-                  39|   *   * *               *   *    *   *                *       *
-                  40|    *   *        **       * *      * *                 * ***** *
-                  41|    *    *       **        *        *                  *       *
-                  42|     *    *               * *      * *                 * ***** *
-                  43|     **    *             *   *    *   *                *       *
-                  44|     ****   *            *   *    *   *                * ***** *
-                  45|     **  ****    **      *   *    *   *                *       *
-                  46|     **          **       ***      ***                 *       *
-                  47|   ******                                              *********
-                */
-
-            case (STATE_ROVER_NOT_STARTED):
-                icons = ICON_CROSS_HAIR            // Center left
-                        | ICON_HORIZONTAL_ACCURACY // Center right
-                        | ICON_LOGGING;            // Bottom right
-                displaySivVsOpenShort();           // Bottom left
-                displayBatteryVsEthernet();        // Top right
-                iconsRadio = setRadioIcons();      // Top left
-                break;
-            case (STATE_ROVER_NO_FIX):
-                icons = ICON_CROSS_HAIR            // Center left
-                        | ICON_HORIZONTAL_ACCURACY // Center right
-                        | ICON_LOGGING;            // Bottom right
-                displaySivVsOpenShort();           // Bottom left
-                displayBatteryVsEthernet();        // Top right
-                iconsRadio = setRadioIcons();      // Top left
-                break;
-            case (STATE_ROVER_FIX):
-                icons = ICON_CROSS_HAIR            // Center left
-                        | ICON_HORIZONTAL_ACCURACY // Center right
-                        | ICON_LOGGING;            // Bottom right
-                displaySivVsOpenShort();           // Bottom left
-                displayBatteryVsEthernet();        // Top right
-                iconsRadio = setRadioIcons();      // Top left
-                break;
-            case (STATE_ROVER_RTK_FLOAT):
-                blinking_icons ^= ICON_CROSS_HAIR_DUAL;
-                icons = (blinking_icons & ICON_CROSS_HAIR_DUAL) // Center left
-                        | ICON_HORIZONTAL_ACCURACY              // Center right
-                        | ICON_LOGGING;                         // Bottom right
-                displaySivVsOpenShort();                        // Bottom left
-                displayBatteryVsEthernet();                     // Top right
-                iconsRadio = setRadioIcons();                   // Top left
-                break;
-            case (STATE_ROVER_RTK_FIX):
-                icons = ICON_CROSS_HAIR_DUAL       // Center left
-                        | ICON_HORIZONTAL_ACCURACY // Center right
-                        | ICON_LOGGING;            // Bottom right
-                displaySivVsOpenShort();           // Bottom left
-                displayBatteryVsEthernet();        // Top right
-                iconsRadio = setRadioIcons();      // Top left
-                break;
-
-            case (STATE_BASE_NOT_STARTED):
-                // Do nothing. Static display shown during state change.
-                break;
-
-            // Start of base / survey in / NTRIP mode
-            // Screen is displayed while we are waiting for horz accuracy to drop to appropriate level
-            // Blink crosshair icon until we have we have horz accuracy < user defined level
-            case (STATE_BASE_TEMP_SETTLE):
-                blinking_icons ^= ICON_CROSS_HAIR;
-                icons = (blinking_icons & ICON_CROSS_HAIR) // Center left
-                        | ICON_HORIZONTAL_ACCURACY         // Center right
-                        | ICON_LOGGING;                    // Bottom right
-                displaySivVsOpenShort();                   // Bottom left
-                displayBatteryVsEthernet();                // Top right
-                iconsRadio = setRadioIcons();              // Top left
-                break;
-            case (STATE_BASE_TEMP_SURVEY_STARTED):
-                icons = ICON_LOGGING;         // Bottom right
-                displayBatteryVsEthernet();   // Top right
-                iconsRadio = setRadioIcons(); // Top left
-                paintBaseTempSurveyStarted();
-                break;
-            case (STATE_BASE_TEMP_TRANSMITTING):
-                icons = ICON_LOGGING;         // Bottom right
-                displayBatteryVsEthernet();   // Top right
-                iconsRadio = setRadioIcons(); // Top left
-                paintRTCM();
-                break;
-            case (STATE_BASE_FIXED_NOT_STARTED):
-                icons = 0;                    // Top right
-                displayBatteryVsEthernet();   // Top right
-                iconsRadio = setRadioIcons(); // Top left
-                break;
-            case (STATE_BASE_FIXED_TRANSMITTING):
-                icons = ICON_LOGGING;         // Bottom right
-                displayBatteryVsEthernet();   // Top right
-                iconsRadio = setRadioIcons(); // Top left
-                paintRTCM();
-                break;
-
-            case (STATE_NTPSERVER_NOT_STARTED):
-            case (STATE_NTPSERVER_NO_SYNC):
-                blinking_icons ^= ICON_CLOCK;
-                icons = (blinking_icons & ICON_CLOCK) // Center left
-                        | ICON_CLOCK_ACCURACY;        // Center right
-                displaySivVsOpenShort();              // Bottom left
-                if (online.ethernetStatus == ETH_CONNECTED)
-                    blinking_icons |= ICON_ETHERNET; // Don't blink if link is up
+                if ((millis() % displayServerRepeatInterval) < displayServerSplashTime)
+                    paintPvtServer();
                 else
-                    blinking_icons ^= ICON_ETHERNET;
-                icons |= (blinking_icons & ICON_ETHERNET); // Top Right
-                iconsRadio = ICON_IP_ADDRESS;              // Top left
-                break;
-
-            case (STATE_NTPSERVER_SYNC):
-                icons = ICON_CLOCK            // Center left
-                        | ICON_CLOCK_ACCURACY // Center right
-                        | ICON_LOGGING_NTP;   // Bottom right
-                displaySivVsOpenShort();      // Bottom left
-                if (online.ethernetStatus == ETH_CONNECTED)
-                    blinking_icons |= ICON_ETHERNET; // Don't blink if link is up
+                    paintPvtServerIP(); 
+            }
+            else if (displayUdpServerIP)
+            {
+                if ((millis() % displayServerRepeatInterval) < displayServerSplashTime)
+                    paintUdpServer();
                 else
-                    blinking_icons ^= ICON_ETHERNET;
-                icons |= (blinking_icons & ICON_ETHERNET); // Top Right
-                iconsRadio = ICON_IP_ADDRESS;              // Top left
-                break;
-
-            case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
-                break;
-            case (STATE_CONFIG_VIA_ETH_STARTED):
-                break;
-            case (STATE_CONFIG_VIA_ETH):
-                displayConfigViaEthernet();
-                break;
-            case (STATE_CONFIG_VIA_ETH_RESTART_BASE):
-                break;
-
-            case (STATE_BUBBLE_LEVEL):
-                paintBubbleLevel();
-                break;
-            case (STATE_PROFILE):
-                paintProfile(displayProfile);
-                break;
-            case (STATE_MARK_EVENT):
-                // Do nothing. Static display shown during state change.
-                break;
-            case (STATE_DISPLAY_SETUP):
-                paintDisplaySetup();
-                break;
-            case (STATE_WIFI_CONFIG_NOT_STARTED):
-                displayWiFiConfigNotStarted(); // Display 'WiFi Config'
-                break;
-            case (STATE_WIFI_CONFIG):
-                iconsRadio = setWiFiIcon(); // Blink WiFi in center
-                displayWiFiConfig();        // Display SSID and IP
-                break;
-            case (STATE_TEST):
-                paintSystemTest();
-                break;
-            case (STATE_TESTING):
-                paintSystemTest();
-                break;
-
-            case (STATE_KEYS_STARTED):
-                paintRTCWait();
-                break;
-            case (STATE_KEYS_NEEDED):
-                // Do nothing. Quick, fall through state.
-                break;
-            case (STATE_KEYS_WIFI_STARTED):
-                iconsRadio = setWiFiIcon(); // Blink WiFi in center
-                paintGettingKeys();
-                break;
-            case (STATE_KEYS_WIFI_CONNECTED):
-                iconsRadio = setWiFiIcon(); // Blink WiFi in center
-                paintGettingKeys();
-                break;
-            case (STATE_KEYS_WIFI_TIMEOUT):
-                // Do nothing. Quick, fall through state.
-                break;
-            case (STATE_KEYS_EXPIRED):
-                // Do nothing. Quick, fall through state.
-                break;
-            case (STATE_KEYS_DAYS_REMAINING):
-                // Do nothing. Quick, fall through state.
-                break;
-            case (STATE_KEYS_LBAND_CONFIGURE):
-                paintLBandConfigure();
-                break;
-            case (STATE_KEYS_LBAND_ENCRYPTED):
-                // Do nothing. Quick, fall through state.
-                break;
-            case (STATE_KEYS_PROVISION_WIFI_STARTED):
-                iconsRadio = setWiFiIcon(); // Blink WiFi in center
-                paintGettingKeys();
-                break;
-            case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
-                iconsRadio = setWiFiIcon(); // Blink WiFi in center
-                paintGettingKeys();
-                break;
-
-            case (STATE_ESPNOW_PAIRING_NOT_STARTED):
-                paintEspNowPairing();
-                break;
-            case (STATE_ESPNOW_PAIRING):
-                paintEspNowPairing();
-                break;
-
-            case (STATE_SHUTDOWN):
-                displayShutdown();
-                break;
-            default:
-                systemPrintf("Unknown display: %d\r\n", systemState);
-                displayError("Display");
-                break;
+                    paintUdpServerIP();
             }
-
-            // Top left corner - Radio icon indicators take three spots (left/center/right)
-            // Allowed icon combinations:
-            // Bluetooth + Rover/Base
-            // WiFi + Bluetooth + Rover/Base
-            // ESP-Now + Bluetooth + Rover/Base
-            // ESP-Now + Bluetooth + WiFi
-            // See setRadioIcons() for the icon selection logic
-
-            // Left spot
-            if (iconsRadio & ICON_MAC_ADDRESS)
+            else
+#endif // COMPILE_NETWORK
             {
-                char macAddress[5];
-                const uint8_t *rtkMacAddress = getMacAddress();
+                oled.erase();
 
-                // Print four characters of MAC
-                snprintf(macAddress, sizeof(macAddress), "%02X%02X", rtkMacAddress[4], rtkMacAddress[5]);
-                oled.setFont(QW_FONT_5X7); // Set font to smallest
-                oled.setCursor(0, 3);
-                oled.print(macAddress);
+                icons = 0;
+                iconsRadio = 0;
+                switch (systemState)
+                {
+
+                    /*
+                                111111111122222222223333333333444444444455555555556666
+                        0123456789012345678901234567890123456789012345678901234567890123
+                        .----------------------------------------------------------------
+                    0|   *******         **             **         *****************
+                    1|  *       *        **             **         *               *
+                    2| *  *****  *       **          ******        * ***  ***  *** *
+                    3|*  *     *  *      **         *      *       * ***  ***  *** ***
+                    4|  *  ***  *        **       * * **** * *     * ***  ***  ***   *
+                    5|    *   *       ** ** **    * * **** * *     * ***  ***  ***   *
+                    6|      *          ******     * *      * *     * ***  ***  ***   *
+                    7|     ***          ****      * *      * *     * ***  ***  ***   *
+                    8|      *            **       * *      * *     * ***  ***  *** ***
+                    9|                            * *      * *     * ***  ***  *** *
+                    10|                              *      *       *               *
+                    11|                               ******        *****************
+                    12|
+                    13|
+                    14|
+                    15|
+                    16|
+                    17|
+                    18|       *
+                    19|       *
+                    20|    *******
+                    21|   *   *   *               ***               ***      ***
+                    22|  *    *    *             *   *             *   *    *   *
+                    23|  *    *    *             *   *             *   *    *   *
+                    24|  *    *    *     **       * *               * *      * *
+                    25|******* *******   **        *                 *        *
+                    26|  *    *    *              * *               * *      * *
+                    27|  *    *    *             *   *             *   *    *   *
+                    28|  *    *    *             *   *             *   *    *   *
+                    29|   *   *   *      **      *   *     **      *   *    *   *
+                    30|    *******       **       ***      **       ***      ***
+                    31|       *
+                    32|       *
+                    33|
+                    34|
+                    35|
+                    36|   **                                                  *******
+                    37|   * *                    ***      ***                 *     **
+                    38|   *  *   *              *   *    *   *                *      **
+                    39|   *   * *               *   *    *   *                *       *
+                    40|    *   *        **       * *      * *                 * ***** *
+                    41|    *    *       **        *        *                  *       *
+                    42|     *    *               * *      * *                 * ***** *
+                    43|     **    *             *   *    *   *                *       *
+                    44|     ****   *            *   *    *   *                * ***** *
+                    45|     **  ****    **      *   *    *   *                *       *
+                    46|     **          **       ***      ***                 *       *
+                    47|   ******                                              *********
+                    */
+
+                case (STATE_ROVER_NOT_STARTED):
+                    icons = ICON_CROSS_HAIR            // Center left
+                            | ICON_HORIZONTAL_ACCURACY // Center right
+                            | ICON_LOGGING;            // Bottom right
+                    displaySivVsOpenShort();           // Bottom left
+                    displayBatteryVsEthernet();        // Top right
+                    iconsRadio = setRadioIcons();      // Top left
+                    break;
+                case (STATE_ROVER_NO_FIX):
+                    icons = ICON_CROSS_HAIR            // Center left
+                            | ICON_HORIZONTAL_ACCURACY // Center right
+                            | ICON_LOGGING;            // Bottom right
+                    displaySivVsOpenShort();           // Bottom left
+                    displayBatteryVsEthernet();        // Top right
+                    iconsRadio = setRadioIcons();      // Top left
+                    break;
+                case (STATE_ROVER_FIX):
+                    icons = ICON_CROSS_HAIR            // Center left
+                            | ICON_HORIZONTAL_ACCURACY // Center right
+                            | ICON_LOGGING;            // Bottom right
+                    displaySivVsOpenShort();           // Bottom left
+                    displayBatteryVsEthernet();        // Top right
+                    iconsRadio = setRadioIcons();      // Top left
+                    break;
+                case (STATE_ROVER_RTK_FLOAT):
+                    blinking_icons ^= ICON_CROSS_HAIR_DUAL;
+                    icons = (blinking_icons & ICON_CROSS_HAIR_DUAL) // Center left
+                            | ICON_HORIZONTAL_ACCURACY              // Center right
+                            | ICON_LOGGING;                         // Bottom right
+                    displaySivVsOpenShort();                        // Bottom left
+                    displayBatteryVsEthernet();                     // Top right
+                    iconsRadio = setRadioIcons();                   // Top left
+                    break;
+                case (STATE_ROVER_RTK_FIX):
+                    icons = ICON_CROSS_HAIR_DUAL       // Center left
+                            | ICON_HORIZONTAL_ACCURACY // Center right
+                            | ICON_LOGGING;            // Bottom right
+                    displaySivVsOpenShort();           // Bottom left
+                    displayBatteryVsEthernet();        // Top right
+                    iconsRadio = setRadioIcons();      // Top left
+                    break;
+
+                case (STATE_BASE_NOT_STARTED):
+                    // Do nothing. Static display shown during state change.
+                    break;
+
+                // Start of base / survey in / NTRIP mode
+                // Screen is displayed while we are waiting for horz accuracy to drop to appropriate level
+                // Blink crosshair icon until we have we have horz accuracy < user defined level
+                case (STATE_BASE_TEMP_SETTLE):
+                    blinking_icons ^= ICON_CROSS_HAIR;
+                    icons = (blinking_icons & ICON_CROSS_HAIR) // Center left
+                            | ICON_HORIZONTAL_ACCURACY         // Center right
+                            | ICON_LOGGING;                    // Bottom right
+                    displaySivVsOpenShort();                   // Bottom left
+                    displayBatteryVsEthernet();                // Top right
+                    iconsRadio = setRadioIcons();              // Top left
+                    break;
+                case (STATE_BASE_TEMP_SURVEY_STARTED):
+                    icons = ICON_LOGGING;         // Bottom right
+                    displayBatteryVsEthernet();   // Top right
+                    iconsRadio = setRadioIcons(); // Top left
+                    paintBaseTempSurveyStarted();
+                    break;
+                case (STATE_BASE_TEMP_TRANSMITTING):
+                    icons = ICON_LOGGING;         // Bottom right
+                    displayBatteryVsEthernet();   // Top right
+                    iconsRadio = setRadioIcons(); // Top left
+                    paintRTCM();
+                    break;
+                case (STATE_BASE_FIXED_NOT_STARTED):
+                    icons = 0;                    // Top right
+                    displayBatteryVsEthernet();   // Top right
+                    iconsRadio = setRadioIcons(); // Top left
+                    break;
+                case (STATE_BASE_FIXED_TRANSMITTING):
+                    icons = ICON_LOGGING;         // Bottom right
+                    displayBatteryVsEthernet();   // Top right
+                    iconsRadio = setRadioIcons(); // Top left
+                    paintRTCM();
+                    break;
+
+                case (STATE_NTPSERVER_NOT_STARTED):
+                case (STATE_NTPSERVER_NO_SYNC):
+                    blinking_icons ^= ICON_CLOCK;
+                    icons = (blinking_icons & ICON_CLOCK) // Center left
+                            | ICON_CLOCK_ACCURACY;        // Center right
+                    displaySivVsOpenShort();              // Bottom left
+                    if (online.ethernetStatus == ETH_CONNECTED)
+                        blinking_icons |= ICON_ETHERNET; // Don't blink if link is up
+                    else
+                        blinking_icons ^= ICON_ETHERNET;
+                    icons |= (blinking_icons & ICON_ETHERNET); // Top Right
+                    iconsRadio = ICON_IP_ADDRESS;              // Top left
+                    break;
+
+                case (STATE_NTPSERVER_SYNC):
+                    icons = ICON_CLOCK            // Center left
+                            | ICON_CLOCK_ACCURACY // Center right
+                            | ICON_LOGGING_NTP;   // Bottom right
+                    displaySivVsOpenShort();      // Bottom left
+                    if (online.ethernetStatus == ETH_CONNECTED)
+                        blinking_icons |= ICON_ETHERNET; // Don't blink if link is up
+                    else
+                        blinking_icons ^= ICON_ETHERNET;
+                    icons |= (blinking_icons & ICON_ETHERNET); // Top Right
+                    iconsRadio = ICON_IP_ADDRESS;              // Top left
+                    break;
+
+                case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
+                    break;
+                case (STATE_CONFIG_VIA_ETH_STARTED):
+                    break;
+                case (STATE_CONFIG_VIA_ETH):
+                    displayConfigViaEthernet();
+                    break;
+                case (STATE_CONFIG_VIA_ETH_RESTART_BASE):
+                    break;
+
+                case (STATE_BUBBLE_LEVEL):
+                    paintBubbleLevel();
+                    break;
+                case (STATE_PROFILE):
+                    paintProfile(displayProfile);
+                    break;
+                case (STATE_MARK_EVENT):
+                    // Do nothing. Static display shown during state change.
+                    break;
+                case (STATE_DISPLAY_SETUP):
+                    paintDisplaySetup();
+                    break;
+                case (STATE_WIFI_CONFIG_NOT_STARTED):
+                    displayWiFiConfigNotStarted(); // Display 'WiFi Config'
+                    break;
+                case (STATE_WIFI_CONFIG):
+                    iconsRadio = setWiFiIcon(); // Blink WiFi in center
+                    displayWiFiConfig();        // Display SSID and IP
+                    break;
+                case (STATE_TEST):
+                    paintSystemTest();
+                    break;
+                case (STATE_TESTING):
+                    paintSystemTest();
+                    break;
+
+                case (STATE_KEYS_STARTED):
+                    paintRTCWait();
+                    break;
+                case (STATE_KEYS_NEEDED):
+                    // Do nothing. Quick, fall through state.
+                    break;
+                case (STATE_KEYS_WIFI_STARTED):
+                    iconsRadio = setWiFiIcon(); // Blink WiFi in center
+                    paintGettingKeys();
+                    break;
+                case (STATE_KEYS_WIFI_CONNECTED):
+                    iconsRadio = setWiFiIcon(); // Blink WiFi in center
+                    paintGettingKeys();
+                    break;
+                case (STATE_KEYS_WIFI_TIMEOUT):
+                    // Do nothing. Quick, fall through state.
+                    break;
+                case (STATE_KEYS_EXPIRED):
+                    // Do nothing. Quick, fall through state.
+                    break;
+                case (STATE_KEYS_DAYS_REMAINING):
+                    // Do nothing. Quick, fall through state.
+                    break;
+                case (STATE_KEYS_LBAND_CONFIGURE):
+                    paintLBandConfigure();
+                    break;
+                case (STATE_KEYS_LBAND_ENCRYPTED):
+                    // Do nothing. Quick, fall through state.
+                    break;
+                case (STATE_KEYS_PROVISION_WIFI_STARTED):
+                    iconsRadio = setWiFiIcon(); // Blink WiFi in center
+                    paintGettingKeys();
+                    break;
+                case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
+                    iconsRadio = setWiFiIcon(); // Blink WiFi in center
+                    paintGettingKeys();
+                    break;
+
+                case (STATE_ESPNOW_PAIRING_NOT_STARTED):
+                    paintEspNowPairing();
+                    break;
+                case (STATE_ESPNOW_PAIRING):
+                    paintEspNowPairing();
+                    break;
+
+                case (STATE_SHUTDOWN):
+                    displayShutdown();
+                    break;
+                default:
+                    systemPrintf("Unknown display: %d\r\n", systemState);
+                    displayError("Display");
+                    break;
+                }
+
+                // Top left corner - Radio icon indicators take three spots (left/center/right)
+                // Allowed icon combinations:
+                // Bluetooth + Rover/Base
+                // WiFi + Bluetooth + Rover/Base
+                // ESP-Now + Bluetooth + Rover/Base
+                // ESP-Now + Bluetooth + WiFi
+                // See setRadioIcons() for the icon selection logic
+
+                // Left spot
+                if (iconsRadio & ICON_MAC_ADDRESS)
+                {
+                    char macAddress[5];
+                    const uint8_t *rtkMacAddress = getMacAddress();
+
+                    // Print four characters of MAC
+                    snprintf(macAddress, sizeof(macAddress), "%02X%02X", rtkMacAddress[4], rtkMacAddress[5]);
+                    oled.setFont(QW_FONT_5X7); // Set font to smallest
+                    oled.setCursor(0, 3);
+                    oled.print(macAddress);
+                }
+                else if (iconsRadio & ICON_BT_SYMBOL_LEFT)
+                    displayBitmap(1, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
+                else if (iconsRadio & ICON_WIFI_SYMBOL_0_LEFT)
+                    displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_0);
+                else if (iconsRadio & ICON_WIFI_SYMBOL_1_LEFT)
+                    displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_1);
+                else if (iconsRadio & ICON_WIFI_SYMBOL_2_LEFT)
+                    displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_2);
+                else if (iconsRadio & ICON_WIFI_SYMBOL_3_LEFT)
+                    displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_3);
+                else if (iconsRadio & ICON_ESPNOW_SYMBOL_0_LEFT)
+                    displayBitmap(0, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_0);
+                else if (iconsRadio & ICON_ESPNOW_SYMBOL_1_LEFT)
+                    displayBitmap(0, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_1);
+                else if (iconsRadio & ICON_ESPNOW_SYMBOL_2_LEFT)
+                    displayBitmap(0, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_2);
+                else if (iconsRadio & ICON_ESPNOW_SYMBOL_3_LEFT)
+                    displayBitmap(0, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_3);
+                else if (iconsRadio & ICON_DOWN_ARROW_LEFT)
+                    displayBitmap(1, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
+                else if (iconsRadio & ICON_UP_ARROW_LEFT)
+                    displayBitmap(1, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
+                else if (iconsRadio & ICON_BLANK_LEFT)
+                {
+                    ;
+                }
+
+                // Center radio spots
+                if (iconsRadio & ICON_BT_SYMBOL_CENTER)
+                {
+                    // Moved to center to give space for ESP NOW icon on far left
+                    displayBitmap(16, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
+                }
+                else if (iconsRadio & ICON_MAC_ADDRESS_2DIGIT)
+                {
+                    char macAddress[5];
+                    const uint8_t *rtkMacAddress = getMacAddress();
+
+                    // Print only last two digits of MAC
+                    snprintf(macAddress, sizeof(macAddress), "%02X", rtkMacAddress[5]);
+                    oled.setFont(QW_FONT_5X7); // Set font to smallest
+                    oled.setCursor(14, 3);
+                    oled.print(macAddress);
+                }
+                else if (iconsRadio & ICON_DOWN_ARROW_CENTER)
+                    displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
+                else if (iconsRadio & ICON_UP_ARROW_CENTER)
+                    displayBitmap(16, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
+
+                // Radio third spot
+                if (iconsRadio & ICON_WIFI_SYMBOL_0_RIGHT)
+                    displayBitmap(28, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_0);
+                else if (iconsRadio & ICON_WIFI_SYMBOL_1_RIGHT)
+                    displayBitmap(28, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_1);
+                else if (iconsRadio & ICON_WIFI_SYMBOL_2_RIGHT)
+                    displayBitmap(28, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_2);
+                else if (iconsRadio & ICON_WIFI_SYMBOL_3_RIGHT)
+                    displayBitmap(28, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_3);
+                else if ((iconsRadio & ICON_DYNAMIC_MODEL) && (online.gnss == true))
+                    paintDynamicModel();
+                else if (iconsRadio & ICON_BASE_TEMPORARY)
+                    displayBitmap(28, 0, BaseTemporary_Width, BaseTemporary_Height, BaseTemporary);
+                else if (iconsRadio & ICON_BASE_FIXED)
+                    displayBitmap(28, 0, BaseFixed_Width, BaseFixed_Height, BaseFixed); // true - blend with other pixels
+                else if (iconsRadio & ICON_DOWN_ARROW_RIGHT)
+                    displayBitmap(31, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
+                else if (iconsRadio & ICON_UP_ARROW_RIGHT)
+                    displayBitmap(31, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
+                else if (iconsRadio & ICON_BLANK_RIGHT)
+                {
+                    ;
+                }
+
+                // Left + center spot
+                if (iconsRadio & ICON_IP_ADDRESS)
+                    paintIPAddress();
+
+                // Top right corner
+                if (icons & ICON_BATTERY)
+                    paintBatteryLevel();
+                else if (icons & ICON_ETHERNET)
+                    displayBitmap(45, 0, Ethernet_Icon_Width, Ethernet_Icon_Height, Ethernet_Icon);
+
+                // Center left
+                if (icons & ICON_CROSS_HAIR)
+                    displayBitmap(0, 18, CrossHair_Width, CrossHair_Height, CrossHair);
+                else if (icons & ICON_CROSS_HAIR_DUAL)
+                    displayBitmap(0, 18, CrossHairDual_Width, CrossHairDual_Height, CrossHairDual);
+                else if (icons & ICON_CLOCK)
+                    paintClock();
+
+                // Center right
+                if (icons & ICON_HORIZONTAL_ACCURACY)
+                    paintHorizontalAccuracy();
+                else if (icons & ICON_CLOCK_ACCURACY)
+                    paintClockAccuracy();
+
+                // Bottom left corner
+                if (icons & ICON_SIV_ANTENNA)
+                    displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
+                else if (icons & ICON_SIV_ANTENNA_LBAND)
+                    displayBitmap(2, 35, SIV_Antenna_LBand_Width, SIV_Antenna_LBand_Height, SIV_Antenna_LBand);
+                else if (icons & ICON_ANTENNA_SHORT)
+                    displayBitmap(2, 35, Antenna_Short_Width, Antenna_Short_Height, Antenna_Short);
+                else if (icons & ICON_ANTENNA_OPEN)
+                    displayBitmap(2, 35, Antenna_Open_Width, Antenna_Open_Height, Antenna_Open);
+
+                // Bottom right corner
+                if (icons & ICON_LOGGING)
+                    paintLogging();
+                else if (icons & ICON_LOGGING_NTP)
+                    paintLoggingNTP(true); // NTP, no pulse
+
+                oled.display(); // Push internal buffer to display
             }
-            else if (iconsRadio & ICON_BT_SYMBOL_LEFT)
-                displayBitmap(1, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
-            else if (iconsRadio & ICON_WIFI_SYMBOL_0_LEFT)
-                displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_0);
-            else if (iconsRadio & ICON_WIFI_SYMBOL_1_LEFT)
-                displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_1);
-            else if (iconsRadio & ICON_WIFI_SYMBOL_2_LEFT)
-                displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_2);
-            else if (iconsRadio & ICON_WIFI_SYMBOL_3_LEFT)
-                displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_3);
-            else if (iconsRadio & ICON_ESPNOW_SYMBOL_0_LEFT)
-                displayBitmap(0, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_0);
-            else if (iconsRadio & ICON_ESPNOW_SYMBOL_1_LEFT)
-                displayBitmap(0, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_1);
-            else if (iconsRadio & ICON_ESPNOW_SYMBOL_2_LEFT)
-                displayBitmap(0, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_2);
-            else if (iconsRadio & ICON_ESPNOW_SYMBOL_3_LEFT)
-                displayBitmap(0, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_3);
-            else if (iconsRadio & ICON_DOWN_ARROW_LEFT)
-                displayBitmap(1, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
-            else if (iconsRadio & ICON_UP_ARROW_LEFT)
-                displayBitmap(1, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
-            else if (iconsRadio & ICON_BLANK_LEFT)
-            {
-                ;
-            }
-
-            // Center radio spots
-            if (iconsRadio & ICON_BT_SYMBOL_CENTER)
-            {
-                // Moved to center to give space for ESP NOW icon on far left
-                displayBitmap(16, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
-            }
-            else if (iconsRadio & ICON_MAC_ADDRESS_2DIGIT)
-            {
-                char macAddress[5];
-                const uint8_t *rtkMacAddress = getMacAddress();
-
-                // Print only last two digits of MAC
-                snprintf(macAddress, sizeof(macAddress), "%02X", rtkMacAddress[5]);
-                oled.setFont(QW_FONT_5X7); // Set font to smallest
-                oled.setCursor(14, 3);
-                oled.print(macAddress);
-            }
-            else if (iconsRadio & ICON_DOWN_ARROW_CENTER)
-                displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
-            else if (iconsRadio & ICON_UP_ARROW_CENTER)
-                displayBitmap(16, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
-
-            // Radio third spot
-            if (iconsRadio & ICON_WIFI_SYMBOL_0_RIGHT)
-                displayBitmap(28, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_0);
-            else if (iconsRadio & ICON_WIFI_SYMBOL_1_RIGHT)
-                displayBitmap(28, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_1);
-            else if (iconsRadio & ICON_WIFI_SYMBOL_2_RIGHT)
-                displayBitmap(28, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_2);
-            else if (iconsRadio & ICON_WIFI_SYMBOL_3_RIGHT)
-                displayBitmap(28, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_3);
-            else if ((iconsRadio & ICON_DYNAMIC_MODEL) && (online.gnss == true))
-                paintDynamicModel();
-            else if (iconsRadio & ICON_BASE_TEMPORARY)
-                displayBitmap(28, 0, BaseTemporary_Width, BaseTemporary_Height, BaseTemporary);
-            else if (iconsRadio & ICON_BASE_FIXED)
-                displayBitmap(28, 0, BaseFixed_Width, BaseFixed_Height, BaseFixed); // true - blend with other pixels
-            else if (iconsRadio & ICON_DOWN_ARROW_RIGHT)
-                displayBitmap(31, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
-            else if (iconsRadio & ICON_UP_ARROW_RIGHT)
-                displayBitmap(31, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
-            else if (iconsRadio & ICON_BLANK_RIGHT)
-            {
-                ;
-            }
-
-            // Left + center spot
-            if (iconsRadio & ICON_IP_ADDRESS)
-                paintIPAddress();
-
-            // Top right corner
-            if (icons & ICON_BATTERY)
-                paintBatteryLevel();
-            else if (icons & ICON_ETHERNET)
-                displayBitmap(45, 0, Ethernet_Icon_Width, Ethernet_Icon_Height, Ethernet_Icon);
-
-            // Center left
-            if (icons & ICON_CROSS_HAIR)
-                displayBitmap(0, 18, CrossHair_Width, CrossHair_Height, CrossHair);
-            else if (icons & ICON_CROSS_HAIR_DUAL)
-                displayBitmap(0, 18, CrossHairDual_Width, CrossHairDual_Height, CrossHairDual);
-            else if (icons & ICON_CLOCK)
-                paintClock();
-
-            // Center right
-            if (icons & ICON_HORIZONTAL_ACCURACY)
-                paintHorizontalAccuracy();
-            else if (icons & ICON_CLOCK_ACCURACY)
-                paintClockAccuracy();
-
-            // Bottom left corner
-            if (icons & ICON_SIV_ANTENNA)
-                displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
-            else if (icons & ICON_SIV_ANTENNA_LBAND)
-                displayBitmap(2, 35, SIV_Antenna_LBand_Width, SIV_Antenna_LBand_Height, SIV_Antenna_LBand);
-            else if (icons & ICON_ANTENNA_SHORT)
-                displayBitmap(2, 35, Antenna_Short_Width, Antenna_Short_Height, Antenna_Short);
-            else if (icons & ICON_ANTENNA_OPEN)
-                displayBitmap(2, 35, Antenna_Open_Width, Antenna_Open_Height, Antenna_Open);
-
-            // Bottom right corner
-            if (icons & ICON_LOGGING)
-                paintLogging();
-            else if (icons & ICON_LOGGING_NTP)
-                paintLoggingNTP(true); // NTP, no pulse
-
-            oled.display(); // Push internal buffer to display
         }
     } // End display online
 }
@@ -2942,13 +2975,23 @@ void printTextCenter(const char *text, uint8_t yPos, QwiicFont &fontType, uint8_
     }
 }
 
-// Given a message (one or two words) display centered
+// Given a message (one, two or three words) display centered
 void displayMessage(const char *message, uint16_t displayTime)
+{
+    displayMessageFont(message, displayTime, false); // Large font
+}
+void displayMessageSmall(const char *message, uint16_t displayTime)
+{
+    displayMessageFont(message, displayTime, true); // Small font
+}
+void displayMessageFont(const char *message, uint16_t displayTime, bool smallFont)
 {
     if (online.display == true)
     {
         char temp[21];
-        uint8_t fontHeight = 15; // Assume fontsize 1
+        uint8_t fontHeight = 16; // Assume fontsize 1
+        if (smallFont)
+            fontHeight = 10;
 
         // Count words based on spaces
         uint8_t wordCount = 0;
@@ -2961,7 +3004,9 @@ void displayMessage(const char *message, uint16_t displayTime)
         }
 
         uint8_t yPos = (oled.getHeight() / 2) - (fontHeight / 2);
-        if (wordCount == 2)
+        if (wordCount >= 2)
+            yPos -= (fontHeight / 2);
+        if (wordCount >= 3)
             yPos -= (fontHeight / 2);
 
         oled.erase();
@@ -2972,7 +3017,10 @@ void displayMessage(const char *message, uint16_t displayTime)
         token = strtok(temp, " ");
         while (token != nullptr)
         {
-            printTextCenter(token, yPos, QW_FONT_8X16, 1, false); // text, y, font type, kerning, inverted
+            if (smallFont)
+                printTextCenter(token, yPos, QW_FONT_5X7, 1, false); // text, y, font type, kerning, inverted
+            else
+                printTextCenter(token, yPos, QW_FONT_8X16, 1, false); // text, y, font type, kerning, inverted
             token = strtok(nullptr, " ");
             yPos += fontHeight;
         }
@@ -3412,3 +3460,14 @@ const uint8_t *getMacAddress()
 #endif // COMPILE_ETHERNET
     return zero;
 }
+
+void paintPvtServer()
+{
+    displayMessage("PVT Server", 0);
+}
+
+void paintUdpServer()
+{
+    displayMessage("UDP Server", 0);
+}
+

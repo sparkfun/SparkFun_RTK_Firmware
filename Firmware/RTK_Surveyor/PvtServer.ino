@@ -31,13 +31,12 @@ pvtServer.ino
 
 */
 
-#ifdef COMPILE_WIFI
+#if COMPILE_NETWORK
 
 //----------------------------------------
 // Constants
 //----------------------------------------
 
-#define PVT_SERVER_MAX_CLIENTS 4
 #define PVT_SERVER_CLIENT_DATA_TIMEOUT  (15 * 1000)
 
 // Define the PVT server states
@@ -68,7 +67,7 @@ const RtkMode_t pvtServerMode = RTK_MODE_BASE_FIXED
 //----------------------------------------
 
 // PVT server
-static WiFiServer * pvtServer = nullptr;
+static NetworkServer * pvtServer = nullptr;
 static uint8_t pvtServerState;
 static uint32_t pvtServerTimer;
 
@@ -211,6 +210,8 @@ void discardPvtServerBytes(RING_BUFFER_OFFSET previousTail, RING_BUFFER_OFFSET n
 // PVT Server Routines
 //----------------------------------------
 
+bool pvtServerRunning() { return (pvtServerState == PVT_SERVER_STATE_RUNNING); }
+
 // Update the state of the PVT server state machine
 void pvtServerSetState(uint8_t newState)
 {
@@ -240,17 +241,23 @@ bool pvtServerStart()
 {
     IPAddress localIp;
 
+    NETWORK_DATA * network;
+    network = &networkData;
+    if (network)
+        localIp = networkGetIpAddress(network->type);
+
     if (settings.debugPvtServer && (!inMainMenu))
         systemPrintln("PVT server starting the server");
 
     // Start the PVT server
-    pvtServer = new WiFiServer(settings.pvtServerPort);
+    if (pvtServer == nullptr)
+        pvtServer = networkServer(NETWORK_USER_PVT_SERVER, settings.pvtServerPort);
     if (!pvtServer)
         return false;
 
     pvtServer->begin();
     online.pvtServer = true;
-    localIp = wifiGetIpAddress();
+
     systemPrintf("PVT server online, IP address %d.%d.%d.%d:%d\r\n",
                  localIp[0], localIp[1], localIp[2], localIp[3],
                  settings.pvtServerPort);
@@ -306,31 +313,37 @@ void pvtServerStopClient(int index)
     bool connected;
     bool dataSent;
 
-    // Done with this client connection
-    if ((settings.debugPvtServer || PERIODIC_DISPLAY(PD_PVT_SERVER_DATA)) && (!inMainMenu))
+    // Determine if a client was allocated
+    if (pvtServerClient[index])
     {
-        PERIODIC_CLEAR(PD_PVT_SERVER_DATA);
+        // Done with this client connection
+        if ((settings.debugPvtServer || PERIODIC_DISPLAY(PD_PVT_SERVER_DATA)) && (!inMainMenu))
+        {
+            //PERIODIC_CLEAR(PD_PVT_SERVER_DATA);
 
-        // Determine the shutdown reason
-        connected = pvtServerClient[index]->connected()
-                    && (!(pvtServerClientWriteError & (1 << index)));
-        dataSent = ((millis() - pvtServerTimer) < PVT_SERVER_CLIENT_DATA_TIMEOUT)
-                 || (pvtServerClientDataSent & (1 << index));
-        if (!dataSent)
-            systemPrintf("PVT Server: No data sent over %d seconds\r\n",
-                         PVT_SERVER_CLIENT_DATA_TIMEOUT / 1000);
-        if (!connected)
-            systemPrintf("PVT Server: Link to client broken\r\n");
-        systemPrintf("PVT server client %d disconnected from %d.%d.%d.%d\r\n",
-                     index,
-                     pvtServerClientIpAddress[index][0],
-                     pvtServerClientIpAddress[index][1],
-                     pvtServerClientIpAddress[index][2],
-                     pvtServerClientIpAddress[index][3]);
+            // Determine the shutdown reason
+            connected = pvtServerClient[index]->connected()
+                        && (!(pvtServerClientWriteError & (1 << index)));
+            dataSent = ((millis() - pvtServerTimer) < PVT_SERVER_CLIENT_DATA_TIMEOUT)
+                    || (pvtServerClientDataSent & (1 << index));
+            if (!dataSent)
+                systemPrintf("PVT Server: No data sent over %d seconds\r\n",
+                            PVT_SERVER_CLIENT_DATA_TIMEOUT / 1000);
+            if (!connected)
+                systemPrintf("PVT Server: Link to client broken\r\n");
+            systemPrintf("PVT server client %d disconnected from %d.%d.%d.%d\r\n",
+                        index,
+                        pvtServerClientIpAddress[index][0],
+                        pvtServerClientIpAddress[index][1],
+                        pvtServerClientIpAddress[index][2],
+                        pvtServerClientIpAddress[index][3]);
+        }
+
+        // Shutdown the PVT server client link
+        pvtServerClient[index]->stop();
+        delete pvtServerClient[index];
+        pvtServerClient[index] = nullptr;
     }
-
-    // Shutdown the PVT server client link
-    pvtServerClient[index]->stop();
     pvtServerClientConnected &= ~(1 << index);
     pvtServerClientWriteError &= ~(1 << index);
 }
@@ -380,7 +393,9 @@ void pvtServerUpdate()
     // Wait until the PVT server is enabled
     case PVT_SERVER_STATE_OFF:
         // Determine if the PVT server should be running
-        if (EQ_RTK_MODE(pvtServerMode) && settings.enablePvtServer && (!wifiIsConnected()))
+        NETWORK_DATA * network;
+        network = &networkData;
+        if (EQ_RTK_MODE(pvtServerMode) && settings.enablePvtServer && network && (!networkIsTypeConnected(network->type)))
         {
             if (networkUserOpen(NETWORK_USER_PVT_SERVER, NETWORK_TYPE_ACTIVE))
             {
@@ -433,7 +448,7 @@ void pvtServerUpdate()
         // Walk the list of PVT server clients
         for (index = 0; index < PVT_SERVER_MAX_CLIENTS; index++)
         {
-            // Determine if the client data structure is in use
+            // Determine if the client data structure is still in use
             if (pvtServerClientConnected & (1 << index))
             {
                 // Data structure in use
@@ -465,27 +480,53 @@ void pvtServerUpdate()
         // Walk the list of PVT server clients
         for (index = 0; index < PVT_SERVER_MAX_CLIENTS; index++)
         {
-            // Determine if the client data structure is in use
+            // Determine if the client data structure is not in use
             if (!(pvtServerClientConnected & (1 << index)))
             {
-                WiFiClient client;
-
                 // Data structure not in use
-                // Check for another PVT server client
-                client = pvtServer->available();
-
-                // Done if no PVT server client found
-                if (!client)
+                NETWORK_DATA * network;
+                network = &networkData;
+                if (!network)
                     break;
 
+                // Check for another PVT server client
+                // Use accept, not available:
+                //   Ethernet accept will return the connected client even if no data received
+                //   Ethernet available expects the client to send data first
+                // The client instances are stored within the NetworkServer instance
+                Client *client = pvtServer->accept(index);
+
+                // Done if no PVT server client found
+                if (!*client)
+                    break;
+
+                // Check if the data structure has been initialized
+                if (pvtServerClient[index] == nullptr)
+                {
+                    pvtServerClient[index] = new NetworkClient(client, network->type);
+
+                    // Check for allocation failure
+                    if(pvtServerClient[index] == nullptr)
+                    {
+                        if (settings.debugPvtServer)
+                            Serial.printf("ERROR: Failed to allocate PVT server client %d!\r\n", index);
+                        break;
+                    }
+                }
+                else
+                {
+                    // This should never happen...
+                    Serial.printf("ERROR: pvtServerClient[%d] already exists!\r\n", index);
+                    break;
+                }
+
                 // Start processing the new PVT server client connection
-                pvtServerClient[index] = new NetworkWiFiClient(client);
                 pvtServerClientIpAddress[index] = pvtServerClient[index]->remoteIP();
                 pvtServerClientConnected |= 1 << index;
                 pvtServerClientDataSent |= 1 << index;
                 if ((settings.debugPvtServer || PERIODIC_DISPLAY(PD_PVT_SERVER_DATA)) && (!inMainMenu))
                 {
-                    PERIODIC_CLEAR(PD_PVT_SERVER_DATA);
+                    PERIODIC_CLEAR(PD_PVT_SERVER_DATA); // This will only print the first client...
                     systemPrintf("PVT server client %d connected to %d.%d.%d.%d\r\n",
                                  index,
                                  pvtServerClientIpAddress[index][0],
@@ -502,6 +543,29 @@ void pvtServerUpdate()
             // Restart the data verification
             pvtServerTimer = millis();
             pvtServerClientDataSent = 0;
+
+            // Keep WiFi alive for PvtServer when no clients are connected
+            // Prevents:
+            //   [D][WiFiGeneric.cpp:831] _eventCallback(): Arduino Event: 5 - STA_DISCONNECTED
+            //   [W][WiFiGeneric.cpp:852] _eventCallback(): Reason: 4 - ASSOC_EXPIRE
+            if (!pvtServerClientConnected)
+            {
+                NETWORK_DATA * network;
+                network = &networkData;
+                if (network->type == NETWORK_TYPE_WIFI)
+                {
+                    // Generate a little DNS traffic
+                    // Use a random host. Checking the same host more than once generates no new traffic...
+                    char randomHost[strlen("www.00000000.com") + 1];
+                    snprintf(randomHost, sizeof(randomHost), "www.%08x.com", millis());
+                    IPAddress theIP;
+                    unsigned long start = millis();
+                    WiFi.hostByName(randomHost, theIP);
+                    if (settings.debugPvtServer)
+                        systemPrintf("PVT Server keep alive: WiFi.hostByName(%s) took %ld ms\r\n", randomHost, millis() - start);
+                }
+            }
+
         }
         break;
     }
@@ -537,4 +601,21 @@ void pvtServerZeroTail()
         pvtServerClientTails[index] = 0;
 }
 
-#endif // COMPILE_WIFI
+void paintPvtServerIP()
+{
+    IPAddress localIp;
+    NETWORK_DATA * network;
+    network = &networkData;
+    if (network)
+        localIp = networkGetIpAddress(network->type);
+
+    char message[31];
+
+    snprintf(message, sizeof(message), "%d.%d. %d.%d: %d",
+                 localIp[0], localIp[1], localIp[2], localIp[3],
+                 settings.pvtServerPort);
+
+    displayMessageSmall(message, 0);
+}
+
+#endif // COMPILE_NETWORK

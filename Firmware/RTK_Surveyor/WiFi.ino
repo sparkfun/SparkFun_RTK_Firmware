@@ -524,6 +524,8 @@ bool wifiConnect(unsigned long timeout)
     int wifiResponse = wifiMulti.run(timeout);
     if (wifiResponse == WL_CONNECTED)
     {
+        // addService fails with "[E][ESPmDNS.cpp:148] addService(): Failed adding service http.tcp."
+        // Do we need it? Maybe we should wait until after the WiFiServer is started?
         if (settings.enablePvtClient == true || settings.enablePvtServer == true || settings.enablePvtUdpServer == true)
         {
             if (settings.mdnsEnable == true)

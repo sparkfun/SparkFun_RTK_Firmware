@@ -56,6 +56,7 @@ class NetworkUDP : public UDP
     
     //------------------------------
     // Determine if the network client was allocated
+    // Note: EthernetUDP and WiFiUDP do not have operator bool() methods
     //------------------------------
 
     operator bool()

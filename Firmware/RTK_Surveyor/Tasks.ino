@@ -840,97 +840,185 @@ void handleGnssDataTask(void *e)
                 {
                     markSemaphore(FUNCTION_WRITESD);
 
-                    // Reduce bytes to record if we have more then the end of the buffer
-                    if ((sdRingBufferTail + bytesToSend) > settings.gnssHandlerBufferSize)
-                        bytesToSend = settings.gnssHandlerBufferSize - sdRingBufferTail;
-
-                    if (settings.enablePrintSDBuffers && (!inMainMenu))
+                    do // Do the SD write in a do loop so we can break out if needed
                     {
-                        int bufferAvailable;
-                        if (USE_I2C_GNSS)
-                            bufferAvailable = serialGNSS.available();
-                        else
+                        if (settings.enablePrintSDBuffers && (!inMainMenu))
                         {
-                            theGNSS.checkUblox();
-                            bufferAvailable = theGNSS.fileBufferAvailable();
+                            int bufferAvailable;
+                            if (USE_I2C_GNSS)
+                                bufferAvailable = serialGNSS.available();
+                            else
+                            {
+                                theGNSS.checkUblox();
+                                bufferAvailable = theGNSS.fileBufferAvailable();
+                            }
+                            int availableUARTSpace;
+                            if (USE_I2C_GNSS)
+                                availableUARTSpace = settings.uartReceiveBufferSize - bufferAvailable;
+                            else
+                                // Use gnssHandlerBufferSize for now. TODO: work out if the SPI GNSS needs its own buffer
+                                // size setting
+                                availableUARTSpace = settings.gnssHandlerBufferSize - bufferAvailable;
+                            systemPrintf("SD Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: "
+                                        "%04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\r\n",
+                                        bufferAvailable, 0, 0, availableUARTSpace, availableHandlerSpace, bytesToSend, 0,
+                                        bufferOverruns);
                         }
-                        int availableUARTSpace;
-                        if (USE_I2C_GNSS)
-                            availableUARTSpace = settings.uartReceiveBufferSize - bufferAvailable;
-                        else
-                            // Use gnssHandlerBufferSize for now. TODO: work out if the SPI GNSS needs its own buffer
-                            // size setting
-                            availableUARTSpace = settings.gnssHandlerBufferSize - bufferAvailable;
-                        systemPrintf("SD Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: "
-                                     "%04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\r\n",
-                                     bufferAvailable, 0, 0, availableUARTSpace, availableHandlerSpace, bytesToSend, 0,
-                                     bufferOverruns);
-                    }
 
-                    // Write the data to the file
-                    long startTime = millis();
-                    startMillis = millis();
+                        // For the SD card, we need to write everything we've got
+                        // to prevent the ARP Write and Events from gatecrashing...
+                            
+                        int32_t sendTheseBytes = bytesToSend;
 
-                    bytesToSend = ubxFile->write(&ringBuffer[sdRingBufferTail], bytesToSend);
-                    if (PERIODIC_DISPLAY(PD_SD_LOG_WRITE) && (bytesToSend > 0))
-                    {
-                        PERIODIC_CLEAR(PD_SD_LOG_WRITE);
-                        systemPrintf("SD %d bytes written to log file\r\n", bytesToSend);
-                    }
+                        // Reduce bytes to record if we have more then the end of the buffer
+                        if ((sdRingBufferTail + sendTheseBytes) > settings.gnssHandlerBufferSize)
+                            sendTheseBytes = settings.gnssHandlerBufferSize - sdRingBufferTail;
 
-                    static unsigned long lastFlush = 0;
-                    if (USE_MMC_MICROSD)
-                    {
-                        if (millis() > (lastFlush + 250)) // Flush every 250ms, not every write
-                        {
-                            ubxFile->flush();
-                            lastFlush += 250;
-                        }
-                    }
-                    fileSize = ubxFile->fileSize(); // Update file size
+                        // Write the data to the file
+                        startMillis = millis();
 
-                    sdFreeSpace -= bytesToSend; // Update remaining space on SD
+                        int32_t bytesSent = ubxFile->write(&ringBuffer[sdRingBufferTail], sendTheseBytes);
 
-                    // Force file sync every 60s
-                    if (millis() - lastUBXLogSyncTime > 60000)
-                    {
-                        if (productVariant == RTK_SURVEYOR)
-                            digitalWrite(pin_baseStatusLED,
-                                         !digitalRead(pin_baseStatusLED)); // Blink LED to indicate logging activity
-
-                        ubxFile->sync();
-                        ubxFile->updateFileAccessTimestamp(); // Update the file access time & date
-
-                        if (productVariant == RTK_SURVEYOR)
-                            digitalWrite(pin_baseStatusLED,
-                                         !digitalRead(pin_baseStatusLED)); // Return LED to previous state
-
-                        lastUBXLogSyncTime = millis();
-                    }
-
-                    // Remember the maximum transfer time
-                    deltaMillis = millis() - startMillis;
-                    if (maxMillis[RBC_SD_CARD] < deltaMillis)
-                        maxMillis[RBC_SD_CARD] = deltaMillis;
-                    long endTime = millis();
-
-                    if (settings.enablePrintBufferOverrun)
-                    {
-                        if (endTime - startTime > 150)
-                            systemPrintf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / "
-                                         "spaceRemaining %d bytes\r\n",
-                                         endTime - startTime, fileSize, bytesToSend, combinedSpaceRemaining);
-                    }
-
-                    xSemaphoreGive(sdCardSemaphore);
-
-                    // Account for the sent data or dropped
-                    if (bytesToSend > 0)
-                    {
-                        sdRingBufferTail += bytesToSend;
+                        // Account for the sent data or dropped
+                        sdRingBufferTail += bytesSent;
                         if (sdRingBufferTail >= settings.gnssHandlerBufferSize)
                             sdRingBufferTail -= settings.gnssHandlerBufferSize;
-                    }
+
+                        if (bytesSent != sendTheseBytes)
+                        {
+                            systemPrintf("SD write mismatch (1): wrote %d bytes of %d\r\n",
+                                         bytesSent, sendTheseBytes);
+                            break; // Exit the do loop
+                        }
+
+                        // If we have more data to write - and the first write was successful
+                        if (bytesToSend > sendTheseBytes)
+                        {
+                            sendTheseBytes = bytesToSend - sendTheseBytes;
+
+                            bytesSent = ubxFile->write(&ringBuffer[sdRingBufferTail], sendTheseBytes);
+
+                            // Account for the sent data or dropped
+                            sdRingBufferTail += bytesSent;
+                            if (sdRingBufferTail >= settings.gnssHandlerBufferSize) // Should be redundant
+                                sdRingBufferTail -= settings.gnssHandlerBufferSize;
+
+                            if (bytesSent != sendTheseBytes)
+                            {
+                                systemPrintf("SD write mismatch (2): wrote %d bytes of %d\r\n",
+                                             bytesSent, sendTheseBytes);
+                                break; // Exit the do loop
+                            }
+                        }
+
+                        if (PERIODIC_DISPLAY(PD_SD_LOG_WRITE) && (bytesToSend > 0) && (!inMainMenu))
+                        {
+                            PERIODIC_CLEAR(PD_SD_LOG_WRITE);
+                            systemPrintf("SD %d bytes written to log file\r\n", bytesToSend);
+                        }
+
+                        sdFreeSpace -= bytesToSend; // Update remaining space on SD
+
+                        // Record any pending trigger events
+                        if (newEventToRecord == true)
+                        {
+                            newEventToRecord = false;
+
+                            if ((settings.enablePrintLogFileStatus) && (!inMainMenu))
+                                systemPrintln("Recording event");
+
+                            // Record trigger count with Time Of Week of rising edge (ms), Millisecond fraction of Time Of Week of
+                            // rising edge (ns), and accuracy estimate (ns)
+                            char eventData[82]; // Max NMEA sentence length is 82
+                            snprintf(eventData, sizeof(eventData), "%d,%d,%d,%d", triggerCount, triggerTowMsR, triggerTowSubMsR,
+                                    triggerAccEst);
+
+                            char nmeaMessage[82]; // Max NMEA sentence length is 82
+                            createNMEASentence(CUSTOM_NMEA_TYPE_EVENT, nmeaMessage, sizeof(nmeaMessage),
+                                            eventData); // textID, buffer, sizeOfBuffer, text
+
+                            ubxFile->write((const uint8_t *)nmeaMessage, strlen(nmeaMessage));
+                            const char *crlf = "\r\n";
+                            ubxFile->write((const uint8_t *)crlf, 2);
+
+                            sdFreeSpace -= strlen(nmeaMessage) + 2; // Update remaining space on SD
+                        }
+
+                        // Record the Antenna Reference Position - if available
+                        if (newARPAvailable == true && settings.enableARPLogging &&
+                            ((millis() - lastARPLog) > (settings.ARPLoggingInterval_s * 1000)))
+                        {
+                            lastARPLog = millis();
+                            newARPAvailable = false;
+
+                            double x = ARPECEFX;
+                            x /= 10000.0; // Convert to m
+                            double y = ARPECEFY;
+                            y /= 10000.0; // Convert to m
+                            double z = ARPECEFZ;
+                            z /= 10000.0; // Convert to m
+                            double h = ARPECEFH;
+                            h /= 10000.0;     // Convert to m
+                            char ARPData[82]; // Max NMEA sentence length is 82
+                            snprintf(ARPData, sizeof(ARPData), "%.4f,%.4f,%.4f,%.4f", x, y, z, h);
+
+                            if ((settings.enablePrintLogFileStatus) && (!inMainMenu))
+                                systemPrintf("Recording Antenna Reference Position %s\r\n", ARPData);
+
+                            char nmeaMessage[82]; // Max NMEA sentence length is 82
+                            createNMEASentence(CUSTOM_NMEA_TYPE_ARP_ECEF_XYZH, nmeaMessage, sizeof(nmeaMessage),
+                                            ARPData); // textID, buffer, sizeOfBuffer, text
+
+                            ubxFile->write((const uint8_t *)nmeaMessage, strlen(nmeaMessage));
+                            const char *crlf = "\r\n";
+                            ubxFile->write((const uint8_t *)crlf, 2);
+
+                            sdFreeSpace -= strlen(nmeaMessage) + 2; // Update remaining space on SD
+                        }
+
+                        static unsigned long lastFlush = 0;
+                        if (USE_MMC_MICROSD)
+                        {
+                            if (millis() > (lastFlush + 250)) // Flush every 250ms, not every write
+                            {
+                                ubxFile->flush();
+                                lastFlush += 250;
+                            }
+                        }
+                        fileSize = ubxFile->fileSize(); // Update file size                        
+
+                        // Force file sync every 60s
+                        if (millis() - lastUBXLogSyncTime > 60000)
+                        {
+                            if (productVariant == RTK_SURVEYOR)
+                                digitalWrite(pin_baseStatusLED,
+                                            !digitalRead(pin_baseStatusLED)); // Blink LED to indicate logging activity
+
+                            ubxFile->sync();
+                            ubxFile->updateFileAccessTimestamp(); // Update the file access time & date
+
+                            if (productVariant == RTK_SURVEYOR)
+                                digitalWrite(pin_baseStatusLED,
+                                            !digitalRead(pin_baseStatusLED)); // Return LED to previous state
+
+                            lastUBXLogSyncTime = millis();
+                        }
+
+                        // Remember the maximum transfer time
+                        deltaMillis = millis() - startMillis;
+                        if (maxMillis[RBC_SD_CARD] < deltaMillis)
+                            maxMillis[RBC_SD_CARD] = deltaMillis;
+
+                        if (settings.enablePrintBufferOverrun)
+                        {
+                            if (deltaMillis > 150)
+                                systemPrintf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / "
+                                            "spaceRemaining %d bytes\r\n",
+                                            deltaMillis, fileSize, bytesToSend, combinedSpaceRemaining);
+                        }
+                    } while(0);
+
+                    xSemaphoreGive(sdCardSemaphore);
                 } // End sdCardSemaphore
                 else
                 {

@@ -482,6 +482,8 @@ const uint8_t btMaxEscapeCharacters = 3; // Number of characters needed to enter
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_Qwiic_OLED.h> //http://librarymanager/All#SparkFun_Qwiic_Graphic_OLED
 
+const int threeLinesOfText = 31; // char array size for three lines of text
+
 #if COMPILE_NETWORK
 bool pvtServerRunning(); // Header
 bool pvtUdpServerRunning(); // Header

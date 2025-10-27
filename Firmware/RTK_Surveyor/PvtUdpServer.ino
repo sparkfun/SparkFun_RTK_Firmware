@@ -388,7 +388,7 @@ void paintUdpServerIP()
     if (network)
         localIp = networkGetIpAddress(network->type);
 
-    char message[31];
+    char message[threeLinesOfText];
 
     snprintf(message, sizeof(message), "%d.%d. %d.%d: %d",
                  localIp[0], localIp[1], localIp[2], localIp[3],

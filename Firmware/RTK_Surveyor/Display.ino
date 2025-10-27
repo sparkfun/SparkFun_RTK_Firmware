@@ -2988,7 +2988,7 @@ void displayMessageFont(const char *message, uint16_t displayTime, bool smallFon
 {
     if (online.display == true)
     {
-        char temp[21];
+        char temp[threeLinesOfText];
         uint8_t fontHeight = 16; // Assume fontsize 1
         if (smallFont)
             fontHeight = 10;

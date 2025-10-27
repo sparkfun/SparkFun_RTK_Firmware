@@ -114,7 +114,7 @@ In the rare event that a unit is not staying on long enough for new firmware to 
 
 ## Updating Firmware From WiFi
 
-![Advanced system settings](img/WiFi Config/SparkFun%20RTK%20System%20Config%20Upload%20BIN.png)
+![Advanced system settings](img/WiFi%20Config/SparkFun%20RTK%20System%20Config%20Upload%20BIN.png)
 
 **Note:** Firmware versions 1.1 to 1.9 have an issue that severely limits firmware upload over WiFi and is not recommended; use the [GUI](firmware_update.md#updating-firmware-using-the-uploader-gui) method instead. Firmware versions v1.10 and beyond support direct firmware updates via WiFi.
 
@@ -158,7 +158,9 @@ Get [esptool.py](https://github.com/espressif/esptool). Connect a USB A to C cab
 
 If the COM port is not showing be sure the unit is turned **On**. If an unknown device is appearing, you’ll need to [install drivers for the CH340](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all). Once you know the COM port, run the following command:
 
+```
 py esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor_Partitions_16MB.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
+```
 
 Where */dev/ttyUSB0* is replaced with the port that the RTK product enumerated at and *RTK_Surveyor_Firmware_vxx.bin* is the firmware you would like to load.
 
@@ -288,11 +290,13 @@ You are welcome to clone or fork this repo and do the exact same thing yourself.
 
 If you run the [compilation workflow](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-rtk-firmware.yml), it will compile the firmware and attempt to push the binary to the Binaries repo. This will fail as your account won't have the right permissions. The [non-release-build](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/non-release-build.yml) is the one for you. The firmware binary will be attached as an Artifact to the workflow run. Navigate to Actions \ Non-Release Build, select the latest run of Non-Release Build, the binary is in the Artifacts.
 
-You can then use the [SparkFun RTK Firmware Uploader](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader) to upload the binary onto the ESP32.
+You can then use (e.g.) the [SparkFun RTK Firmware Uploader](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader) to upload the binary onto the ESP32.
 
 ## Using Docker
 
 Installing the correct version of the ESP32 core and of each required Arduino library, is tedious and error-prone. Especially on Windows. We've lost count of the number of times code compilation fails on our local machines, because we had the wrong ESP32 core installed, or forgot to patch Server.h... It is much easier to sandbox the firmware compilation using an environment like [Docker](https://www.docker.com/).
+
+Docker is open-source. It is our new favourite thing!
 
 Here is a step-by-step guide for how to install Docker and compile the firmware from scratch:
 
@@ -330,20 +334,20 @@ For the real Wild West experience, you can also download a copy of the `release_
 
 ### Install Docker Desktop
 
-* Head to [Docker](https://www.docker.com/) and create an account. A free "Personal" account will cover occasional compilations of the firmware
+* **(Optional)** Head to [Docker](https://www.docker.com/) and create an account. A free "Personal" account will cover occasional compilations of the firmware
 * Download and install [Docker Desktop](https://docs.docker.com/get-started/get-docker/) - there are versions for Mac, Windows and Linux. You may need to restart to complete the installation.
-* Run the Desktop and sign in
+* Run the Desktop. If you don't sign in, it will run in Personal mode - which will cover occasional compilations of the firmware
 * On Windows, you may see an error saying "**WSL needs updating** Your version of Windows Subsystem for Linux (WSL) is too old". If you do:
     * Open a command prompt
 	* Type `wsl --update` to update WSL. At the time of writing, this installs Windows Subsystem for Linux 2.6.1
 	* Restart the Docker Desktop
-* If you are using Docker for the first time, the "What is a container?" and "How do I run a container?" demos are useful
+* If you are using Docker for the first time, the "What is a container?" and "How do I run a container?" demos are useful - _but not essential_
     * On Windows, you may want to give Docker Desktop permission to access to your Network, so it can access (e.g.) HTML ports
 	* You can Stop the container and Delete it when you are done
 * You may want to prevent Docker from running when your machine starts up
     * Uncheck "Start Docker Desktop when you sign in to your computer" in the Desktop settings
 
-### Running the Dockerfile to create an Image
+### Using Docker to create the firmware binary
 
 * **Make sure you have Docker Desktop running.** You don't need to be logged in, but it needs to be running.
 * Open a Command Prompt and `cd` into the SparkFun_RTK_Firmware folder
@@ -365,18 +369,34 @@ For the real Wild West experience, you can also download a copy of the `release_
 
 ```
     app3M_fat9M_16MB.csv
+    compile_with_docker.bat
     Dockerfile
     readme.md
     RTKFirmware.csv
     RTK_Surveyor
 ```
 
-* The file we will be using is the `Dockerfile`.
-* Type:
+* The file that does most of the work is the `Dockerfile`
+
+* But, if you're short on time, run `compile_with_docker.bat`. It does everything for you:
+
+![Output of the compile batch file](./img/CompileSource/compile_me_batch_file.png)
+
+* Hey presto! You have your newly compiled firmware binary!
+
+### Running the Dockerfile manually
+
+If you want to see and understand what's going on under the hood with the Dockerfile, Image and Container:
+
+Here is how to perform each step manually:
+
+* To begin, run the Dockerfile. Type:
 
 ```
 docker build -t rtk_firmware .
 ```
+
+You should see:
 
 ![Dockerfile starting](./img/CompileSource/Dockerfile_starting.png)
 
@@ -396,7 +416,7 @@ docker build -t rtk_firmware --progress=plain --no-cache .
 
 Building the full Image from scratch is slow, taking several minutes. You should only need to do it once - unless you make any changes to the Dockerfile.
 
-* When you make changes to the source code and want to recompile, use:
+* **When you make changes to the source code and want to recompile, use:**
 
 ```
 docker build -t rtk_firmware --no-cache-filter deployment .
@@ -404,7 +424,7 @@ docker build -t rtk_firmware --no-cache-filter deployment .
 
 This uses the cache for the `upstream` stage and avoids recreating the full ubuntu machine. But it ignores the cache for the `deployment` stage, ensuring the code is recompiled.
 
-### Access the firmware by running the Image
+#### Access the firmware binary by running the Image
 
 In Docker Desktop, in the Images tab, you should now be able to see an Image named `rtk_firmware`. We now need to Run that Image to access the firmware binary. Click the triangular Run icon under Actions:
 
@@ -436,11 +456,34 @@ If you need the `.elf` file so you can debug code crashes with me-no-dev's [ESP 
 docker cp rtk_container:/RTK_Surveyor.ino.elf .
 ```
 
+If you need the `.bootloader.bin` file so you can upload it with esptool:
+
+```
+docker cp rtk_container:/RTK_Surveyor.ino.bootloader.bin .
+```
+
 If you want the files to appear in a more convenient directory, replace the single `.` with a folder path.
 
 Delete the `rtk_container` container afterwards, to save disk space and so you can reuse the same container name next time. If you forget, you will see an error:
 
 ```Conflict. The container name "/rtk_container" is already in use by container. You have to remove (or rename) that container to be able to reuse that name.```
+
+* **Remember:** when you make changes to the source code and want to recompile, use:
+
+```
+docker build -t rtk_firmware --no-cache-filter deployment .
+```
+
+* **Shortcut:** the `compile_with_docker.bat` batch file does everything for you:
+
+```
+docker build -t rtk_firmware --no-cache-filter deployment .
+docker create --name=rtk_container rtk_firmware:latest
+docker cp rtk_container:/RTK_Surveyor.ino.bin .
+docker cp rtk_container:/RTK_Surveyor.ino.elf .
+docker cp rtk_container:/RTK_Surveyor.ino.bootloader.bin .
+docker container rm rtk_container
+```
 
 ### Compiling on Windows (Deprecated)
 

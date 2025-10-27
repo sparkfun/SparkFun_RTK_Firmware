@@ -485,7 +485,7 @@ docker cp rtk_container:/RTK_Surveyor.ino.bootloader.bin .
 docker container rm rtk_container
 ```
 
-### Compiling on Windows (Deprecated)
+## Compiling on Windows (Deprecated)
 
 **Note: we recommend using the Docker method. It is far easier and much less error-prone...**
 
@@ -532,7 +532,7 @@ You have not replaced the partition file correctly. See the 'Change Partition ta
 
 **Note:** There are a variety of compile guards (COMPILE_WIFI, COMPILE_AP, etc) at the top of RTK_Surveyor.ino that can be commented out to remove them from compilation. This will greatly reduce the firmware size and allow for faster development of functions that do not rely on these features (serial menus, system configuration, logging, etc).
 
-#### Required Libraries
+### Required Libraries
 
 **Note:** You should click on the link next to each of the #includes at the top of RTK_Surveyor.ino within the Arduino IDE to open the library manager and download them. Getting them directly from Github also works but may not be 'official' releases.
 
@@ -582,9 +582,9 @@ The following libraries are only available via GitHub:
 
     * [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) (not available via library manager)
 
-### Compiling on Ubuntu 20.04 (Deprecated)
+## Compiling on Ubuntu 20.04 (Deprecated)
 
-#### Virtual Machine
+### Virtual Machine
 
 Execute the following commands to create the Linux virtual machine:
 
@@ -639,7 +639,7 @@ Execute the following commands to create the Linux virtual machine:
         2. ssh-copy-id -o IdentitiesOnly=yes -i ~/.ssh/Sparkfun_RTK_20.04  &lt;username&gt;@&lt;IP address&gt;
         3. ssh -Y &lt;username&gt;@&lt;IP address&gt;
 
-#### Build Environment
+### Build Environment
 
 Execute the following commands to create the build environment for the SparkFun RTK Firmware:
 
@@ -843,6 +843,8 @@ Execute the following commands to create the build environment for the SparkFun 
 40. cd ~/SparkFun/RTK/
 41. cp  Firmware/app3M_fat9M_16MB.csv  ~/.arduino15/packages/esp32/hardware/esp32/2.0.2/tools/partitions/app3M_fat9M_16MB.csv
 
-### Arduino CLI
+## Arduino CLI
 
-The firmware can be compiled using [Arduino CLI](https://github.com/arduino/arduino-cli). This makes compilation fairly platform independent and flexible. All release candidates and firmware releases are compiled using Arduino CLI using a github action. You can see the source of the action [here](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-release.yml), and use it as a starting point for Arduino CLI compilation.
+The firmware can be compiled using [Arduino CLI](https://github.com/arduino/arduino-cli). This makes compilation fairly platform independent and flexible. All release candidates and firmware releases are compiled using Arduino CLI using a github action. You can see the source of the action [here](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-rtk-firmware.yml), and use it as a starting point for Arduino CLI compilation.
+
+This is the same method the Dockerfile uses - using arduino-cli on a virtual ubuntu machine.

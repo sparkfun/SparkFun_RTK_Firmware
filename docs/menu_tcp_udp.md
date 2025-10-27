@@ -17,7 +17,7 @@ Some Data Collector software (such as [Vespucci](gis_software.md#vespucci)) requ
 
 ![TCP Port Entry](img/WiFi%20Config/SparkFun%20RTK%20Config%20-%20TCP%20Port.png)
 
-If either Client or Server is enabled, a port can be designated. By default, the port is 2947 (registered as [*GPS Daemon request/response*](https://tcp-udp-ports.com/port-2948.htm)) but any port 0 to 65535 is supported.
+If either Client or Server is enabled, a port can be designated. By default, the port is 2948 (registered as [*GPS Daemon request/response*](https://tcp-udp-ports.com/port-2948.htm)) but any port 0 to 65535 is supported.
 
 ![Ethernet TCP Client connection](img/Terminal/TCP_Client.gif)
 

@@ -1192,7 +1192,7 @@ typedef struct
     bool debugPvtServer = false;
     bool enablePvtServer = false;
     uint16_t pvtServerPort = 2948; // PVT server port, 2948 is GPS Daemon: http://tcp-udp-ports.com/port-2948.htm
-    bool displayServerIP = true;
+    bool displayServerIP = true; // Also used by UDP Server
 
     // UDP Server
     bool debugPvtUdpServer = false;

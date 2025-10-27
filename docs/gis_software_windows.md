@@ -26,7 +26,7 @@ Above: From the subpanel, select 'gpsd'.
 
 ![Entering gpsd specifics](img/QGIS/SparkFun%20RTK%20QGIS%20-%20GPS%20Panel%20Entering%20IP%20and%20port.png)
 
-Enter the IP address of your RTK device. This can be found by opening a serial connection to the device. The IP address will be displayed every few seconds. Enter the TCP port to use. By default an RTK device uses 2947.
+Enter the IP address of your RTK device. This can be found by opening a serial connection to the device. The IP address will be displayed every few seconds. Enter the TCP port to use. By default an RTK device uses 2948.
 
 Press 'Connect'. 
 

@@ -1612,7 +1612,7 @@ function tcpClientBoxes() {
     }
     else {
         hide("tcpClientSettingsConfig");
-        //ge("pvtClientPort").value = 2947;
+        //ge("pvtClientPort").value = 2948;
     }
 }
 
@@ -1622,7 +1622,7 @@ function tcpServerBoxes() {
     }
     else {
         hide("tcpServerSettingsConfig");
-        //ge("pvtServerPort").value = 2947;
+        //ge("pvtServerPort").value = 2948;
     }
 }
 

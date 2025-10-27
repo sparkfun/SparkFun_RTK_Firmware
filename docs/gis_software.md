@@ -294,7 +294,7 @@ To verify the NMEA sentences are being delivered correctly, Survey Master has a 
 
 [Vespucci](https://play.google.com/store/apps/details?id=de.blau.android&hl=en_US&gl=US) is an Open Street Map editor for Android.
 
-This software requires the RTK device to connect over TCP. Be sure you have a local WiFi network entered into the [WiFi Config menu](menu_wifi.md), have a TCP Client or Server enabled, and have noted the TCP port (it's 2947 by default).
+This software requires the RTK device to connect over TCP. Be sure you have a local WiFi network entered into the [WiFi Config menu](menu_wifi.md), have a TCP Client or Server enabled, and have noted the TCP port (it's 2948 by default).
 
 ![Vespucci Gear Button](img/Vespucci/SparkFun%20RTK%20Vespucci%20-%20Main%20Gear.png)
 
@@ -342,7 +342,7 @@ Above: From the subpanel, select 'gpsd'.
 
 ![Entering gpsd specifics](img/QGIS/SparkFun%20RTK%20QGIS%20-%20GPS%20Panel%20Entering%20IP%20and%20port.png)
 
-Enter the IP address of your RTK device. This can be found by opening a serial connection to the device. The IP address will be displayed every few seconds. Enter the TCP port to use. By default an RTK device uses 2947.
+Enter the IP address of your RTK device. This can be found by opening a serial connection to the device. The IP address will be displayed every few seconds. Enter the TCP port to use. By default an RTK device uses 2948.
 
 Press 'Connect'. 
 

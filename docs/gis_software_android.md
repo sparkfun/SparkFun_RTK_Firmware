@@ -565,7 +565,7 @@ Once you have a full RTK fix you'll notice the location bubble in SW Maps turns 
 
 [Vespucci](https://play.google.com/store/apps/details?id=de.blau.android&hl=en_US&gl=US) is an Open Street Map editor for Android.
 
-This software requires the RTK device to connect over TCP. Be sure you have a local WiFi network entered into the [WiFi Config menu](menu_wifi.md), have a TCP Client or Server enabled, and have noted the TCP port (it's 2947 by default).
+This software requires the RTK device to connect over TCP. Be sure you have a local WiFi network entered into the [WiFi Config menu](menu_wifi.md), have a TCP Client or Server enabled, and have noted the TCP port (it's 2948 by default).
 
 ![Vespucci Gear Button](img/Vespucci/SparkFun%20RTK%20Vespucci%20-%20Main%20Gear.png)
 

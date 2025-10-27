@@ -114,7 +114,7 @@ In the rare event that a unit is not staying on long enough for new firmware to 
 
 ## Updating Firmware From WiFi
 
-![Advanced system settings](img/WiFi Config/SparkFun%20RTK%20System%20Config%20Upload%20BIN.png)
+![Advanced system settings](img/WiFi%20Config/SparkFun%20RTK%20System%20Config%20Upload%20BIN.png)
 
 **Note:** Firmware versions 1.1 to 1.9 have an issue that severely limits firmware upload over WiFi and is not recommended; use the [GUI](firmware_update.md#updating-firmware-using-the-uploader-gui) method instead. Firmware versions v1.10 and beyond support direct firmware updates via WiFi.
 
@@ -158,7 +158,9 @@ Get [esptool.py](https://github.com/espressif/esptool). Connect a USB A to C cab
 
 If the COM port is not showing be sure the unit is turned **On**. If an unknown device is appearing, you’ll need to [install drivers for the CH340](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all). Once you know the COM port, run the following command:
 
+```
 py esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor_Partitions_16MB.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
+```
 
 Where */dev/ttyUSB0* is replaced with the port that the RTK product enumerated at and *RTK_Surveyor_Firmware_vxx.bin* is the firmware you would like to load.
 
@@ -273,13 +275,225 @@ As of writing, no additional releases of the NEO-D9S firmware have been made.
 
 ## Compiling Source
 
-### Windows
+This is information about how to compile the RTK Firmware from source. This is for advanced users who would like to modify the functionality of the RTK products.
 
-The SparkFun RTK firmware is compiled using Arduino (currently v1.8.15). To compile:
+* [How SparkFun does it](#how-sparkfun-does-it)
+* [Using Docker](#using-docker)
+* [Compiling on Windows (Deprecated)](#compiling-on-windows-deprecated)
+* [Compiling on Ubuntu 20.04 (Deprecated)](#compiling-on-ubuntu-2004-deprecated)
+
+## How SparkFun does it
+
+At SparkFun, we use GitHub Actions and a Workflow to compile each release of RTK Firmware. We run the [compilation workflow](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-rtk-firmware.yml) directly on GitHub. A virtual ubuntu machine installs the [Arduino CLI](https://github.com/arduino/arduino-cli/releases), installs the correct ESP32 Arduino core, patches the core in a couple of places, installs all the required libraries at the required version, converts the embedded HTML and Bootstrap JavaScript to binary zip format, and generates the firmware binary for the ESP32. That binary is either uploaded as an Artifact (by [non-release-build](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/non-release-build.yml)) or pushed to the [SparkFun RTK Firmware Binaries](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries) repo (by the [compilation workflow](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-rtk-firmware.yml)).
+
+You are welcome to clone or fork this repo and do the exact same thing yourself. But you may need a paid GitHub Pro account to run the GitHub Actions, especially if you keep your clone / fork private.
+
+If you run the [compilation workflow](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-rtk-firmware.yml), it will compile the firmware and attempt to push the binary to the Binaries repo. This will fail as your account won't have the right permissions. The [non-release-build](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/non-release-build.yml) is the one for you. The firmware binary will be attached as an Artifact to the workflow run. Navigate to Actions \ Non-Release Build, select the latest run of Non-Release Build, the binary is in the Artifacts.
+
+You can then use (e.g.) the [SparkFun RTK Firmware Uploader](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader) to upload the binary onto the ESP32.
+
+## Using Docker
+
+Installing the correct version of the ESP32 core and of each required Arduino library, is tedious and error-prone. Especially on Windows. We've lost count of the number of times code compilation fails on our local machines, because we had the wrong ESP32 core installed, or forgot to patch Server.h... It is much easier to sandbox the firmware compilation using an environment like [Docker](https://www.docker.com/).
+
+Docker is open-source. It is our new favourite thing!
+
+Here is a step-by-step guide for how to install Docker and compile the firmware from scratch:
+
+### Clone, fork or download the RTK Firmware repo
+
+To build the RTK Firmware, you obviously need a copy of the source code.
+
+If you are familiar with Git and GitHub Desktop, you can clone the RTK Firmware repo directly into GitHub Desktop:
+
+<figure markdown>
+![Clone RTK Firmware with GitHub Desktop](./img/CompileSource/Clone_Repo_To_GitHub_Desktop.png)
+<figcaption markdown>
+Clone RTK Firmware with GitHub Desktop
+</figcaption>
+</figure>
+
+If you want to _contribute_ to the RTK Firmware, and already have a GitHub account, you can Fork the repo:
+
+<figure markdown>
+![Fork RTK Firmware](./img/CompileSource/Fork_Repo.png)
+<figcaption markdown>
+Fork a copy of RTK Firmware
+</figcaption>
+</figure>
+
+Clone your fork to your local machine, make changes, and send us a Pull Request. This is exactly what the SparkFun Team do when developing the code. Please use the `release_candidate` branch for any such changes. We are very unlikely to merge anything directly into `main`, unless it is (e.g.) docs corrections or improvements.
+
+If you don't want to do either of those, you can simply Download a Zip copy of the repo instead. You will receive a complete copy as a Zip file. You can do this from the green **Code** button, or click on the icon below to download a copy of the main (released) branch:
+
+[![Download ZIP](./img/CompileSource/Download_Zip.png)](https://github.com/sparkfun/SparkFun_RTK_Firmware/archive/refs/heads/main.zip "Download ZIP (main branch)")
+
+For the real Wild West experience, you can also download a copy of the `release_candidate` code branch. This is where the team is actively changing and testing the code, before it becomes a full release. The code there will _usually_ compile and will _usually_ work, but we don't guarantee it! We may be part way through implementing some breaking changes at the time of your download...
+
+[![Download ZIP - release candidate](./img/CompileSource/Download_Zip.png)](https://github.com/sparkfun/SparkFun_RTK_Firmware/archive/refs/heads/release_candidate.zip "Download ZIP (release_candidate branch)")
+
+### Install Docker Desktop
+
+* **(Optional)** Head to [Docker](https://www.docker.com/) and create an account. A free "Personal" account will cover occasional compilations of the firmware
+* Download and install [Docker Desktop](https://docs.docker.com/get-started/get-docker/) - there are versions for Mac, Windows and Linux. You may need to restart to complete the installation.
+* Run the Desktop. If you don't sign in, it will run in Personal mode - which will cover occasional compilations of the firmware
+* On Windows, you may see an error saying "**WSL needs updating** Your version of Windows Subsystem for Linux (WSL) is too old". If you do:
+    * Open a command prompt
+	* Type `wsl --update` to update WSL. At the time of writing, this installs Windows Subsystem for Linux 2.6.1
+	* Restart the Docker Desktop
+* If you are using Docker for the first time, the "What is a container?" and "How do I run a container?" demos are useful - _but not essential_
+    * On Windows, you may want to give Docker Desktop permission to access to your Network, so it can access (e.g.) HTML ports
+	* You can Stop the container and Delete it when you are done
+* You may want to prevent Docker from running when your machine starts up
+    * Uncheck "Start Docker Desktop when you sign in to your computer" in the Desktop settings
+
+### Using Docker to create the firmware binary
+
+* **Make sure you have Docker Desktop running.** You don't need to be logged in, but it needs to be running.
+* Open a Command Prompt and `cd` into the SparkFun_RTK_Firmware folder
+* Check you are in the right place. Type `dir` and hit enter. You should see the following files and folders:
+
+```
+    .gitattributes
+    .github
+    .gitignore
+    docs
+    Firmware
+    Graphics
+    Issue_Template.md
+    License.md
+    README.md
+```
+
+* `cd Firmware` and then `dir` again. You should see:
+
+```
+    app3M_fat9M_16MB.csv
+    compile_with_docker.bat
+    Dockerfile
+    readme.md
+    RTKFirmware.csv
+    RTK_Surveyor
+```
+
+* The file that does most of the work is the `Dockerfile`
+
+* But, if you're short on time, run `compile_with_docker.bat`. It does everything for you:
+
+![Output of the compile batch file](./img/CompileSource/compile_me_batch_file.png)
+
+* Hey presto! You have your newly compiled firmware binary!
+
+### Running the Dockerfile manually
+
+If you want to see and understand what's going on under the hood with the Dockerfile, Image and Container:
+
+Here is how to perform each step manually:
+
+* To begin, run the Dockerfile. Type:
+
+```
+docker build -t rtk_firmware .
+```
+
+You should see:
+
+![Dockerfile starting](./img/CompileSource/Dockerfile_starting.png)
+
+![Dockerfile complete](./img/CompileSource/Dockerfile_complete.png)
+
+* If you want to see the full build progress including the output of echo or ls, use:
+
+```
+docker build -t rtk_firmware --progress=plain .
+```
+
+* If you want to rebuild the image completely from scratch, without using the cache, use:
+
+```
+docker build -t rtk_firmware --progress=plain --no-cache .
+```
+
+Building the full Image from scratch is slow, taking several minutes. You should only need to do it once - unless you make any changes to the Dockerfile.
+
+* **When you make changes to the source code and want to recompile, use:**
+
+```
+docker build -t rtk_firmware --no-cache-filter deployment .
+```
+
+This uses the cache for the `upstream` stage and avoids recreating the full ubuntu machine. But it ignores the cache for the `deployment` stage, ensuring the code is recompiled.
+
+#### Access the firmware binary by running the Image
+
+In Docker Desktop, in the Images tab, you should now be able to see an Image named `rtk_firmware`. We now need to Run that Image to access the firmware binary. Click the triangular Run icon under Actions:
+
+![Docker image ready to run](./img/CompileSource/Docker_Image.png)
+
+Running the Image will create a Container, through which we can access the output of the arduino-cli code compilation.
+
+By default, the Container name is random. To avoid this, we define one in the **Optional settings** :
+
+![Docker Container - named rtk_container](./img/CompileSource/Docker_Container.png)
+
+Run the Container and you should see:
+
+![Container is complete](./img/CompileSource/Container_complete.png)
+
+In the Command Prompt, type the following :
+
+```
+docker cp rtk_container:/RTK_Surveyor.ino.bin .
+```
+
+Hey presto! A file called `RTK_Surveyor.ino.bin` appears in the current directory. That's the firmware binary we are going to upload to the ESP32.
+
+![Firmware binary](./img/CompileSource/Firmware_binary.png)
+
+If you need the `.elf` file so you can debug code crashes with me-no-dev's [ESP ExceptionDecoder](https://github.com/me-no-dev/EspExceptionDecoder):
+
+```
+docker cp rtk_container:/RTK_Surveyor.ino.elf .
+```
+
+If you need the `.bootloader.bin` file so you can upload it with esptool:
+
+```
+docker cp rtk_container:/RTK_Surveyor.ino.bootloader.bin .
+```
+
+If you want the files to appear in a more convenient directory, replace the single `.` with a folder path.
+
+Delete the `rtk_container` container afterwards, to save disk space and so you can reuse the same container name next time. If you forget, you will see an error:
+
+```Conflict. The container name "/rtk_container" is already in use by container. You have to remove (or rename) that container to be able to reuse that name.```
+
+* **Remember:** when you make changes to the source code and want to recompile, use:
+
+```
+docker build -t rtk_firmware --no-cache-filter deployment .
+```
+
+* **Shortcut:** the `compile_with_docker.bat` batch file does everything for you:
+
+```
+docker build -t rtk_firmware --no-cache-filter deployment .
+docker create --name=rtk_container rtk_firmware:latest
+docker cp rtk_container:/RTK_Surveyor.ino.bin .
+docker cp rtk_container:/RTK_Surveyor.ino.elf .
+docker cp rtk_container:/RTK_Surveyor.ino.bootloader.bin .
+docker container rm rtk_container
+```
+
+## Compiling on Windows (Deprecated)
+
+**Note: we recommend using the Docker method. It is far easier and much less error-prone...**
+
+The SparkFun RTK Firmware can be compiled using the Arduino IDE (currently v1.8.19). To compile:
 
 1. Install [Arduino](https://www.arduino.cc/en/software).
 
-2. Install ESP32 for Arduino. [Here](https://learn.sparkfun.com/tutorials/esp32-thing-hookup-guide#installing-via-arduino-ide-boards-manager) are some good instructions for installing it via the Arduino Boards Manager. **Note**: Use v2.0.2 of the core. **Note:** We use the 'ESP32 Dev Module' for pin numbering. Select the correct board under Tools->Board->ESP32 Arduino->ESP32 Dev Module.
+2. Install ESP32 for Arduino. [Here](https://learn.sparkfun.com/tutorials/esp32-thing-hookup-guide#installing-via-arduino-ide-boards-manager) are some good instructions for installing it via the Arduino Boards Manager. **Note**: Use **v2.0.2** of the core. **Note:** We use the 'ESP32 Dev Module' for pin numbering. Select the correct board under Tools->Board->ESP32 Arduino->ESP32 Dev Module.
 
 3. Change the Partition table. Replace
 
@@ -293,7 +507,20 @@ The SparkFun RTK firmware is compiled using Arduino (currently v1.8.15). To comp
 
     B. Set the 'Flash Size' to 16MB (128mbit)
 
-5. Obtain all the [required libraries](firmware_update.md#required-libraries).
+5. Obtain all the [required libraries](#required-libraries).
+
+6. Patch `Server.h` in the ESP core: copy `Server.h` from the `RTK_Surveyor\Patch` folder and replace:
+
+```
+~/.arduino15/packages/esp32/hardware/esp32/2.0.2/cores/esp32/Server.h
+```
+
+7. Update the web config `form.h` by running the two python scripts in the `Tools` folder:
+
+```
+python index_html_zipper.py ../RTK_Surveyor/AP-Config/index.html ../RTK_Surveyor/form.h
+python main_js_zipper.py ../RTK_Surveyor/AP-Config/src/main.js ../RTK_Surveyor/form.h
+```
 
 Once compiled, firmware can be uploaded directly to a unit when the RTK unit is on and the correct COM port is selected under the Arduino IDE Tools->Port menu.
 
@@ -301,11 +528,11 @@ If you are seeing the error:
 
 > text section exceeds available space ...
 
-You have not replaced the partition file correctly. See the 'Change Partition table' step inside the [Windows instructions](firmware_update.md#windows_1).
+You have not replaced the partition file correctly. See the 'Change Partition table' step inside the [Windows instructions](#compiling-on-windows-deprecated_3).
 
 **Note:** There are a variety of compile guards (COMPILE_WIFI, COMPILE_AP, etc) at the top of RTK_Surveyor.ino that can be commented out to remove them from compilation. This will greatly reduce the firmware size and allow for faster development of functions that do not rely on these features (serial menus, system configuration, logging, etc).
 
-#### Required Libraries
+### Required Libraries
 
 **Note:** You should click on the link next to each of the #includes at the top of RTK_Surveyor.ino within the Arduino IDE to open the library manager and download them. Getting them directly from Github also works but may not be 'official' releases.
 
@@ -321,29 +548,33 @@ Using the library manager in the Arduino IDE, for each of the libraries below:
 
 The RTK firmware requires the following libraries:
 
-    * [Arduino JSON](https://github.com/bblanchon/ArduinoJson)
+    * [Arduino JSON @ 6.19.4](https://github.com/bblanchon/ArduinoJson)
 
-    * [ESP32Time](https://github.com/fbiego/ESP32Time)
+    * [ESP32Time @ 2.0.0](https://github.com/fbiego/ESP32Time)
 
-    * [ESP32 BleSerial](https://github.com/avinabmalla/ESP32_BleSerial)
+    * [ESP32 BleSerial @ 1.0.5](https://github.com/avinabmalla/ESP32_BleSerial)
 
-    * [ESP32-OTA-Pull](https://github.com/mikalhart/ESP32-OTA-Pull)
+    * [ESP32-OTA-Pull @ 1.0.0](https://github.com/mikalhart/ESP32-OTA-Pull)
 
-    * Ethernet
+    * Ethernet @ 2.0.2
 
-    * [JC_Button](https://github.com/JChristensen/JC_Button)
+    * [JC_Button @ 2.1.2](https://github.com/JChristensen/JC_Button)
 
-    * [PubSub Client for MQTT](https://github.com/knolleary/pubsubclient)
+    * [PubSub Client for MQTT @ 2.8.0](https://github.com/knolleary/pubsubclient)
 
-    * [SdFat](https://github.com/greiman/SdFat)
+    * [SdFat @ 2.1.1](https://github.com/greiman/SdFat)
 
-    * [SparkFun LIS2DH12 Arduino Library](https://github.com/sparkfun/SparkFun_LIS2DH12_Arduino_Library)
+    * [SparkFun LIS2DH12 Arduino Library @ 1.0.3](https://github.com/sparkfun/SparkFun_LIS2DH12_Arduino_Library)
 
-    * [SparkFun MAX1704x Fuel Gauge Arduino Library](https://github.com/sparkfun/SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library)
+    * [SparkFun MAX1704x Fuel Gauge Arduino Library @ 1.0.4](https://github.com/sparkfun/SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library)
 
-    * [SparkFun u-blox GNSS v3](https://github.com/sparkfun/SparkFun_u-blox_GNSS_v3)
+    * [SparkFun u-blox GNSS v3 @ 3.0.14](https://github.com/sparkfun/SparkFun_u-blox_GNSS_v3)
 
-    * [SparkFun_WebServer_ESP32_W5500](https://github.com/SparkFun/SparkFun_WebServer_ESP32_W5500)
+    * [SparkFun_WebServer_ESP32_W5500 @ 1.5.5](https://github.com/SparkFun/SparkFun_WebServer_ESP32_W5500)
+
+    * [SparkFun Qwiic OLED Arduino Library @ 1.0.13](https://github.com/sparkfun/SparkFun_Qwiic_OLED_Arduino_Library)
+
+    * [SSL CLient ESP32 @ 2.0.0](https://github.com/alkonosst/SSLClientESP32)
 
 The following libraries are only available via GitHub:
 
@@ -351,11 +582,9 @@ The following libraries are only available via GitHub:
 
     * [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) (not available via library manager)
 
-    * [SparkFun Micro OLED Breakout](https://github.com/sparkfun/SparkFun_Micro_OLED_Arduino_Library)
+## Compiling on Ubuntu 20.04 (Deprecated)
 
-### Ubuntu 20.04
-
-#### Virtual Machine
+### Virtual Machine
 
 Execute the following commands to create the Linux virtual machine:
 
@@ -410,7 +639,7 @@ Execute the following commands to create the Linux virtual machine:
         2. ssh-copy-id -o IdentitiesOnly=yes -i ~/.ssh/Sparkfun_RTK_20.04  &lt;username&gt;@&lt;IP address&gt;
         3. ssh -Y &lt;username&gt;@&lt;IP address&gt;
 
-#### Build Environment
+### Build Environment
 
 Execute the following commands to create the build environment for the SparkFun RTK Firmware:
 
@@ -614,6 +843,8 @@ Execute the following commands to create the build environment for the SparkFun 
 40. cd ~/SparkFun/RTK/
 41. cp  Firmware/app3M_fat9M_16MB.csv  ~/.arduino15/packages/esp32/hardware/esp32/2.0.2/tools/partitions/app3M_fat9M_16MB.csv
 
-### Arduino CLI
+## Arduino CLI
 
-The firmware can be compiled using [Arduino CLI](https://github.com/arduino/arduino-cli). This makes compilation fairly platform independent and flexible. All release candidates and firmware releases are compiled using Arduino CLI using a github action. You can see the source of the action [here](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-release.yml), and use it as a starting point for Arduino CLI compilation.
+The firmware can be compiled using [Arduino CLI](https://github.com/arduino/arduino-cli). This makes compilation fairly platform independent and flexible. All release candidates and firmware releases are compiled using Arduino CLI using a github action. You can see the source of the action [here](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-rtk-firmware.yml), and use it as a starting point for Arduino CLI compilation.
+
+This is the same method the Dockerfile uses - using arduino-cli on a virtual ubuntu machine.

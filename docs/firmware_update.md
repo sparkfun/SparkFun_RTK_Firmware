@@ -487,11 +487,13 @@ docker container rm rtk_container
 
 ### Compiling on Windows (Deprecated)
 
-The SparkFun RTK Firmware is compiled using Arduino (currently v1.8.15). To compile:
+**Note: we recommend using the Docker method. It is far easier and much less error-prone...**
+
+The SparkFun RTK Firmware can be compiled using the Arduino IDE (currently v1.8.19). To compile:
 
 1. Install [Arduino](https://www.arduino.cc/en/software).
 
-2. Install ESP32 for Arduino. [Here](https://learn.sparkfun.com/tutorials/esp32-thing-hookup-guide#installing-via-arduino-ide-boards-manager) are some good instructions for installing it via the Arduino Boards Manager. **Note**: Use v2.0.2 of the core. **Note:** We use the 'ESP32 Dev Module' for pin numbering. Select the correct board under Tools->Board->ESP32 Arduino->ESP32 Dev Module.
+2. Install ESP32 for Arduino. [Here](https://learn.sparkfun.com/tutorials/esp32-thing-hookup-guide#installing-via-arduino-ide-boards-manager) are some good instructions for installing it via the Arduino Boards Manager. **Note**: Use **v2.0.2** of the core. **Note:** We use the 'ESP32 Dev Module' for pin numbering. Select the correct board under Tools->Board->ESP32 Arduino->ESP32 Dev Module.
 
 3. Change the Partition table. Replace
 
@@ -505,7 +507,20 @@ The SparkFun RTK Firmware is compiled using Arduino (currently v1.8.15). To comp
 
     B. Set the 'Flash Size' to 16MB (128mbit)
 
-5. Obtain all the [required libraries](firmware_update.md#required-libraries).
+5. Obtain all the [required libraries](#required-libraries).
+
+6. Patch `Server.h` in the ESP core: copy `Server.h` from the `RTK_Surveyor\Patch` folder and replace:
+
+```
+~/.arduino15/packages/esp32/hardware/esp32/2.0.2/cores/esp32/Server.h
+```
+
+7. Update the web config `form.h` by running the two python scripts in the `Tools` folder:
+
+```
+python index_html_zipper.py ../RTK_Surveyor/AP-Config/index.html ../RTK_Surveyor/form.h
+python main_js_zipper.py ../RTK_Surveyor/AP-Config/src/main.js ../RTK_Surveyor/form.h
+```
 
 Once compiled, firmware can be uploaded directly to a unit when the RTK unit is on and the correct COM port is selected under the Arduino IDE Tools->Port menu.
 
@@ -513,7 +528,7 @@ If you are seeing the error:
 
 > text section exceeds available space ...
 
-You have not replaced the partition file correctly. See the 'Change Partition table' step inside the [Windows instructions](firmware_update.md#windows_1).
+You have not replaced the partition file correctly. See the 'Change Partition table' step inside the [Windows instructions](#compiling-on-windows-deprecated_3).
 
 **Note:** There are a variety of compile guards (COMPILE_WIFI, COMPILE_AP, etc) at the top of RTK_Surveyor.ino that can be commented out to remove them from compilation. This will greatly reduce the firmware size and allow for faster development of functions that do not rely on these features (serial menus, system configuration, logging, etc).
 
@@ -533,37 +548,39 @@ Using the library manager in the Arduino IDE, for each of the libraries below:
 
 The RTK firmware requires the following libraries:
 
-    * [Arduino JSON](https://github.com/bblanchon/ArduinoJson)
+    * [Arduino JSON @ 6.19.4](https://github.com/bblanchon/ArduinoJson)
 
-    * [ESP32Time](https://github.com/fbiego/ESP32Time)
+    * [ESP32Time @ 2.0.0](https://github.com/fbiego/ESP32Time)
 
-    * [ESP32 BleSerial](https://github.com/avinabmalla/ESP32_BleSerial)
+    * [ESP32 BleSerial @ 1.0.5](https://github.com/avinabmalla/ESP32_BleSerial)
 
-    * [ESP32-OTA-Pull](https://github.com/mikalhart/ESP32-OTA-Pull)
+    * [ESP32-OTA-Pull @ 1.0.0](https://github.com/mikalhart/ESP32-OTA-Pull)
 
-    * Ethernet
+    * Ethernet @ 2.0.2
 
-    * [JC_Button](https://github.com/JChristensen/JC_Button)
+    * [JC_Button @ 2.1.2](https://github.com/JChristensen/JC_Button)
 
-    * [PubSub Client for MQTT](https://github.com/knolleary/pubsubclient)
+    * [PubSub Client for MQTT @ 2.8.0](https://github.com/knolleary/pubsubclient)
 
-    * [SdFat](https://github.com/greiman/SdFat)
+    * [SdFat @ 2.1.1](https://github.com/greiman/SdFat)
 
-    * [SparkFun LIS2DH12 Arduino Library](https://github.com/sparkfun/SparkFun_LIS2DH12_Arduino_Library)
+    * [SparkFun LIS2DH12 Arduino Library @ 1.0.3](https://github.com/sparkfun/SparkFun_LIS2DH12_Arduino_Library)
 
-    * [SparkFun MAX1704x Fuel Gauge Arduino Library](https://github.com/sparkfun/SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library)
+    * [SparkFun MAX1704x Fuel Gauge Arduino Library @ 1.0.4](https://github.com/sparkfun/SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library)
 
-    * [SparkFun u-blox GNSS v3](https://github.com/sparkfun/SparkFun_u-blox_GNSS_v3)
+    * [SparkFun u-blox GNSS v3 @ 3.0.14](https://github.com/sparkfun/SparkFun_u-blox_GNSS_v3)
 
-    * [SparkFun_WebServer_ESP32_W5500](https://github.com/SparkFun/SparkFun_WebServer_ESP32_W5500)
+    * [SparkFun_WebServer_ESP32_W5500 @ 1.5.5](https://github.com/SparkFun/SparkFun_WebServer_ESP32_W5500)
+
+    * [SparkFun Qwiic OLED Arduino Library @ 1.0.13](https://github.com/sparkfun/SparkFun_Qwiic_OLED_Arduino_Library)
+
+    * [SSL CLient ESP32 @ 2.0.0](https://github.com/alkonosst/SSLClientESP32)
 
 The following libraries are only available via GitHub:
 
     * [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) (not available via library manager)
 
     * [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) (not available via library manager)
-
-    * [SparkFun Micro OLED Breakout](https://github.com/sparkfun/SparkFun_Micro_OLED_Arduino_Library)
 
 ### Compiling on Ubuntu 20.04 (Deprecated)
 

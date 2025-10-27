@@ -273,9 +273,178 @@ As of writing, no additional releases of the NEO-D9S firmware have been made.
 
 ## Compiling Source
 
-### Windows
+This is information about how to compile the RTK Firmware from source. This is for advanced users who would like to modify the functionality of the RTK products.
 
-The SparkFun RTK firmware is compiled using Arduino (currently v1.8.15). To compile:
+* [How SparkFun does it](#how-sparkfun-does-it)
+* [Using Docker](#using-docker)
+* [Compiling on Windows (Deprecated)](#compiling-on-windows-deprecated)
+* [Compiling on Ubuntu 20.04 (Deprecated)](#compiling-on-ubuntu-2004-deprecated)
+
+## How SparkFun does it
+
+At SparkFun, we use GitHub Actions and a Workflow to compile each release of RTK Firmware. We run the [compilation workflow](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-rtk-firmware.yml) directly on GitHub. A virtual ubuntu machine installs the [Arduino CLI](https://github.com/arduino/arduino-cli/releases), installs the correct ESP32 Arduino core, patches the core in a couple of places, installs all the required libraries at the required version, converts the embedded HTML and Bootstrap JavaScript to binary zip format, and generates the firmware binary for the ESP32. That binary is either uploaded as an Artifact (by [non-release-build](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/non-release-build.yml)) or pushed to the [SparkFun RTK Firmware Binaries](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries) repo (by the [compilation workflow](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-rtk-firmware.yml)).
+
+You are welcome to clone or fork this repo and do the exact same thing yourself. But you may need a paid GitHub Pro account to run the GitHub Actions, especially if you keep your clone / fork private.
+
+If you run the [compilation workflow](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-rtk-firmware.yml), it will compile the firmware and attempt to push the binary to the Binaries repo. This will fail as your account won't have the right permissions. The [non-release-build](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/non-release-build.yml) is the one for you. The firmware binary will be attached as an Artifact to the workflow run. Navigate to Actions \ Non-Release Build, select the latest run of Non-Release Build, the binary is in the Artifacts.
+
+You can then use the [SparkFun RTK Firmware Uploader](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader) to upload the binary onto the ESP32.
+
+## Using Docker
+
+Installing the correct version of the ESP32 core and of each required Arduino library, is tedious and error-prone. Especially on Windows. We've lost count of the number of times code compilation fails on our local machines, because we had the wrong ESP32 core installed, or forgot to patch Server.h... It is much easier to sandbox the firmware compilation using an environment like [Docker](https://www.docker.com/).
+
+Here is a step-by-step guide for how to install Docker and compile the firmware from scratch:
+
+### Clone, fork or download the RTK Firmware repo
+
+To build the RTK Firmware, you obviously need a copy of the source code.
+
+If you are familiar with Git and GitHub Desktop, you can clone the RTK Firmware repo directly into GitHub Desktop:
+
+<figure markdown>
+![Clone RTK Firmware with GitHub Desktop](./img/CompileSource/Clone_Repo_To_GitHub_Desktop.png)
+<figcaption markdown>
+Clone RTK Firmware with GitHub Desktop
+</figcaption>
+</figure>
+
+If you want to _contribute_ to the RTK Firmware, and already have a GitHub account, you can Fork the repo:
+
+<figure markdown>
+![Fork RTK Firmware](./img/CompileSource/Fork_Repo.png)
+<figcaption markdown>
+Fork a copy of RTK Firmware
+</figcaption>
+</figure>
+
+Clone your fork to your local machine, make changes, and send us a Pull Request. This is exactly what the SparkFun Team do when developing the code. Please use the `release_candidate` branch for any such changes. We are very unlikely to merge anything directly into `main`, unless it is (e.g.) docs corrections or improvements.
+
+If you don't want to do either of those, you can simply Download a Zip copy of the repo instead. You will receive a complete copy as a Zip file. You can do this from the green **Code** button, or click on the icon below to download a copy of the main (released) branch:
+
+[![Download ZIP](./img/CompileSource/Download_Zip.png)](https://github.com/sparkfun/SparkFun_RTK_Firmware/archive/refs/heads/main.zip "Download ZIP (main branch)")
+
+For the real Wild West experience, you can also download a copy of the `release_candidate` code branch. This is where the team is actively changing and testing the code, before it becomes a full release. The code there will _usually_ compile and will _usually_ work, but we don't guarantee it! We may be part way through implementing some breaking changes at the time of your download...
+
+[![Download ZIP - release candidate](./img/CompileSource/Download_Zip.png)](https://github.com/sparkfun/SparkFun_RTK_Firmware/archive/refs/heads/release_candidate.zip "Download ZIP (release_candidate branch)")
+
+### Install Docker Desktop
+
+* Head to [Docker](https://www.docker.com/) and create an account. A free "Personal" account will cover occasional compilations of the firmware
+* Download and install [Docker Desktop](https://docs.docker.com/get-started/get-docker/) - there are versions for Mac, Windows and Linux. You may need to restart to complete the installation.
+* Run the Desktop and sign in
+* On Windows, you may see an error saying "**WSL needs updating** Your version of Windows Subsystem for Linux (WSL) is too old". If you do:
+    * Open a command prompt
+	* Type `wsl --update` to update WSL. At the time of writing, this installs Windows Subsystem for Linux 2.6.1
+	* Restart the Docker Desktop
+* If you are using Docker for the first time, the "What is a container?" and "How do I run a container?" demos are useful
+    * On Windows, you may want to give Docker Desktop permission to access to your Network, so it can access (e.g.) HTML ports
+	* You can Stop the container and Delete it when you are done
+* You may want to prevent Docker from running when your machine starts up
+    * Uncheck "Start Docker Desktop when you sign in to your computer" in the Desktop settings
+
+### Running the Dockerfile to create an Image
+
+* **Make sure you have Docker Desktop running.** You don't need to be logged in, but it needs to be running.
+* Open a Command Prompt and `cd` into the SparkFun_RTK_Firmware folder
+* Check you are in the right place. Type `dir` and hit enter. You should see the following files and folders:
+
+```
+    .gitattributes
+    .github
+    .gitignore
+    docs
+    Firmware
+    Graphics
+    Issue_Template.md
+    License.md
+    README.md
+```
+
+* `cd Firmware` and then `dir` again. You should see:
+
+```
+    app3M_fat9M_16MB.csv
+    Dockerfile
+    readme.md
+    RTKFirmware.csv
+    RTK_Surveyor
+```
+
+* The file we will be using is the `Dockerfile`.
+* Type:
+
+```
+docker build -t rtk_firmware .
+```
+
+![Dockerfile starting](./img/CompileSource/Dockerfile_starting.png)
+
+![Dockerfile complete](./img/CompileSource/Dockerfile_complete.png)
+
+* If you want to see the full build progress including the output of echo or ls, use:
+
+```
+docker build -t rtk_firmware --progress=plain .
+```
+
+* If you want to rebuild the image completely from scratch, without using the cache, use:
+
+```
+docker build -t rtk_firmware --progress=plain --no-cache .
+```
+
+Building the full Image from scratch is slow, taking several minutes. You should only need to do it once - unless you make any changes to the Dockerfile.
+
+* When you make changes to the source code and want to recompile, use:
+
+```
+docker build -t rtk_firmware --no-cache-filter deployment .
+```
+
+This uses the cache for the `upstream` stage and avoids recreating the full ubuntu machine. But it ignores the cache for the `deployment` stage, ensuring the code is recompiled.
+
+### Access the firmware by running the Image
+
+In Docker Desktop, in the Images tab, you should now be able to see an Image named `rtk_firmware`. We now need to Run that Image to access the firmware binary. Click the triangular Run icon under Actions:
+
+![Docker image ready to run](./img/CompileSource/Docker_Image.png)
+
+Running the Image will create a Container, through which we can access the output of the arduino-cli code compilation.
+
+By default, the Container name is random. To avoid this, we define one in the **Optional settings** :
+
+![Docker Container - named rtk_container](./img/CompileSource/Docker_Container.png)
+
+Run the Container and you should see:
+
+![Container is complete](./img/CompileSource/Container_complete.png)
+
+In the Command Prompt, type the following :
+
+```
+docker cp rtk_container:/RTK_Surveyor.ino.bin .
+```
+
+Hey presto! A file called `RTK_Surveyor.ino.bin` appears in the current directory. That's the firmware binary we are going to upload to the ESP32.
+
+![Firmware binary](./img/CompileSource/Firmware_binary.png)
+
+If you need the `.elf` file so you can debug code crashes with me-no-dev's [ESP ExceptionDecoder](https://github.com/me-no-dev/EspExceptionDecoder):
+
+```
+docker cp rtk_container:/RTK_Surveyor.ino.elf .
+```
+
+If you want the files to appear in a more convenient directory, replace the single `.` with a folder path.
+
+Delete the `rtk_container` container afterwards, to save disk space and so you can reuse the same container name next time. If you forget, you will see an error:
+
+```Conflict. The container name "/rtk_container" is already in use by container. You have to remove (or rename) that container to be able to reuse that name.```
+
+### Compiling on Windows (Deprecated)
+
+The SparkFun RTK Firmware is compiled using Arduino (currently v1.8.15). To compile:
 
 1. Install [Arduino](https://www.arduino.cc/en/software).
 
@@ -353,7 +522,7 @@ The following libraries are only available via GitHub:
 
     * [SparkFun Micro OLED Breakout](https://github.com/sparkfun/SparkFun_Micro_OLED_Arduino_Library)
 
-### Ubuntu 20.04
+### Compiling on Ubuntu 20.04 (Deprecated)
 
 #### Virtual Machine
 

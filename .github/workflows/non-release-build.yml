@@ -51,7 +51,7 @@ jobs:
             --build-arg CORE_VERSION=${{ env.CORE_VERSION }} \
             --build-arg FIRMWARE_VERSION_MAJOR=${{ env.FIRMWARE_VERSION_MAJOR }} \
             --build-arg FIRMWARE_VERSION_MINOR=${{ env.FIRMWARE_VERSION_MINOR }} \
-            --build-arg POINTPERFECT_TOKEN=${{ secrets.POINTPERFECT_TOKEN }} \
+            --build-arg POINTPERFECT_TOKEN="${{ secrets.POINTPERFECT_TOKEN }}" \
             --build-arg ENABLE_DEVELOPER=${{ env.ENABLE_DEVELOPER }} \
             --build-arg DEBUG_LEVEL=${{ env.DEBUG_LEVEL }} \
             .

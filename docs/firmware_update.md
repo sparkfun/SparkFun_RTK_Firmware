@@ -306,21 +306,11 @@ To build the RTK Firmware, you obviously need a copy of the source code.
 
 If you are familiar with Git and GitHub Desktop, you can clone the RTK Firmware repo directly into GitHub Desktop:
 
-<figure markdown>
 ![Clone RTK Firmware with GitHub Desktop](./img/CompileSource/Clone_Repo_To_GitHub_Desktop.png)
-<figcaption markdown>
-Clone RTK Firmware with GitHub Desktop
-</figcaption>
-</figure>
 
 If you want to _contribute_ to the RTK Firmware, and already have a GitHub account, you can Fork the repo:
 
-<figure markdown>
 ![Fork RTK Firmware](./img/CompileSource/Fork_Repo.png)
-<figcaption markdown>
-Fork a copy of RTK Firmware
-</figcaption>
-</figure>
 
 Clone your fork to your local machine, make changes, and send us a Pull Request. This is exactly what the SparkFun Team do when developing the code. Please use the `release_candidate` branch for any such changes. We are very unlikely to merge anything directly into `main`, unless it is (e.g.) docs corrections or improvements.
 
@@ -477,10 +467,31 @@ Delete the `rtk_container` container afterwards, to save disk space and so you c
 docker build -t rtk_firmware --no-cache-filter deployment .
 ```
 
-* **Shortcut:** the `compile_with_docker.bat` batch file does everything for you:
+#### Shortcut: compile_with_docker.bat
+
+**Shortcut:** the `compile_with_docker.bat` batch file does everything for you:
 
 ```
 docker build -t rtk_firmware --no-cache-filter deployment .
+docker create --name=rtk_container rtk_firmware:latest
+docker cp rtk_container:/RTK_Surveyor.ino.bin .
+docker cp rtk_container:/RTK_Surveyor.ino.elf .
+docker cp rtk_container:/RTK_Surveyor.ino.bootloader.bin .
+docker container rm rtk_container
+```
+
+#### Changing the build properties
+
+**Changing the build properties:** if you want to change the build properties and (e.g.) include your own PointPerfect token, paste the following into a .bat file or shell script:
+
+```
+docker build -t rtk_firmware --no-cache-filter deployment^
+ --build-arg FIRMWARE_VERSION_MAJOR=99^
+ --build-arg FIRMWARE_VERSION_MINOR=99^
+ --build-arg POINTPERFECT_TOKEN="0xe0,0x9c,<<=YOUR TOKEN IN C HEX FORMAT=>>,0x70,0x00"^
+ --build-arg ENABLE_DEVELOPER=false^
+ --build-arg DEBUG_LEVEL=none^
+ .
 docker create --name=rtk_container rtk_firmware:latest
 docker cp rtk_container:/RTK_Surveyor.ino.bin .
 docker cp rtk_container:/RTK_Surveyor.ino.elf .

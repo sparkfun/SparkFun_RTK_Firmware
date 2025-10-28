@@ -342,7 +342,7 @@ For the real Wild West experience, you can also download a copy of the `release_
 
 ### Using Docker to create the firmware binary
 
-* **Make sure you have Docker Desktop running.** You don't need to be logged in, but it needs to be running.
+* **Make sure you have Docker Desktop running.** You don't need to be signed in, but it needs to be running.
 * Open a Command Prompt and `cd` into the SparkFun_RTK_Firmware folder
 * Check you are in the right place. Type `dir` and hit enter. You should see the following files and folders:
 
@@ -376,6 +376,8 @@ For the real Wild West experience, you can also download a copy of the `release_
 ![Output of the compile batch file](./img/CompileSource/compile_me_batch_file.png)
 
 * Hey presto! You have your newly compiled firmware binary!
+
+You can then use (e.g.) the [SparkFun RTK Firmware Uploader](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader) to upload the binary onto the ESP32.
 
 ### Running the Dockerfile manually
 

@@ -336,7 +336,10 @@ For the real Wild West experience, you can also download a copy of the `release_
 
 * **(Optional)** Head to [Docker](https://www.docker.com/) and create an account. A free "Personal" account will cover occasional compilations of the firmware
 * Download and install [Docker Desktop](https://docs.docker.com/get-started/get-docker/) - there are versions for Mac, Windows and Linux. You may need to restart to complete the installation.
-* Run the Desktop. If you don't sign in, it will run in Personal mode - which will cover occasional compilations of the firmware
+* Run the Desktop
+    * You don't _need_ to have an account and you don't _need_ to be signed in
+    * You only need to be signed in if you want to store or share your Container on Docker Hub
+    * If you don't sign in, Docker Desktop will run in Personal mode - which will cover local compilations of the firmware
 * On Windows, you may see an error saying "**WSL needs updating** Your version of Windows Subsystem for Linux (WSL) is too old". If you do:
     * Open a command prompt
 	* Type `wsl --update` to update WSL. At the time of writing, this installs Windows Subsystem for Linux 2.6.1

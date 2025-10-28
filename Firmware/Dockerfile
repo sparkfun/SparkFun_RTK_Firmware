@@ -2,20 +2,20 @@ FROM ubuntu:latest AS upstream
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV FILENAME_PREFIX=RTK_Firmware
-ENV FIRMWARE_VERSION_MAJOR=99
-ENV FIRMWARE_VERSION_MINOR=99
-ENV CORE_VERSION=2.0.2
+ARG CORE_VERSION=2.0.2
+
+ARG FIRMWARE_VERSION_MAJOR=99
+ARG FIRMWARE_VERSION_MINOR=99
 
 # ESP32 Core Debug Level
 # We use "none" for releases and "error" for release_candidate
 # You may find "verbose" useful while you are debugging your changes
-ENV DEBUG_LEVEL=error
+ARG DEBUG_LEVEL=error
 
 # Developer Mode
 # You may find "true" useful while you are making changes
 # Set to false for releases
-ENV ENABLE_DEVELOPER=true
+ARG ENABLE_DEVELOPER=true
 
 # If you have your own u-blox PointPerfect token, define it here
 # or pass it in as an arg when building the Dockerfile
@@ -75,39 +75,31 @@ RUN arduino-cli config set library.enable_unsafe_install true
 RUN arduino-cli lib install --git-url https://github.com/me-no-dev/ESPAsyncWebServer.git
 RUN arduino-cli lib install --git-url https://github.com/me-no-dev/AsyncTCP.git
 
-# Copy RTK_Everywhere into /work and build deployment image
+# Copy RTK_Surveyor and build deployment image
 FROM upstream AS deployment
 
-# Create work directory
-WORKDIR /work
+# Add the source files
 ADD . .
 
-# Get current date
-#RUN echo "$(date +'%b_%d_%Y')" > date_scores.txt
-#RUN DATE_SCORES=$(cat date_scores.txt) && echo "Date: ${DATE_SCORES}"
-#RUN echo "$(date +'%b %d %Y')" > date_no_scores.txt
-#RUN DATE_NO_SCORES=$(cat date_no_scores.txt) && echo "Date: ${DATE_NO_SCORES}"
-
 # Patch Server.h to avoid https://github.com/arduino-libraries/Ethernet/issues/88#issuecomment-455498941
-WORKDIR /work/RTK_Surveyor/Patch
-RUN cp Server.h "/root/.arduino15/packages/esp32/hardware/esp32/${CORE_VERSION}/cores/esp32/Server.h"
+RUN cd ./RTK_Surveyor/Patch \
+    && cp Server.h "/root/.arduino15/packages/esp32/hardware/esp32/${CORE_VERSION}/cores/esp32/Server.h"
 
 # Update form.h with index_html and main_js
-WORKDIR /work/Tools
-RUN python index_html_zipper.py ../RTK_Surveyor/AP-Config/index.html ../RTK_Surveyor/form.h
-RUN python main_js_zipper.py ../RTK_Surveyor/AP-Config/src/main.js ../RTK_Surveyor/form.h
+RUN cd ./Tools \
+    && python index_html_zipper.py ../RTK_Surveyor/AP-Config/index.html ../RTK_Surveyor/form.h \
+    && python main_js_zipper.py ../RTK_Surveyor/AP-Config/src/main.js ../RTK_Surveyor/form.h
 
 # Copy custom app3M_fat9M_16MB.csv
-WORKDIR /work
 RUN cp app3M_fat9M_16MB.csv "/root/.arduino15/packages/esp32/hardware/esp32/${CORE_VERSION}/tools/partitions/app3M_fat9M_16MB.csv"
 
 # Compile Sketch
-WORKDIR /work/RTK_Surveyor
-RUN arduino-cli compile --fqbn "esp32:esp32:esp32":DebugLevel=${DEBUG_LEVEL} \
+RUN cd ./RTK_Surveyor \
+    && arduino-cli compile --fqbn "esp32:esp32:esp32":DebugLevel=${DEBUG_LEVEL} \
     ./RTK_Surveyor.ino \
     --build-property build.partitions=app3M_fat9M_16MB \
     --build-property upload.maximum_size=3145728 \
-    --build-property "compiler.cpp.extra_flags=\"-DPOINTPERFECTTOKEN=${POINTPERFECT_TOKEN}\" \
+    --build-property "compiler.cpp.extra_flags=\"-DPOINTPERFECT_TOKEN=${POINTPERFECT_TOKEN}\" \
     \"-DFIRMWARE_VERSION_MAJOR=${FIRMWARE_VERSION_MAJOR}\" \
     \"-DFIRMWARE_VERSION_MINOR=${FIRMWARE_VERSION_MINOR}\" \
     \"-DENABLE_DEVELOPER=${ENABLE_DEVELOPER}\"" \
@@ -115,5 +107,5 @@ RUN arduino-cli compile --fqbn "esp32:esp32:esp32":DebugLevel=${DEBUG_LEVEL} \
 
 # Copy the compile output. List the files
 FROM deployment AS output
-COPY --from=deployment /work/RTK_Surveyor/build/esp32.esp32.esp32 /
+COPY --from=deployment ./RTK_Surveyor/build/esp32.esp32.esp32 /
 CMD echo $(ls /*.*)

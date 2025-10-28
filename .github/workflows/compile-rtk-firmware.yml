@@ -6,8 +6,7 @@ on:
 env:
   FILENAME_PREFIX: RTK_Surveyor_Firmware
   FIRMWARE_VERSION_MAJOR: 4
-  FIRMWARE_VERSION_MINOR: 3
-  POINTPERFECT_TOKEN: ${{ secrets.POINTPERFECT_TOKEN }}
+  FIRMWARE_VERSION_MINOR: 4
   #We limit the ESP32 core to v2.0.2
   CORE_VERSION: 2.0.2
 
@@ -52,106 +51,46 @@ jobs:
               echo "DEBUG_LEVEL=debug" >> "$GITHUB_ENV"
           fi
 
-      - name: Setup Arduino CLI
-        uses: arduino/setup-arduino-cli@v1
-
-      - name: Start config file
-        run: arduino-cli config init --additional-urls "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
-
-      - name: Update index
-        run: arduino-cli core update-index
-
-      - name: Install platform
-        run: arduino-cli core install esp32:esp32@${{ env.CORE_VERSION }}
-
-      - name: Get Known Libraries
-        run: arduino-cli lib install
-          ArduinoJson@6.19.4
-          ESP32Time@2.0.0
-          ESP32_BleSerial@1.0.5
-          "ESP32-OTA-Pull"@1.0.0
-          Ethernet@2.0.2
-          JC_Button@2.1.2
-          PubSubClient@2.8.0
-          "SdFat"@2.1.1
-          "SparkFun LIS2DH12 Arduino Library"@1.0.3
-          "SparkFun MAX1704x Fuel Gauge Arduino Library"@1.0.4
-          "SparkFun u-blox GNSS v3"@3.0.14
-          SparkFun_WebServer_ESP32_W5500@1.5.5
-          SSLClientESP32@2.0.0
-
-      - name: Enable external libs
-        run: arduino-cli config set library.enable_unsafe_install true
-
-      - name: Get Libraries
-        run: arduino-cli lib install --git-url
-          https://github.com/sparkfun/SparkFun_Qwiic_OLED_Arduino_Library.git
-          https://github.com/me-no-dev/ESPAsyncWebServer.git 
-          https://github.com/me-no-dev/AsyncTCP.git
-          
-      #Incorporate ESP-Now patch into core: https://github.com/espressif/arduino-esp32/pull/7044/files
-      #- name: Patch ESP32 Core
-      #  run: |
-      #    cd Firmware/RTK_Surveyor/Patch/
-      #    cp WiFiGeneric.cpp /home/runner/.arduino15/packages/esp32/hardware/esp32/${{ env.CORE_VERSION }}/libraries/WiFi/src/WiFiGeneric.cpp
-
-      #Patch Server.h to avoid https://github.com/arduino-libraries/Ethernet/issues/88#issuecomment-455498941
-      #Note: this patch can be removed if/when we upgrade to ESP32 core >= v2.0.6 
-      - name: Patch ESP32 Server.h for Ethernet
+      - name: Run Dockerfile and copy files
+        # The --quiet suppresses the build output, keeping the secrets safe
         run: |
-          cd Firmware/RTK_Surveyor/Patch/
-          cp Server.h /home/runner/.arduino15/packages/esp32/hardware/esp32/${{ env.CORE_VERSION }}/cores/esp32/Server.h
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      # Configure Python - now we have Python installed, we need to provide everything needed by esptool otherwise the compile fails
-      - name: Configure Python
-        run: |
-          pip3 install pyserial
-
-      - name: Update index_html
-        run: |
-          cd Firmware/Tools
-          python index_html_zipper.py ../RTK_Surveyor/AP-Config/index.html ../RTK_Surveyor/form.h
-
-      - name: Update main_js
-        run: |
-          cd Firmware/Tools
-          python main_js_zipper.py ../RTK_Surveyor/AP-Config/src/main.js ../RTK_Surveyor/form.h
+          cd ./Firmware
+          echo "*** The docker build is quiet to protect the GitHub secrets ***"
+          docker build -t rtk_firmware --no-cache --quiet \
+            --build-arg CORE_VERSION=${{ env.CORE_VERSION }} \
+            --build-arg FIRMWARE_VERSION_MAJOR=${{ env.FIRMWARE_VERSION_MAJOR }} \
+            --build-arg FIRMWARE_VERSION_MINOR=${{ env.FIRMWARE_VERSION_MINOR }} \
+            --build-arg POINTPERFECT_TOKEN="${{ secrets.POINTPERFECT_TOKEN }}" \
+            --build-arg ENABLE_DEVELOPER=${{ env.ENABLE_DEVELOPER }} \
+            --build-arg DEBUG_LEVEL=${{ env.DEBUG_LEVEL }} \
+            .
+          docker create --name=rtk_container rtk_firmware:latest
+          mkdir ./build
+          docker cp rtk_container:/RTK_Surveyor.ino.bin ./build
+          docker cp rtk_container:/RTK_Surveyor.ino.elf ./build
+          docker cp rtk_container:/RTK_Surveyor/form.h ./RTK_Surveyor
+          docker container rm rtk_container
 
       - name: Commit and push form.h
-        uses: actions-js/push@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          directory: ./Firmware/RTK_Surveyor
-          branch: ${{ env.BRANCH }}
-          message: 'Update form.h via Python'
-
-      - name: Copy custom app3M_fat9M_16MB.csv
-        run:
-          cp Firmware/app3M_fat9M_16MB.csv /home/runner/.arduino15/packages/esp32/hardware/esp32/${{ env.CORE_VERSION }}/tools/partitions/app3M_fat9M_16MB.csv
-
-      - name: Compile Sketch
-        run: arduino-cli compile --fqbn "esp32:esp32:esp32":DebugLevel=${{ env.DEBUG_LEVEL }} ./Firmware/RTK_Surveyor/RTK_Surveyor.ino
-          --build-property build.partitions=app3M_fat9M_16MB
-          --build-property upload.maximum_size=3145728 
-          --build-property "compiler.cpp.extra_flags=\"-DPOINTPERFECT_TOKEN=$POINTPERFECT_TOKEN\" \"-DFIRMWARE_VERSION_MAJOR=$FIRMWARE_VERSION_MAJOR\" \"-DFIRMWARE_VERSION_MINOR=$FIRMWARE_VERSION_MINOR\" \"-DENABLE_DEVELOPER=${{ env.ENABLE_DEVELOPER }}\""
-          --export-binaries
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add ./Firmware/RTK_Surveyor/form.h
+          git commit -m "Update form.h via Python"
+          git push origin ${{ env.BRANCH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Rename binary
         run: |
-          cd Firmware/RTK_Surveyor/build/esp32.esp32.esp32/
+          cd ./Firmware/build/
           mv RTK_Surveyor.ino.bin ${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}.bin
 
       - name: Upload binary to action
         uses: actions/upload-artifact@v4
         with: 
           name: ${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}
-          path: ./Firmware/RTK_Surveyor/build/esp32.esp32.esp32/${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}.bin
-
+          path: ./Firmware/build/${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}.bin
       
       - name: Push binary to Binaries Repo
         # uses: dmnemec/copy_file_to_another_repo_action #Workaround for Issue: https://github.com/orgs/community/discussions/55820#discussioncomment-5946136
@@ -159,7 +98,7 @@ jobs:
         env:
           API_TOKEN_GITHUB: ${{ secrets.API_GITHUB_RTK_FILE_TOKEN }}
         with:
-          source_file: ./Firmware/RTK_Surveyor/build/esp32.esp32.esp32/${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}.bin
+          source_file: ./Firmware/build/${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}.bin
           destination_repo: 'sparkfun/SparkFun_RTK_Firmware_Binaries'
           destination_folder: ''
           user_email: 'nathan@sparkfun.com'

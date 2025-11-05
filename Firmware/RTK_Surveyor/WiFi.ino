@@ -83,8 +83,8 @@ void menuWiFi()
             systemPrintf("%d) Password %d: %s\r\n", (x * 2) + 2, x + 1, settings.wifiNetworks[x].password);
         }
 
-        systemPrint("a) Configure device via WiFi Access Point or connect to WiFi: ");
-        systemPrintf("%s\r\n", settings.wifiConfigOverAP ? "AP" : "WiFi");
+        systemPrint("a) Configure device WiFi as Access Point or Station Client: ");
+        systemPrintf("%s\r\n", settings.wifiConfigOverAP ? "AP" : "STA");
 
         systemPrint("c) Captive Portal: ");
         systemPrintf("%s\r\n", settings.enableCaptivePortal ? "Enabled" : "Disabled");

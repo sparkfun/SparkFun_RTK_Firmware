@@ -31,6 +31,9 @@ CC = $(GCC) $(CFLAGS)
 %.o: %.c $(INCLUDES)
 	$(CC) -c -o $@ $<
 
+Read_Map_File:	Read_Map_File.c   $(INCLUDES)
+	$(CC) $(CFLAGS) -o $@ $<    -liberty
+
 %: %.c $(INCLUDES)
 	$(CC) $(CFLAGS) -o $@ $<
 

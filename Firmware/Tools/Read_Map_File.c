@@ -4,7 +4,17 @@
 * Program to read the map file and process the ESP32 backtrace
 **********************************************************************/
 /*
-  Linux:
+  Linux: Building Read_Map_File
+
+  1.  Install the iberty library
+
+      sudo apt install libiberty-dev
+
+  2.  Make the Read_Map_File application
+
+      make
+
+  Linux: Capturing and analyzing a crash dump
 
   1.  From the top level RTK directory, build the RTK_Surveyor.ino.bin file
       using the Arduino CLI, an example:
@@ -34,6 +44,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <libiberty/demangle.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -50,6 +61,7 @@ typedef struct _SYMBOL_TYPE
     struct _SYMBOL_TYPE * nextSymbol;
     uint64_t address;
     uint64_t length;
+    char * mangledName;
     char * name;
 } SYMBOL_TYPE;
 
@@ -100,10 +112,10 @@ SYMBOL_TYPE * symbolListTail;
 // Support routines
 //----------------------------------------
 
-void dumpBuffer(char * buffer, size_t length)
+void dumpBuffer(const char * buffer, size_t length)
 {
   ssize_t bytes;
-  char * end;
+  const char * end;
   unsigned int index;
   ssize_t offset;
 
@@ -250,16 +262,28 @@ ssize_t readLineFromFile(char * buffer, size_t maxLineLength)
 void symbolAdd(const char * symbol, uint64_t baseAddress, uint64_t length)
 {
     SYMBOL_TYPE * entry;
+    const char * name;
+    size_t nameLength;
 
-    entry = malloc(sizeof(SYMBOL_TYPE) + 7 + strlen(symbol) + 1);
+    nameLength = strlen(symbol) + 1;
+    entry = malloc(sizeof(SYMBOL_TYPE) + 7 + nameLength + 1024);
     if (entry)
     {
         // Build the symbol entry
         entry->nextSymbol = nullptr;
         entry->address = baseAddress;
         entry->length = length;
-        entry->name = &((char *)entry)[sizeof(SYMBOL_TYPE)];
-        strcpy(entry->name, symbol);
+
+        // Save the mangled name
+        entry->mangledName = &((char *)entry)[sizeof(SYMBOL_TYPE)];
+        strcpy(entry->mangledName, symbol);
+
+        // Save the demangled name
+        name = cplus_demangle_v3(symbol, DMGL_GNU_V3 | DMGL_TYPES | DMGL_PARAMS | DMGL_ANSI);
+        if (!name)
+            name = symbol;
+        entry->name = entry->mangledName + nameLength;
+        strcpy(entry->name, name);
 
         // Add the symbol to the list
         if (!symbolListHead)
@@ -275,8 +299,6 @@ void symbolAdd(const char * symbol, uint64_t baseAddress, uint64_t length)
             symbolListTail = entry;
         }
         symbolEntries += 1;
-//        printf("0x%08lx-0x%08lx: %s\n",
-//               baseAddress, baseAddress + length - 1, symbol);
     }
 }
 
@@ -286,33 +308,11 @@ char * symbolGetName(char * buffer)
     size_t headerLength;
     char * symbolName;
 
-    // Determine if this is a c symbol
-    headerLength = sizeof(C_PLUS_PLUS_HEADER) - 1;
-    c = strncmp(buffer, C_PLUS_PLUS_HEADER, headerLength);
-
-    // Remove the c++ header from the symbol
-    if (!c)
-    {
-        buffer += headerLength;
-        if (*buffer == 'N')
-            buffer++;
-        if (*buffer == 'K')
-            buffer++;
-
-        // Remove the value
-        while ((*buffer >= '0') && (*buffer <= '9'))
-            buffer++;
-    }
-
     // Get the symbol name
     symbolName = &symbolBuffer[0];
     while (*buffer && (*buffer != ' ') && (*buffer != '\t'))
         *symbolName++ = *buffer++;
     *symbolName = 0;
-
-    // Remove the last character of a c++ symbol
-    if ((!c) && (symbolBuffer[0]))
-        *--symbolName = 0;
 
     // Return the next position in the buffer
     return buffer;
@@ -503,120 +503,6 @@ int parseMapFile()
             }
         }
     } while (readBufferBytes);
-
-/*
-    uint64_t baseAddress;
-    char * buffer;
-    uint64_t length;
-    static size_t lineNumber;
-    size_t lineOffset;
-    int offset;
-    char * symbol;
-    static char symbolBuffer[HALF_READ_BUFFER_SIZE];
-    const char * text = " .text._Z";
-    int textLength;
-    int value;
-
-    textLength = strlen(text);
-
-    do
-    {
-        // Read a line from the map file
-        lineLength = readLineFromFile(line, sizeof(line));
-        if (lineLength <= 0)
-            break;
-        lineNumber += 1;
-
-        // Locate the routine names
-        if (strncmp(line, text, textLength) == 0)
-        {
-            // Remove the value
-            buffer = &line[textLength];
-            value = 0;
-            while ((*buffer >= '0') && (*buffer <= '9'))
-            {
-                value *= 10;
-                value += *buffer++ - '0';
-            }
-            if (!value)
-                continue;
-
-            // Get the symbol name
-            symbol = &symbolBuffer[0];
-            while (*buffer && (*buffer != ' ') && (*buffer != '\t'))
-                *symbol++ = *buffer++;
-            *symbol = 0;
-
-            // Remove the last character of the symbol
-            if (symbolBuffer[0])
-                *--symbol = 0;
-
-            // Remove the white space
-            buffer = removeWhiteSpace(buffer);
-
-            // Read the symbol address and length from next line if necessary
-            if (!*buffer)
-            {
-                // Read a line from the map file
-                lineLength = readLineFromFile(line, sizeof(line));
-                if (lineLength <= 0)
-                    break;
-                lineNumber += 1;
-                buffer = line;
-            }
-
-            // Remove the white space
-            buffer = removeWhiteSpace(buffer);
-
-            // Get the symbol address
-            if (sscanf(buffer, "0x%016lx", &baseAddress) != 1)
-                continue;
-
-            // Remove the white space
-            buffer = skipOverText(buffer);
-            buffer = removeWhiteSpace(buffer);
-
-            // Get the symbol length
-            if (sscanf(buffer, "0x%lx", &length) == 1)
-            {
-                // Routines are in flash which starts at 0x40000000
-                if (baseAddress >= 0x40000000)
-                {
-                    SYMBOL_TYPE * entry;
-
-                    entry = malloc(sizeof(SYMBOL_TYPE) + 7 + strlen(symbolBuffer) + 1);
-                    if (entry)
-                    {
-                        // Build the symbol entry
-                        entry->nextSymbol = nullptr;
-                        entry->address = baseAddress;
-                        entry->length = length;
-                        entry->name = &((char *)entry)[sizeof(SYMBOL_TYPE)];
-                        strcpy(entry->name, symbolBuffer);
-
-                        // Add the symbol to the list
-                        if (!symbolListHead)
-                        {
-                            // This is the first entry in the list
-                            symbolListHead = entry;
-                            symbolListTail = entry;
-                        }
-                        else
-                        {
-                            // Add this entry of the end of the list
-                            symbolListTail->nextSymbol = entry;
-                            symbolListTail = entry;
-                        }
-                        symbolEntries += 1;
-//                        printf("0x%08lx-0x%08lx: %s\n",
-//                               baseAddress, baseAddress + length - 1, symbolBuffer);
-                    }
-                }
-            }
-        }
-    } while (readBufferBytes);
-*/
-
     return exitStatus;
 }
 

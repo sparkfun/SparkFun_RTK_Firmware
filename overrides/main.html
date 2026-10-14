@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if true %}
+    <a href="https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/gh-pages/pdf/SparkFun_RTK_User_Manual.pdf?raw=true" title="Download Site" class="md-content__button md-icon">
+        {% include ".icons/material/file-pdf-box.svg" %}
+    </a>
+{% endif %}
+
+{{ super() }}
+{% endblock content %}

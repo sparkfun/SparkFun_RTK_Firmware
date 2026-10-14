@@ -18,7 +18,7 @@ These services cover entire countries and regions but charge a monthly fee. Easy
 * [Onocoy](https://console.onocoy.com/explorer) ($25/month) - US, EU, Australia, and many other partial areas
 * [Skylark](https://www.swiftnav.com/skylark) ($29 to $69/month) - US, EU, Japan, Australia
 * [SensorCloud RTK](https://rtk.sensorcloud.com/pricing/) ($100/month) partial US, EU
-* [Premium Positioning](https://www.premium-positioning.com) (quoted per device and term, 14-day free trial) - EU, UK, US multi-network coverage (35+ countries, see [coverage map](https://www.premium-positioning.com/coverage))
+* [Premium Positioning](https://www.premium-positioning.com) ($70-$180/month, $350-$900/year, 14-day free trial) - EU, UK, US, 35+ countries (see [coverage map](https://www.premium-positioning.com/coverage))
 * [KeyNetGPS](https://www.keypre.com/KeynetGPS) ($375/month) North Eastern US
 * [Hexagon/Leica](https://hxgnsmartnet.com/en-US) ($500/month) - partial US, EU
 
